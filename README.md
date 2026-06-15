@@ -9,38 +9,82 @@ Hier entsteht eine MII Kerndatensatz-Schulungsumgebung. Initiale Übungen werden
   - Verarbeiten von FHIR-Beispieldaten
   - Validierung von Ressourcen und Profilen
 
-## Prerequisites -> [in den Übungsbereich](exercises/prerequisites.md)
+## ⚪ ⚪ Prerequisites -> [Link in den Übungsbereich](exercises/prerequisites.md)
 Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit GIT, npm, sushi, docker-compose, eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher.
 
-## Exercise 0 - [Vorbereiten der Beispieldaten](exercises/exercise-0.md)
+Verwendete Werkzeuge (Referenzauswahl):
+- FHIR-Shorthand (FSH) - Compiler `sushi` 
+- FHIR Store / Server `blaze`
+- Terminologie-Server `blaze` (TermServ)
+- Validierungsservice `MII FHIR Validator`
 
-Zu Beginn:
-> - FSH-Compiler `Sushi` einrichten
-> - (Lokalen) FHIR Store/Server starten
+## 🔵 🔵 Exercise 0 - [FHIR-Profilen definieren und Ressourcen generieren](exercises/exercise-0.md)
 
-Los geht es:
-- Klonen des Beispieldatenrepository
-- Builden von FHIR-Ressourcen 
-  - Beispieldaten: MII Musterdaten oder MII KDS Testdaten
+> \> FSH-Compiler `sushi` per `npm` eingerichtet.
+
+- Beispielprofil und Beispielressource in `fsh` definieren 
+- Ressourcen mittels `sushi` builden
+
+## 🟢 🟢 Exercise 1 - [Beispiel FHIR-Search](exercises/exercise-1.md)
+
+> \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
+
+- Beispielressource in den FHIR Server hochladen
+- Beispielabfragen via HTTP REST
+
+## 🟡 🟡 Exercise 2 - [Daten in FHIR-Server laden](exercises/exercise-2.md)
+
+> \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
+
+- Builden von Beispieldaten: 
+  - `MII Musterdaten` oder `MII KDS Testdaten`
   - Verwalten von FHIR-Packages (`~./fhir`)
-- Laden der Beispieldaten in den FHIR Server
+- Beispieldaten in den FHIR Server hochladen
 
-## Exercise 1 - [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-1.md)
+## 🟠 🟠 Exercise 3 - [Query von KDS-Daten](exercises/exercise-3.md)
 
+> \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
+
+- Abfragen auf Beispielprofil bzw. Ressourcen
+- Abfragen auf KDS-Profilen
+- Ausblick auf TORCH?
+
+## 🔴 🔴 Exercise 4 - [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-4.md)
+
+> \> Lokalen Terminologieserver gestartet. (Docker-Compose)
+
+- Terminologien aus zentralen Quellen runterladen
+- Terminologie-Packete in lokalen TermServ hochladen
+  - ICD10-GM
+  - SNOMED-CT
+  - LOINC
+
+## 🟣 🟣 Exercise 5 - [Nutzen des MII FHIR Validators](exercises/exercise-5.md)
+
+> \> MII FHIR Validator lokal eingerichtet und gestartet. (Docker-Compose)
+
+- Validator-Umgebungsvariablen konfigurieren?
+- Einzelne Profile validieren
+- Einzelne Ressourcen validieren
+- Beispieldaten validieren
+
+## 🟤 🟤 Exercise 6 - [Interpretieren von Ergebnissen](exercises/exercise-6.md)
+
+> \> Validierungsreport erzeugt.
+
+- Validierungsreport auswerten
+- Häufige Warnings
+- Häufige Errors
+
+## ⚫ ⚫ Exercise 7 - [Ausblick: Sonstiges](exercises/exercise-7.md)
+
+- Alternative Validierungsserver
+- Versionierung von Codesystemen
+- Lizenzen
 - ...
-  - --> [MII Validator Quickstart](https://github.com/medizininformatik-initiative/mii-fhir-validator#quick-start) --> [Blaze Termserv](https://samply.github.io/blaze/terminology-service/validation.html)
 
-## Exercise 2 - [Inbetriebnahme des MII FHIR Validators](exercises/exercise-2.md)
-- ...
-
-## Exercise 3 - [Starten der Validierung](exercises/exercise-3.md)
-
-- ...
-
-## Exercise 4 - [Interpretieren von Ergebnissen](exercises/exercise-4.md)
-
-## ....
-
+## Ende
+___
 ### Kontakt
 * Jendrik Richter (UMG) 
 * baseTrace-Team
