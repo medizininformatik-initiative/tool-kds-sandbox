@@ -10,20 +10,20 @@ Hier entsteht eine MII Kerndatensatz-Schulungsumgebung. Initiale Übungen werden
   - Validierung von Ressourcen und Profilen
 
 ## ⚪ ⚪ Prerequisites -> [Link in den Übungsbereich](exercises/prerequisites.md)
-Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit GIT, npm, sushi, docker-compose, eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher.
-
-Verwendete Werkzeuge (Referenzauswahl):
-- FHIR-Shorthand (FSH) - Compiler `sushi` 
+Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit verschiedenen technischen Werkzeugen sowie eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher. Die verwendeten Werkzeuge (Referenzauswahl) sind im Folgenden aufgelistet:
+- FHIR-Shorthand (FSH) - Compiler `sushi`
+- Versionsverwaltung `git`
+- Container Service `Docker-Compose`
 - FHIR Store / Server `blaze`
 - Terminologie-Server `blaze` (TermServ)
 - Validierungsservice `MII FHIR Validator`
 
 ## 🔵 🔵 Exercise 0 - [FHIR-Profilen definieren und Ressourcen generieren](exercises/exercise-0.md)
 
-> \> FSH-Compiler `sushi` per `npm` eingerichtet.
+> \> FSH-Compiler `sushi` eingerichtet. (NPM-Installation)
 
-- Beispielprofil und Beispielressource in `fsh` definieren 
 - Ressourcen mittels `sushi` builden
+- Beispielprofil und Beispielressource in `fsh` definieren 
 
 ## 🟢 🟢 Exercise 1 - [Beispiel FHIR-Search](exercises/exercise-1.md)
 
@@ -54,8 +54,10 @@ Verwendete Werkzeuge (Referenzauswahl):
 > \> Lokalen Terminologieserver gestartet. (Docker-Compose)
 
 - Terminologien aus zentralen Quellen runterladen
+  - https://terminologien.bfarm.de (ATC, ICD-10-GM, LOINC, OPS, UCUM, ...)
+  - https://www.nlm.nih.gov/healthit/snomedct/ (SNOMED-CT)
 - Terminologie-Packete in lokalen TermServ hochladen
-  - ICD10-GM
+  - ICD-10-GM
   - SNOMED-CT
   - LOINC
 
@@ -78,7 +80,8 @@ Verwendete Werkzeuge (Referenzauswahl):
 
 ## ⚫ ⚫ Exercise 7 - [Ausblick: Sonstiges](exercises/exercise-7.md)
 
-- Alternative Validierungsserver
+- Alternative Terminologieserver
+- Alternative Validierungsservices
 - Versionierung von Codesystemen
 - Lizenzen
 - ...

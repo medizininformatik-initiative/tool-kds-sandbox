@@ -3,6 +3,35 @@ ___
 # ⚪ Prerequisites
 
 
+## Note
+💡 Fokus & Wichtiges
+💡 Leuchtende Glühbirne (für Tipps, Ideen, Merksätze)
+
+⚠️ Warnschild / Achtung (für Stolperfallen oder Fehlerquellen)
+
+❗ Ausrufezeichen (für wichtige Hinweise)
+
+🔍 Lupe (für Details oder „Genau hinschauen“)
+
+🚀 Einstieg & Fortschritt
+🚀 Rakete (für den Start oder „Schnellkurs“)
+
+🏁 Zielflagge (für das Endergebnis oder Zwischenziele)
+
+🛠️ Werkzeug / Hammer & Schraubenschlüssel (für Vorbereitung/Setup)
+
+🧩 Puzzleteil (für Module oder Zusammenhänge)
+
+📋 Struktur & Navigation
+📌 Pinnnadel (für Fixpunkte oder Zusammenfassungen)
+
+📖 Offenes Buch (für Theorie-Grundlagen)
+
+💻 Laptop / Computer (für Praxis-Schritte am Bildschirm)
+
+✅ Grünes Häkchen (für erledigte Schritte oder "Richtig-Beispiele")
+
+❌ Rotes Kreuz (für "Falsch-Beispiele")
 
 
 ___
