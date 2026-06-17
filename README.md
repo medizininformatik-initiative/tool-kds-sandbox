@@ -10,7 +10,7 @@ Hier entsteht eine MII Kerndatensatz-Schulungsumgebung. Initiale Übungen werden
   - Validierung von Ressourcen und Profilen
 
 ## ⚪ ⚪ Prerequisites -> [Link in den Übungsbereich](exercises/prerequisites.md)
-Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit verschiedenen technischen Werkzeugen sowie eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher. Die verwendeten Werkzeuge (Referenzauswahl) sind im Folgenden aufgelistet:
+Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit verschiedenen technischen Werkzeugen sowie eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher. Die wichtigsten Werkzeuge (Referenzauswahl) sind im Folgenden aufgelistet:
 - FHIR-Shorthand (FSH) - Compiler `sushi`
 - Versionsverwaltung `git`
 - Container Service `Docker-Compose`
@@ -23,16 +23,19 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 > \> FSH-Compiler `sushi` eingerichtet. (NPM-Installation)
 
 - Ressourcen mittels `sushi` builden
+  - Verwalten von FHIR-Packages (`~./fhir`)
 - Beispielprofil und Beispielressource in `fsh` definieren 
+- Anwendungsfallbeispiel mit KDS-Bezug
+- IG generieren und Ressourcen visualisieren
 
-## 🟢 🟢 Exercise 1 - [Beispiel FHIR-Search](exercises/exercise-1.md)
+## 🟢 🟢 Exercise 1 - [Einfaches Beispiel FHIR-Search](exercises/exercise-1.md)
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
 - Beispielressource in den FHIR Server hochladen
 - Beispielabfragen via HTTP REST
 
-## 🟡 🟡 Exercise 2 - [Daten in FHIR-Server laden](exercises/exercise-2.md)
+## 🟡 🟡 Exercise 2 - [Beispiel-Daten in FHIR-Server laden](exercises/exercise-2.md)
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
