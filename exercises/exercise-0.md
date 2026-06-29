@@ -65,7 +65,7 @@ dotnet --version
 fhir --version
 ```
 
----
+___
 
 ## 🛠️ Ressourcen mittels `SUSHI` builden 🛠️
 
@@ -73,7 +73,7 @@ fhir --version
 
 Um uns der Spezifikation von Profilen und Ressourcen praktisch anzunähern, initiieren wir nun mit SUSHI ein neues FSH-Projekt und starten den Build-Process mit der erzeugten Beispiel-FSH-Datei.
 
-#### Erster Schritt: 
+#### Erster Schritt
 
 Wechseln in dein Arbeitsverzeichnis und starten das Projekt-Setup (bspw. mit default Werten) mittels:
 
@@ -101,7 +101,7 @@ Die initiierte Struktur sieht wie folgt aus:
 4 directories, 7 files
 ```
 
-#### Nächster Schritt: 
+#### Nächster Schritt
 
 Im Projektverzeichnis die bereits existierende Beispieldatei `patient.fsh` builden mittels:
 
@@ -209,6 +209,7 @@ dependencies:
 Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_ZuckWatch_Labor_Hemo.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must support) um.
 
 Neues Profil mit entsprechenden Einschränkungen in `.fsh`-Datei definieren:
+
 ```bash
 Profile: PR_ZuckWatch_Labor_Hemo
 Parent: MII_PR_Labor_Laboruntersuchung
@@ -251,6 +252,7 @@ Unser Ordner sieht damit wie folgt aus:
 Schreibe in einer separaten `.fsh`-Datei eine Instance eines fiktiven Patienten-Messwerts. Nutze als `InstanceOf` das neu erstellte Studienprofil `PR_ZuckWatch_Labor_Hemo` und befülle es mit einem realistischen Testwert (z. B. 48 mmol/mol).
 
 Definition der Instance unseres "PR_ZuckWatch_Labor_Hemo"-Profils:
+
 ```bash
 Instance: Example-ZuckWatch-Labor-Hemo-01
 InstanceOf: PR_ZuckWatch_Labor_Hemo
@@ -315,10 +317,10 @@ Unser Ordner sieht damit wie folgt aus:
 
 **Hintergrund:**
 
-* **FHIR Packages** sind komprimierte Module (wie npm-Pakete), die FHIR-Ressourcen (Profiles, Extensions, ValueSets) für ein bestimmtes Projekt oder einen Leitfaden bündeln.
-* Ein **Snapshot** ist die vollständig ausformulierte, berechnete Version eines FHIR-Profils. Er enthält alle vererbten Elemente der Basis-Ressource. Fehlt der Snapshot, enthält das Profil nur die Abweichungen (das sogenannte *Differential*).
+- **FHIR Packages** sind komprimierte Module (wie npm-Pakete), die FHIR-Ressourcen (Profiles, Extensions, ValueSets) für ein bestimmtes Projekt oder einen Leitfaden bündeln.
+- Ein **Snapshot** ist die vollständig ausformulierte, berechnete Version eines FHIR-Profils. Er enthält alle vererbten Elemente der Basis-Ressource. Fehlt der Snapshot, enthält das Profil nur die Abweichungen (das sogenannte *Differential*).
 
-**Das Problem:** Tools wie **SUSHI** benötigen zwingend die vollständigen Snapshots der Paket-Abhängigkeiten, um deine Ressourcen korrekt zu validieren und zu generieren. Wenn ein Paket (z. B. durch automatische Downloads anderer Tools) ohne Snapshots in deinem lokalen FHIR-Cache (`~/.fhir/packages/`) landet, bricht SUSHI mit Fehlermeldungen ab. 
+**Das Problem:** Tools wie **SUSHI** benötigen zwingend die vollständigen Snapshots der Paket-Abhängigkeiten, um deine Ressourcen korrekt zu validieren und zu generieren. Wenn ein Paket (z. B. durch automatische Downloads anderer Tools) ohne Snapshots in deinem lokalen FHIR-Cache (`~/.fhir/packages/`) landet, bricht SUSHI mit Fehlermeldungen ab.
 
 Mit den folgenden Varianten erzwingst du das Herunterladen und Generieren bei fehlenden Snapshots:
 
@@ -374,7 +376,7 @@ Die Rückmeldung von `SUSHI` sollte nun wie folgt aussehen (Wortwitz des Compile
 
 **Hintergrund:** FHIR-Ressourcen und Implementation Guides (IGs) liegen im Quellcode als reine JSON-, XML- oder FSH-Dateien vor. Für das menschliche Auge – und insbesondere für die spätere Abstimmung mit medizinischem Fachpersonal oder Entwicklern – sind diese Textwüsten schwer lesbar.
 
-Um Profile, ValueSets und Leitfäden in eine strukturierte, interaktive HTML-Ansicht mit Baumstrukturen (ähnlich wie auf Simplifier oder in den offiziellen HL7-Spezifikationen) zu verwandeln, müssen die Daten gerendert werden. 
+Um Profile, ValueSets und Leitfäden in eine strukturierte, interaktive HTML-Ansicht mit Baumstrukturen (ähnlich wie auf Simplifier oder in den offiziellen HL7-Spezifikationen) zu verwandeln, müssen die Daten gerendert werden.
 
 Je nachdem, ob du lokal die vollständige Dokumentation bauen oder nur schnell ein einzelnes Profil prüfen möchtest, stehen dir dafür verschiedene Wege zur Verfügung:
 
