@@ -13,8 +13,9 @@ Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-
 📋 Übersicht:
 
 - [Docker einrichten (vorbereitend)](#docker-einrichten)
-- [Service definieren und via docker-compose starten](#service-definieren-und-starten)
-- TODO
+- [Container definieren und via docker-compose starten](#container-definieren-und-starten)
+- [Ressourcen hochladen](#ressourcen-hochladen)
+- [Ressourcen abfragen](#ressourcen-abfragen)
 
 ___
 
@@ -43,7 +44,7 @@ Standardmäßig benötigt Docker unter Ubuntu Root-Rechte:
 sudo docker run hello-world
 ```
 
-### FHIR-Server definieren und starten
+### Container definieren und starten
 
 Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zum Samply/Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [Github-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker-Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten lege eine docker-compose.yml an:
 
@@ -103,7 +104,9 @@ ___
 
 Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später im Tutorial werden wir auch noch FHIR-Bundles nutzen, um mehrere Ressourcen gleichzeitig an den FHIR-Server zu übermitteln.
 
-- Upload der Beispiel-Patient-Ressource via `HTTP POST` an den /fhir-Endpunkt des FHIR-Servers:
+#### Upload Patient
+
+- Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
 ```bash
 curl -X POST http://localhost:8080/fhir/Patient \
@@ -135,19 +138,85 @@ Antwort des Servers:
 }
 ```
 
-- Upload der Beispiel-Observation-Ressource via `HTTP POST`:
+#### Upload Observation
 
-```bash
+Bevor wir die Observation hochladen, müssen wir sicherstellen, dass die referenzielle Integrität gewahrt bleibt. In FHIR verweist eine Observation über das Element subject auf einen Patienten.
 
-```
+Da der Server bei einem POST-Request IDs zufällig generiert (z. B. DHYSYTWMKTNZRTNP), würde unsere Observation ins Leere laufen, wenn sie hart auf Patient/example-patient verweist.
 
-### Beispielabfrage via HTTP-REST
+##############################
 
-TODO
+Feste IDs via HTTP PUT erzwingen
+Um dieses Problem elegant zu lösen, nutzen wir anstelle von POST die HTTP-Methode PUT. Damit bestimmen wir die ID der Ressource direkt vom Client aus.
 
-```bash
+Patient mit fester ID hochladen (PUT):
+Hierbei übergeben wir die ID example-patient direkt am Ende der Endpunkt-URL.
+
+Bash
+curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
+  -H "Content-Type: application/fhir+json" \
+  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
+Observation hochladen (PUT):
+Da unsere in Exercise 0 definierte Observation (EXA_ZuckWatch_Labor_Hemo.fsh) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun perfekt mit dem soeben angelegten Patienten. Wir laden auch die Observation mit einer festen ID via PUT hoch:
+
+Bash
+curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
+  -H "Content-Type: application/fhir+json" \
+  -d @ExampleIG/fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
+💡 Merkregel für FHIR-Server:
+
+POST: Der Server generiert eine zufällige ID (z. B. /fhir/Patient).
+
+PUT: Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. /fhir/Patient/meine-id).
+
+Ressourcen abfragen
+Ein FHIR-Search-String wird als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
+
+Beispielabfrage via HTTP-REST
+Um zu überprüfen, welche Patienten aktuell auf dem Server existieren, nutzen wir einen standardmäßigen GET-Request auf den Ressourcen-Endpunkt:
+
+Bash
 curl -X GET "http://localhost:8080/fhir/Patient"
-```
+
+FHIR-Server antworten bei Suchabfragen niemals mit einer nackten Liste oder einem einfachen Array. Als Antwort erhältst du immer eine Container-Ressource vom Typ Bundle (mit dem Attribut "type": "searchset").
+
+Das Feld "total" verrät dir sofort die Anzahl der gefundenen Ressourcen.
+
+Die eigentlichen Patientendaten liegen tiefer verschachtelt im Array "entry".
+
+Gezielte Suche nach Kriterien (FHIR-Search Parameters)
+FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Teste die folgenden mächtigen Such-Szenarien direkt in deinem Terminal:
+
+1. Suche nach einem spezifischen LOINC-Code
+Möchtest du alle Laborwerte abfragen, die den in unserer Studie fixierten HbA1c-Code aufweisen, filterst du über den Parameter code. Das Trennzeichen | separiert dabei das Codesystem (LOINC) vom eigentlichen Code:
+
+Bash
+curl -X GET "http://localhost:8080/fhir/Observation?code=http://loinc.org|4548-4"
+
+2. Verknüpfte Suche nach dem Patienten (Chaining / Reference Search)
+Du kannst gezielt alle Laborwerte abfragen, die exakt zu unserem zuvor angelegten Patienten gehören, indem du über die Patienten-Referenz filterst:
+
+Bash
+curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient"
+
+3. Kombination mehrerer Parameter (AND-Suche)
+FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombinieren. Die folgende Abfrage sucht nach Observations, die sowohl zum Patienten example-patient gehören als auch den Status final besitzen:
+
+Bash
+curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final"
+
+Ressourcen löschen (FHIR-Delete)
+Sollten sich Fehler in deine Testdaten eingeschlichen haben oder möchtest du den Server für den nächsten Durchlauf bereinigen, kannst du Ressourcen über die HTTP-Methode DELETE gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
+
+Bash
+curl -X DELETE "http://localhost:8080/fhir/Patient/example-patient"
+
+Hintergrundwissen (Soft Delete):
+Ein FHIR-Server löscht Daten in der Regel nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert.
+Wenn du versucht, diese ID danach erneut direkt via GET aufzurufen, antwortet der Server folgerichtig mit dem HTTP-Status 410 Gone. Bei einer allgemeinen Suchabfrage taucht sie standardmäßig nicht mehr auf.
+
+##############################
+
 ___
 ___
 [Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
