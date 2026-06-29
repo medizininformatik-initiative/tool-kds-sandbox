@@ -1,10 +1,15 @@
+___
+___
 **Prerequisites** • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
 ___
+___
+
 # ⚪ Prerequisites
 
 Bevor du mit den Übungen startest, stelle sicher, dass deine lokale Entwicklungsumgebung die folgenden Voraussetzungen erfüllt. Das spart Zeit und verhindert Frustration bei den späteren Validierungs- und Build-Schritten.
 
 ## 💻 Technische Mindestanforderungen
+
 * **Betriebssystem:** Linux (bspw. Ubuntu/Debian) oder Windows mit **WSL2** (Windows Subsystem for Linux).
 * **Hardware:** Mindestens **8 GB Arbeitsspeicher (RAM)**. Der FHIR-Publisher und der lokale Validierungsservice benötigen temporär viel Speicher.
 * **Rechte:** Du benötigst **Sudo-Rechte** auf dem System, um Pakete (wie Docker, Java, Node.js) zu installieren.
@@ -12,6 +17,7 @@ Bevor du mit den Übungen startest, stelle sicher, dass deine lokale Entwicklung
 ---
 
 ## 🛠️ Benötigte Werkzeuge (Installations-Checkliste)
+
 Die Übungen bauen aufeinander auf. Du wirst im Laufe des Tutorials folgende Tools einrichten (die genaue Anleitung erfolgt in den jeweiligen Übungen):
 
 1. **Für die Modellierung (Exercise 0):** Node.js mit `npm`, der Compiler `sushi` sowie das `Firely Terminal`.
@@ -24,12 +30,14 @@ Die Übungen bauen aufeinander auf. Du wirst im Laufe des Tutorials folgende Too
 
 Alle Ordnerstrukturen, Konfigurationsdateien (wie `docker-compose.yml`) und fertigen FSH-Beispieldateien der einzelnen Übungen sind im Git-Repository über separate Branches organisiert. Die Beispieldateien bzw. Musterlösungen stehen dir jeweils im passenden Solution-Branch (z. B. `solution_exercise-0`, `solution_exercise-1` etc.) zur Verfügung.
 
----
+___
+
 ## Copy-Pasta (später entfernen)
+
 💡 Leuchtende Glühbirne (Fokus & Wichtiges, für Tipps, Ideen, Merksätze)  
 ⚠️ Warnschild / Achtung (für Stolperfallen oder Fehlerquellen)  
 ❗ Ausrufezeichen (für wichtige Hinweise)  
-🔍 Lupe (für Details oder „Genau hinschauen“)    
+🔍 Lupe (für Details oder „Genau hinschauen“)
 🚀 Rakete (für den Start oder „Schnellkurs“)  
 🏁 Zielflagge (für das Endergebnis oder Zwischenziele)  
 🛠️ Werkzeug / Hammer & Schraubenschlüssel (für Vorbereitung/Setup)  
@@ -42,7 +50,7 @@ Alle Ordnerstrukturen, Konfigurationsdateien (wie `docker-compose.yml`) und fert
 ❌ Rotes Kreuz (für "Falsch-Beispiele")  
 
 ___
+___
 **Prerequisites** • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
-
-
-
+___
+___

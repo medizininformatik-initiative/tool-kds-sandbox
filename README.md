@@ -2,7 +2,7 @@
 
 Hier entsteht eine MII Kerndatensatz-Schulungsumgebung. Initiale Übungen werden aus dem Aus-, Fort- und Weiterbildungsprojekt baseTrace heraus erstellt. Die Schulungsumgebung soll Mitte 2026 mit einem initialen Satz an Übungen/Inhalten verfügbar werden. Zukünftig können weitere Übungen/Inhalte entwickelt und hinzugefügt werden.
 
-- Zielgruppe: 
+- Zielgruppe:
   - Neue Mitarbeitende der DIZe
 - Zukünftige Themen:
   - Implementierung von KDS-Profilen
@@ -10,7 +10,9 @@ Hier entsteht eine MII Kerndatensatz-Schulungsumgebung. Initiale Übungen werden
   - Validierung von Ressourcen und Profilen
 
 ## ⚪ ⚪ Prerequisites -> [Link in den Übungsbereich](exercises/prerequisites.md)
+
 Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumgebung mit verschiedenen technischen Werkzeugen sowie eines Textbearbeitungsprogramm und minimal 8GB Arbeitsspeicher. Die wichtigsten Werkzeuge (Referenzauswahl) sind im Folgenden aufgelistet:
+
 - FHIR-Shorthand (FSH) - Compiler `sushi`
 - Versionsverwaltung `git`
 - Container Service `Docker-Compose`
@@ -24,7 +26,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 
 - Ressourcen mittels `sushi` builden
   - Verwalten von FHIR-Packages (`~./fhir`)
-- Beispielprofil und Beispielressource in `fsh` definieren 
+- Beispielprofil und Beispielressource in `fsh` definieren
 - Anwendungsfallbeispiel mit KDS-Bezug
 - IG generieren und Ressourcen visualisieren
 
@@ -39,7 +41,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
-- Builden von Beispieldaten: 
+- Builden von Beispieldaten:
   - `MII Musterdaten` oder `MII KDS Testdaten`
   - Verwalten von FHIR-Packages (`~./fhir`)
 - Beispieldaten in den FHIR Server hochladen
@@ -57,8 +59,8 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 > \> Lokalen Terminologieserver gestartet. (Docker-Compose)
 
 - Terminologien aus zentralen Quellen runterladen
-  - https://terminologien.bfarm.de (ATC, ICD-10-GM, LOINC, OPS, UCUM, ...)
-  - https://www.nlm.nih.gov/healthit/snomedct/ (SNOMED-CT)
+  - [https://terminologien.bfarm.de](https://terminologien.bfarm.de) (ATC, ICD-10-GM, LOINC, OPS, UCUM, ...)
+  - [https://www.nlm.nih.gov/healthit/snomedct/](https://www.nlm.nih.gov/healthit/snomedct/) (SNOMED-CT)
 - Terminologie-Packete in lokalen TermServ hochladen
   - ICD-10-GM
   - SNOMED-CT
@@ -90,7 +92,10 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - ...
 
 ## Ende
+
 ___
+
 ### Kontakt
-* Jendrik Richter (UMG) 
-* baseTrace-Team
+
+- Jendrik Richter (UMG)
+- baseTrace-Team
