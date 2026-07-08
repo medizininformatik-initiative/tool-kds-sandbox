@@ -445,7 +445,7 @@ Wenn du keine lokale `Java`-Umgebung einrichten willst und nur schnell sehen mö
 
 ## 🔍 Weiterführende Materialien 🔍
 
-Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und erstellen von FHIR Profilen und Ressourcen eingerichtet.
+Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR Profilen und Ressourcen eingerichtet.
 
 Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
 
