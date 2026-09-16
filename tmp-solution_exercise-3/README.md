@@ -1,4 +1,4 @@
-# Lösung Exercise 2 – KDS-Beispieldaten in FHIR-Server laden
+# Lösung Exercise 3 – KDS-Beispieldaten in FHIR-Server laden
 
 ## Enthaltene Dateien
 
@@ -23,7 +23,7 @@ bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
 bash bin/unresolved-references.sh transaction-bundle.json
 
 # 5. Bundle reparieren (fehlende Locations/Encounters ergänzen)
-bash ../tmp-solution_exercise-2/repair-bundle.sh transaction-bundle.json > bundle-repaired.json
+bash ../tmp-solution_exercise-3/repair-bundle.sh transaction-bundle.json > bundle-repaired.json
 
 # 6. In Blaze hochladen
 curl -X POST http://localhost:8080/fhir \

@@ -1,257 +1,329 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🔴 Aufsetzen eines lokalen Terminologieservers
+# 🟠 Query von KDS-Daten
+
+**Nächste Schritte:**  
+
+- Teste die Abfragen lokal (Blaze muss laufen!)
+- Ersetze nachfolgend `PATIENT_ID` mit einer ID aus Deiner Datenbasis  
+- Erweitere die Abfragen um weitere Filter oder Ressourcen
+
+___
 
 ## Einführung & Kontext
 
-In den vorherigen Übungen haben wir gelernt, **FHIR-Ressourcen** in einen Server zu laden und abzufragen. Für eine vollständige Validierung und Kodierung至关重要 sind jedoch ** Terminologien** (Codesysteme) wie ICD-10-GM, SNOMED-CT, LOINC, OPS, ATC, UCUM.
+In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende der DIZe** (UKSH-Standort) in einen lokalen FHIR-Server (Blaze) geladen — ca. 8.400 Ressourcen mit den „DIZ-Flavours“ der Universitätskliniken (UKHD, UKSH, UKW).
 
-Auch wenn ein FHIR-Server wie **Blaze** über einen integrierten **Terminologieserver** (TermServ) verfügt, müssen die Codesysteme zuerst **heruntergeladen** und **importiert** werden. In dieser Übung richten wir einen lokalen Terminologieserver ein und laden die essentialen Codesysteme für die DIZ-Praxis.
+In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durchzuführen. Du wirst FHIR-Search-Parameter (LOINC-Code, Chaining, AND, Sortierung, Pagination) auf echte KDS-Ressourcen anwenden und siehst, wie du die Daten für Analysen oder Auswertungen nutzen kannst.
 
-> 💡 **Warum Terminologien?**  
-> - **Validierung:** Codes prüfen (z. B. ist `LOINC#4548-4` gültig?)  
-> - **Übersetzung:** Zwischen verschiedenen Codiersystemen (z. B. ICD-10-GM → SNOMED)  
-> - **Display-Names:** Automatische Anzeige von Code-Beschreibungen  
-> - **DIZ-Alltag:** Beim Import, Export und der Datenqualitätssicherung
+> 💡 **Warum FHIR-Search?**  
+> In der DIZ-Praxis greifen duale Auswertungen, Forschungsprojekte oder Export-Skripte fast immer über FHIR-Search auf die integrierten Daten zu. Der FHIR-Search-Standard erlaubt es, flexibel und standortübergreifend auf die Daten zuzugreifen — unabhängig vom zugrundeliegenden Datenbanksystem.
 
-> 💡 **Hintergrund: MII SU-TermServ**  
-> Die MII betreibt einen zentralen **Terminologieservice** (SU-TermServ) für alle DIZe. Für lokale Tests, Offline-Arbeit oder spezifische Versionen ist ein **lokales Setup** dennoch wichtig — und Grundlage für Ex5 (Validation).
+> 💡 **Ausblick: TORCH & DIMP/DUP**  
+> Für komplexe Datenanforderungen (z. B. cohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
+>
+> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH nutzt **CRTDL** (Clinical Resource Transfer Definition Language) und kann entweder CQL oder FLARE für die Kohorten definition verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
+> - **DIMP/DUP-Pipeline (aether-orchestriert)**: Die Infrastruktur zur automatisierten Datenbereitstellung und -pseudonymisierung für Forschungsprojekte. DIMP (Datenintegrations- und Musterspeicherpipeline) und DUP (Datenauslesepipeline) werden über die aether-Orchestrierung gesteuert — typischerweise im Hintergrund für Exportanfragen aktiv.
+>
+> Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um Projekt-basierte, auditierbare Extraktionsketten.
 
----
+___
 
 📋 **Übersicht:**
 
-- [Hintergrund: Terminologien im DIZ](#-hintergrund-terminologien-im-diz)
-- [Quellen für Codesysteme](#-quellen-für-codesysteme)
-- [Blaze-Termserv einrichten](#-blaze-termserv-einrichten)
-- [Codesysteme importieren](#-codesysteme-importieren)
-- [Überprüfung & Tests](#-überprüfung--tests)
-- [Ausblick & Zusammenfassung](#-ausblick--zusammenfassung)
+- [Grundlagen: FHIR-Search auf KDS-Profilen](#-fhir-search-auf-kds-profilen)
+- [Fachliche Beispieldaten-Abfragen](#-fachliche-beispieldaten-abfragen)
+- [Skriptbasierter Ausblick (R/Python)](#-skriptbasierter-ausblick-rpython)
+- [Zusammenfassung & Merkregeln](#-zusammenfassung--merkregeln)
 
----
+___
 
-## 💻 Hintergrund: Terminologien im DIZ
+## 💻 FHIR-Search auf KDS-Profilen
 
-### 1.1 Codesysteme für DIZ-Anwendungen
+FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( `_count`, `_sort`, `_summary`, `_contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
 
-| Codesystem | Quelle | Nutzen im DIZ |
-|------------|--------|---------------|
-| **ICD-10-GM** | [bfarma](https://terminologien.bfarm.de) | Diagnosekodierung (OPDR, MELD, etc.) |
-| **SNOMED-CT** | [NLM](https://www.nlm.nih.gov/healthit/snomedct/) | Klinische Befunde (Observation.code, Condition.code) |
-| **LOINC** | [NLM](https://loinc.org) | Laborcodes (Observation.code) |
-| **OPS** | [bfarma](https://terminologien.bfarm.de) | Prozeduren (Procedure.code, DiagnosticReport.code) |
-| **ATC** | [bfarma](https://terminologien.bfarm.de) | Arzneimittel (Medication.code) |
-| **UCUM** | [UCUM.org](https://ucum.org) | Einheiten (valueQuantity.unit) |
+> ⚠️ **Voraussetzung:** Blaze läuft noch auf `http://localhost:8080` (aus [Exercise 2/2](exercise-2.md#daten-in-blase-hochladen)). Sollte er nicht mehr laufen: `docker compose up -d` im Blaze-Verzeichnis.
 
-> ⚠️ **Versionierung:** Codesysteme werden monatlich/quarterly aktualisiert! Im DIZ-Alltag ist die richtige **Versionierung** kritisch (z. B. LOINC 2.82.0 vs. neuer).
+### 1.1 Ressourcentypen in der Musterdatenspende
 
----
-
-## 📥 Quellen für Codesysteme
-
-### 2.1 bfarm (Dekstop-Website & API)
-
-[https://terminologien.bfarm.de](https://terminologien.bfarm.de) bietet Downloads für:
-
-- ICD-10-GM (json, xml)
-- LOINC (json, xml, csv)
-- OPS (json, xml)
-- ATC (json, xml)
-- UCUM (json)
-
-**Vorgehen:**
-1. Website besuchen → Downloads → Ausgewählte Version auswählen  
-2. JSON/XML-Paket herunterladen  
-3. Für Blaze-Termserv: JSON-Format nutzen
-
----
-
-### 2.2 NLM (SNOMED-CT & LOINC)
-
-[https://www.nlm.nih.gov/healthit/snomedct/](https://www.nlm.nih.gov/healthit/snomedct/)
-
-**SNOMED-CT:**
-- International Release → RF2 (Compressed Delta-Files)  
-- Für Tests: SNOMED-CT International Edition ( miniature / simplified verfügbar)
-
-**LOINC:**
-- Direkter Download per API / Webinterface  
-- LOINC Table File (TSV) → JSON-Import für TermServ
-
-> 💡 **Hinweis:** SNOMED-CT ist groß (mehrere GB). Für lokale Tests reicht oft die „ miniature Edition“.
-
----
-
-## 🛠️ Blaze-Termserv einrichten
-
-Blaze bietet einen integrierten Terminologieserver an. Wir erweitern die `docker-compose.yml` von Exercise 1/2 um den TermServ.
-
-### 3.1 docker-compose.yml erweitern
-
-```yaml
-services:
-  blaze:
-    image: "samply/blaze:1.9.0"
-    environment:
-      JAVA_TOOL_OPTIONS: "-Xmx2g"
-    ports:
-      - "8080:8080"
-    volumes:
-      - "blaze-data:/app/data"
-    healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-  blaze-term:
-    image: "samply/blaze:1.9.0"
-    command: ["java", "-Xmx1g", "-jar", "/app/blaze.jar", "terminology"]
-    ports:
-      - "8081:8080"
-    volumes:
-      - "blaze-term-data:/app/data"
-    healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-volumes:
-  blaze-data:
-  blaze-term-data:
-```
-
-### 3.2 Container starten
+Prüfe, welche Ressourcentypen Du siehst (UKSH-Daten):
 
 ```bash
-# Server starten
-docker compose up -d
-
-# TermServ prüfen
-curl -v http://localhost:8081/fhir/metadata
+curl -s "http://localhost:8080/fhir/metadata" | jq '.resource[] | select(.type != "CapabilityStatement" and .type != "StructureDefinition") | .type'
 ```
 
----
+Ergebnis (UKSH-Beispiel): `Patient`, `Observation`, `Condition`, `Encounter`, `DiagnosticReport`, `Procedure`, `Location`, `ServiceRequest`, `Practitioner`, `Organization`, `Coverage`, `CareTeam`, `CarePlan`, `Immunization`, `Media`, `DocumentReference`, `DiagnosticReport`, `Observation`, `QuestionnaireResponse`, `Specimen`.
 
-## 📦 Codesysteme importieren
+Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
 
-### 4.1 Import via REST-API
+| Ressource | KDS-Modul-Bezug | Beispiel-Feld |
+|-----------|-----------------|---------------|
+| `Patient` | KDS-Basis | `name`, `birthDate`, `gender` |
+| `Observation` | Labor, Vitalwerte | `code`, `valueQuantity`, `subject` |
+| `Condition` | Diagnosen (ICD-10-GM) | `code`, `clinicalStatus`, `verificationStatus`, `subject` |
+| `Encounter` | Aufenthalte | `class`, `period`, `location`, `subject` |
+| `DiagnosticReport` | Befunde | `code`, `result`, `subject` |
+| `Procedure` | Eingriffe | `code`, `performedPeriod`, `subject` |
 
-Blaze offeriert einen REST-Endpunkt für den Import (`POST /_import`).
+___
 
-#### ICD-10-GM importieren
+### 1.2 Standard-Search-Parameter
+
+#### **Hintergrund:** FHIR-Search-Parameter
+
+| Parameter | Funktion | Beispiel |
+| --------- | -------- | -------- |
+| `_id` | Nach ID filtern | `/Patient?_id=abc123` |
+| `_count` | Seite begrenzen | `/Patient?_count=5` (erste 5 Einträge) |
+| `_summary` | Response reduzieren | `/Patient?_summary=true` (nur `id`, `resourceType`, `meta`) |
+| `_sort` | Sortieren | `/Patient?_sort=_lastUpdated-desc` |
+| `_contained` / `_include` / `_revinclude` | Verknüpfte Ressourcen | `/Observation?_include=Observation:subject` |
+| `code` | Coding-Filter | `/Observation?code=http://loinc.org\|4548-4` |
+| `subject` | Referenz-Filter | `/Observation?subject=Patient/xyz` |
+
+___
+
+#### Praktische Übung: Basis-Abfragen
+
+##### **Abfrage 1: Alle Patienten (mit Pagination)**
 
 ```bash
-# 1. ICD-10-GM von bfarm herunterladen (z. B. 2025 Version)
-wget https://terminologien.bfarm.de/media/downloads/icd-10-gm/icd-10-gm-2025-json.zip
+# Erste 5 Patienten
+curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq '{
+  total: .total,
+  link: .link[].url,
+  entry_count: (.entry | length),
+  Beispiel: .entry[0].resource.name[0]
+}'
 
-# 2. Entpacken (JSON-Datei)
-unzip icd-10-gm-2025-json.zip
-
-# 3. Import via curl (blaze-term:8081)
-curl -X POST http://localhost:8081/fhir/\_import \
-  -H "Content-Type: application/fhir+json" \
-  -d @icd-10-gm-2025.json
+# Nächste 5 (Pagination über `_offset` oder `_getpages`)
+curl -s "http://localhost:8080/fhir/Patient?_count=5&_offset=5" | jq '.total, .entry | length'
 ```
 
-#### SNOMED-CT importieren (Ausblick)
+> 💡 **Merke:** FHIR-Server antworten immer mit einem `Bundle` vom Typ `searchset`. `total` zeigt die Gesamtanzahl an, `entry` enthält die aktuellen Ressourcen für diese „Seite“.
 
-SNOMED-CT nutzt das **RF2-Format** (Compressed Delta-Files). Für den Import benötigt Blaze ein spezielles Format — alternativ: **SNOMED-CT JSON** (einfacher für Tests).
+___
+
+##### **Abfrage 2: Observation mit LOINC-Code (HbA1c)**
+
+Nutze den festen LOINC-Code **4548-4** (aus [Exercise 1](exercise-0.md#studienprofil-anlegen)) und filtere nach KDS-Profil (`_profile`) falls verfügbar:
 
 ```bash
-# Beispiel für kleine SNOMED-CT JSON (Ausblick)
-curl -X POST http://localhost:8081/fhir/\_import \
-  -H "Content-Type: application/fhir+json" \
-  -d @snomed-ct-minimal.json
+# 1. Alle Laborwerte mit LOINC 4548-4
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_count=3" | jq '{
+  total: .total,
+  Beispiele: (.entry | .[0:2]) | .[].resource | {
+    code: .code.coding[0].display,
+    value: .valueQuantity.value,
+    unit: .valueQuantity.unit,
+    patient: .subject.reference
+  }
+}'
 ```
 
-> ⚠️ **Hinweis:** Der Import kann lange dauern (große Codesysteme). Der Status ist über `GET /_import` abrufbar.
+> 💡 **KDS-Hinweis:** Im KDS-Labor-Modul ist dieses Profil definiert. Falls der Server die Profile importiert hat, kannst Du zusätzlich filtern:
+>
+> ```bash
+> curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&code=http://loinc.org\|4548-4"
+> ```
 
----
+___
 
-### 4.2 Import über MII FHIR Validator (alternative)
+##### **Abfrage 3: Verknüpfte Suche (Chaining)**
 
-Der MII FHIR Validator bringt einen eigenen Terminologieserver mit (ausgestattet mit ICD-10-GM, LOINC, SNOMED-CT).
-
-**Vorteil:** „Out-of-the-box“ mit wichtigen Codesystemen  
-**Nachteil:** Weniger flexibel für benutzerdefinierte Versionen
+Alle Laborwerte eines bestimmten Patienten (via `subject`-Referenz):
 
 ```bash
-# Validator starten (Docker)
-docker run -p 8082:8080 \
-  -v $(pwd)/validator-data:/data \
-  mii/fhir-validator:latest
+# Zuerst: Einen Patienten nach_name suchen (z. B. "Muster")
+PATIENT_ID=$(curl -s "http://localhost:8080/fhir/Patient?name=Muster&_count=1" | jq -r '.entry[0].resource.id')
+
+echo "Gefundene Patient-ID: $PATIENT_ID"
+
+# Alle Observationen für diesen Patienten
+curl -s "http://localhost:8080/fhir/Observation?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {code: .code.coding[0].display, value: .valueQuantity.value, unit: .valueQuantity.unit}'
 ```
 
-> 💡 **Ex5** geht detailliert auf den MII Validator ein — hier nur als Hinweis.
+___
 
----
+##### **Abfrage 4: AND-Suche (Kombination)**
 
-## ✅ Überprüfung & Tests
-
-### 5.1 Codesysteme abfragen
+Observationen mit **mehreren Kriterien** kombinieren (z. B. Laborwert > 48 mmol/mol für einen Patienten):
 
 ```bash
-# Alle geladenen Codesysteme
-curl -s "http://localhost:8081/fhir/CodeSystem" | jq '.entry[].resource | {id: .id, url: .url, version: .version, name: .name}'
-
-# ICD-10-GM prüfen
-curl -s "http://localhost:8081/fhir/CodeSystem?name=icd-10-gm" | jq '.entry[].resource | {url, version, count: .concept | length}'
-
-# LOINC prüfen
-curl -s "http://localhost:8081/fhir/CodeSystem?name=loinc" | jq '.entry[].resource | {url, version}'
+# Beispiel: Laborwert > 48 mmol/mol für einen Patienten (nach LOINC 4548-4)
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&value-quantity=gt48&subject=Patient/$PATIENT_ID&_count=3" | jq '.entry[].resource | {value: .valueQuantity.value, clinical: .clinicalCode?.coding[0].display}'
 ```
 
-### 5.2 Code-Bestätigung testen
+> 💡 **Merke:** Kombinierte Parameter werden als **AND** verknüpft. Ein `OR` erfordert komplexe `_filter`-Ausdrücke (nicht in dieser Übung).
+
+___
+
+##### **Abfrage 5: Sortierung & Limit**
+
+Laborwerte nach Datum sortieren (`issued` oder `effectiveDateTime`):
 
 ```bash
-# Code `4548-4` (LOINC) prüfen
-curl -s "http://localhost:8081/fhir/ValueSet/\$expand?url=http://loinc.org&code=4548-4" | jq '.expansion.contains[0]'
-
-# ICD-10-GM Code `I10` (Essentielle Hypertonie) prüfen
-curl -s "http://localhost:8081/fhir/ValueSet/\$expand?url=http://fhir.de/CodeSystem/bfarm/icd-10-gm&code=I10" | jq '.expansion.contains[0]'
+# 10 neueste Laborwerte mit LOINC 4548-4
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_sort=-issued&_count=10" | jq '.entry[].resource | {date: .effectiveDateTime, value: .valueQuantity.value}'
 ```
 
----
+___
 
-## 🏁 Ausblick & Zusammenfassung
+### 1.3 Suche auf KDS-Profilen (Ausblick)
 
-### Zusammenfassung
+Möchtest Du gezielt KDS-Profil-Inhalte abfragen (z. B. alle Observationen aus dem KDS-Labor-Modul), nutze den `_profile`-Parameter mit dem **StructureDefinition-URL** des Profils:
 
-| Schritt | Kommando |
-|---------|----------|
-| **Blaze-Termserv starten** | `docker compose up -d blaze-term` |
-| **Codesystem herunterladen** | `wget https://terminologien.bfarm.de/...` |
-| **Codesystem importieren** | `curl -X POST http://localhost:8081/fhir/\_import -d@code.json` |
-| **Import prüfen** | `curl http://localhost:8081/fhir/CodeSystem` |
-| **Code validieren** | `curl http://localhost:8081/fhir/ValueSet/\$expand?...` |
+```bash
+# Beispiel (funktioniert nur, wenn der Server die KDS-Profile importiert hat):
+curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&_count=5" | jq '.entry[].resource.code.coding[0].display'
+```
+
+> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat. In einer echten DIZ-Umgebung wäre dies der Fall.
+
+___
+
+## 💻 Fachliche Beispieldaten-Abfragen
+
+Im Folgenden findest Du typische **Fachabfragen**, die Du im DIZ-Alltag benötigst (Diagnosen, Laborwerte, Aufenthalte). Nutze die Beispiel-ID `PATIENT_ID` aus Abfrage 3 oben.
+
+### 2.1 Alle Diagnosen eines Patienten (ICD-10-GM)
+
+```bash
+# Condition mit ICD-10-GM-Diagnosen
+curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
+  code: .code.coding[0].code,
+  display: .code.coding[0].display,
+  clinicalStatus: .clinicalStatus.coding[0].code,
+  verification: .verificationStatus.coding[0].code
+}'
+```
+
+### 2.2 Alle Aufenthalte eines Patienten (Encounter)
+
+```bash
+# Encounter mit Klassifizierung (AMB, INA, etc.)
+curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
+  class: .class.display,
+  period_start: .period.start,
+  period_end: .period.end,
+  location: (.location[]?.location.display // "ohne Station") | .[0:40]
+}'
+```
+
+### 2.3 Gesamtbild: Ressourcen-Verteilung pro Patient
+
+```bash
+# Anzahl aller Ressourcen pro Typ für einen Patienten
+for resource in Patient Observation Condition Encounter DiagnosticReport Procedure; do
+  count=$(curl -s "http://localhost:8080/fhir/$resource?subject=Patient/$PATIENT_ID&_summary=count" | jq '.total')
+  echo "$resource: $count"
+done
+```
+
+___
+
+## 💻 Skriptbasierter Ausblick (R/Python)
+
+Für wiederholte Abfragen, Komplexität oder statistische Auswertungen lohnt sich ein **Skriptansatz**. Hier zwei kurze Beispiele:
+
+### 3.1 Python: fhir-pyrate (Python Library)
+
+```bash
+# Installation (optional)
+pip install fhir-pyrate
+
+# Minimalbeispiel: Abfrage aller Laborwerte für einen Patienten
+python3 <<EOF
+from fhirclient import client
+from fhirclient.models import observation, patient
+
+settings = {
+    'app_id': 'my_app',
+    'api_base': 'http://localhost:8080/fhir'
+}
+smart = client.FHIRClient(settings=settings)
+
+# Patient suchen
+PATIENT_ID = '$PATIENT_ID'
+obs = observation.Observation.search({'subject': f'Patient/{PATIENT_ID}', 'code': 'http://loinc.org|4548-4'}).perform_resources(smart.server)
+
+print(f'Gefundene Laborwerte: {len(obs)}')
+for o in obs[:3]:
+    print(f'  {o.effectiveDateTime.isostring}: {o.valueQuantity.value} {o.valueQuantity.unit}')
+EOF
+```
+
+### 3.2 R: fhircrackr (Library)
+
+```r
+# Installation
+# install.packages("devtools")
+# devtools::install_github("POLAR-fhiR/fhircrackr")
+
+library(fhircrackr)
+library(dplyr)
+
+# Verbindung
+fhir_con <- fhir_connection("http://localhost:8080/fhir")
+
+# Observationen für einen Patienten abfragen
+obs_df <- fhir_query(
+  fhir_con,
+  resource_type = "Observation",
+  query = list(
+    subject = paste0("Patient/", PATIENT_ID),
+    code = "http://loinc.org|4548-4",
+    _count = 10
+  )
+)
+
+print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.unit))
+```
+
+> 💡 **Warum Skripte?**  
+>
+> - Automatisierung (tägliche exports, Cronjobs)  
+> - Komplexität (mehrere Filterschritte, Aggregationen)  
+> - Statistik (ggf. in R/Python direkt weiterarbeiten)  
+> - Wiederverwendbarkeit (Versionierung im Git)
+
+> ⚠️ **Hinweis:** Skript-Abfragen erfordern keine Authentifizierung, wenn Blaze ungeschützt läuft. In Live-DIZ muß OAuth/Certs eingerichtet werden (nicht in dieser Übung).
+
+___
+
+## 🏁 Zusammenfassung & Merkregeln
+
+### Warum FHIR-Search?
+
+> ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
+> ✅ **Standort-unabhängig** — Alle DIZ exportieren über die gleiche API  
+> ✅ **Flexibel** — Kombiniere Filter, Pagination, Sortierung  
+
+### Wichtigste Parameter im Alltag
+
+| Situation | Parameter | Beispiel |
+| --------- | --------- | -------- |
+| **ID-Suche** | `_id` | `/Patient?_id=abc123` |
+| **Code-Suche** | `code` | `/Observation?code=http://loinc.org\|4548-4` |
+| **Referenz-Suche** | `subject` | `/Observation?subject=Patient/xyz` |
+| **Chaining** | `subject` | `/Observation?subject=Patient/xyz` |
+| **AND-Suche** | Kombination | `?code=...&value-quantity=gt48` |
+| **Pagination** | `_count`, `_offset` | `?_count=5&_offset=10` |
+| **Sortierung** | `_sort` | `?_sort=-issued` |
+| **Komprimierung** | `_summary` | `?_summary=true` |
 
 ### Ausblick
 
-- **Ex5:** Validierung — prüfen, ob Ressourcen/Profile mit den geladenen Codesystemen übereinstimmen  
-- **Ex6:** Validierungsreport interpretieren (Warnings, Errors)  
-
-### Zukünftige Erweiterungen
-
-- **Automatisierung:** Import-Script für monatliche Updates (Cronjob)  
-- **Zentrale TermServ-Verwaltung:** MII SU-TermServ für alle DIZe  
-- **Versionierung:** Historie der Codesysteme (mehrere Versionen parallel)  
-
----
-
-**Nächste Schritte:**  
-- Startere Blaze-Termserv und importiere ICD-10-GM + LOINC  
-- Teste die Code-Validierung über die REST-API  
-- Bereite dich auf Ex5 (Validator) vor
+- **Ex5:** Terminologien laden (bfarm, SNOMED), lokal verfügbar machen  
+- **Ex6:** MII FHIR Validator — Profile/Ressourcen checken  
+- **Ex7:** Validierungsreport interpretieren  
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

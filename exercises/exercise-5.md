@@ -1,220 +1,262 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟣 Nutzen des MII FHIR Validators
+# 🔴 Aufsetzen eines lokalen Terminologieservers
+
+**Nächste Schritte:**  
+
+- Startere Blaze-Termserv und importiere ICD-10-GM + LOINC  
+- Teste die Code-Validierung über die REST-API  
+- Bereite dich auf Ex6 (Validator) vor
+
+___
 
 ## Einführung & Kontext
 
-Nachdem wir in [Exercise 4](exercise-4.md) gelernt haben, **Codesysteme lokal zu laden**, ist der nächste Schritt die **Validierung** unserer FHIR-Ressourcen und -Profile.
+In den vorherigen Übungen haben wir gelernt, **FHIR-Ressourcen** in einen Server zu laden und abzufragen. Für eine vollständige Validierung und Kodierung sind jedoch **Terminologien** (Codesysteme) wie ICD-10-GM, SNOMED-CT, LOINC, OPS, ATC, UCUM.
 
-Der **MII FHIR Validator** ist ein wichtiger Bestandteil für die MII-Infrastruktur und dient dazu, sicherzustellen, dass alle Daten, die in die DIZe eingespeist werden, **konform** mit den definierten Profilen und Codesystemen sind.
+Auch wenn ein FHIR-Server wie **Blaze** über einen integrierten **Terminologieserver** (TermServ) verfügt, müssen die Codesysteme zuerst **heruntergeladen** und **importiert** werden. In dieser Übung richten wir einen lokalen Terminologieserver ein und laden die essentialen Codesysteme für die DIZ-Praxis.
 
-> 💡 **Warum Validierung?**  
-> - **Datenqualität:** Fehler frühzeitig erkennen (falsche Codes, fehlende Pflichtfelder)  
-> - **Standortübergreifende Konsistenz:** Alle DIZe(validieren auf demselben Standard)  
-> - **Audit & Compliance:** Nachweisbarkeit der Datenqualität  
-> - **DIZ-Alltag:** Vor dem Export, Integration, oder bei der Datenbereinigung
+> 💡 **Warum Terminologien?**  
+>
+> - **Validierung:** Codes prüfen (z. B. ist `LOINC#4548-4` gültig?)  
+> - **Übersetzung:** Zwischen verschiedenen Codiersystemen (z. B. ICD-10-GM → SNOMED)  
+> - **Display-Names:** Automatische Anzeige von Code-Beschreibungen  
+> - **DIZ-Alltag:** Beim Import, Export und der Datenqualitätssicherung
 
-> 💡 **Ausblick:** In [Exercise 6](exercise-6.md) lernst du, die Validierungsberichte **zu interpretieren** und typische Errors zu beheben.
+> 💡 **Hintergrund: MII SU-TermServ**  
+> Die MII betreibt einen zentralen **Terminologieservice** (SU-TermServ) für alle DIZe. Für lokale Tests, Offline-Arbeit oder spezifische Versionen ist ein **lokales Setup** dennoch wichtig — und Grundlage für Ex6 (Validation).
 
----
+___
 
 📋 **Übersicht:**
 
-- [Hintergrund: FHIR-Validation](#-hintergrund-fhir-validation)
-- [Validator-Umgebung einrichten](#-validator-umgebung-einrichten)
-- [Validation-Beispiele](#-validation-beispiele)
-- [Validation über CLI](#-validation-über-cli)
-- [Zusammenfassung & Ausblick](#-zusammenfassung--ausblick)
+- [Hintergrund: Terminologien im DIZ](#-hintergrund-terminologien-im-diz)
+- [Quellen für Codesysteme](#-quellen-für-codesysteme)
+- [Blaze-Termserv einrichten](#blaze-termserv-einrichten)
+- [Codesysteme importieren](#-codesysteme-importieren)
+- [Überprüfung & Tests](#-überprüfung--tests)
+- [Ausblick & Zusammenfassung](#-ausblick--zusammenfassung)
 
----
+___
 
-## 💻 Hintergrund: FHIR-Validation
+## 💻 Hintergrund: Terminologien im DIZ
 
-### 1.1 Welche Validierungen gibt es?
+### 1.1 Codesysteme für DIZ-Anwendungen
 
-| Ebene | Prüfung | Ziel |
-|-------|---------|------|
-| **Ressourcenebene** | Struktur & Pflichtfelder | Ist die Ressource syntaktisch korrekt? |
-| **Profil Ebene** | Profil-Constraint | Erfüllt die Ressource alle Profil-Regeln? |
-| **Codesystem-Ebene** | Code-Validität | Ist der verwendete Code im Codesystem enthalten? |
-| **Referenzielle Integrität** | Referenzen | Verweist die Ressource auf gültige Zielressourcen? |
+| Codesystem | Quelle | Nutzen im DIZ |
+|------------|--------|---------------|
+| **ICD-10-GM** | [bfarma](https://terminologien.bfarm.de) | Diagnosekodierung (OPDR, MELD, etc.) |
+| **SNOMED-CT** | [NLM](https://www.nlm.nih.gov/healthit/snomedct/) | Klinische Befunde (Observation.code, Condition.code) |
+| **LOINC** | [NLM](https://loinc.org) | Laborcodes (Observation.code) |
+| **OPS** | [bfarma](https://terminologien.bfarm.de) | Prozeduren (Procedure.code, DiagnosticReport.code) |
+| **ATC** | [bfarma](https://terminologien.bfarm.de) | Arzneimittel (Medication.code) |
+| **UCUM** | [UCUM.org](https://ucum.org) | Einheiten (valueQuantity.unit) |
 
-> ⚠️ **Hinweis:** FHIR-Validator prüft **nicht** fachliche Kontexte (z. B. „Ist ein Laborwert plausibel?“) — das muss die Geschäftslogik der Anwendung prüfen.
+> ⚠️ **Versionierung:** Codesysteme werden monatlich/quarterly aktualisiert! Im DIZ-Alltag ist die richtige **Versionierung** kritisch (z. B. LOINC 2.82.0 vs. neuer).
 
----
+___
 
-### 1.2 Validierungsbericht-Struktur
+## 📥 Quellen für Codesysteme
 
-Ein Validierungsbericht enthält typischerweise:
+### 2.1 bfarm (Dekstop-Website & API)
 
-| Feld | Inhalt |
-|------|--------|
-| **severity** | `error` / `warning` / `information` / `fatal` |
-| **code** | `invalid` / `structure` / `required` / `binding` |
-| **details` | Beschreibung des Issues (Text + Link zur HL7-Spezifikation) |
-| **location` | XML/JSON-Pfad zur fehlerhaften Zeile |
+[https://terminologien.bfarm.de](https://terminologien.bfarm.de) bietet Downloads für:
 
----
+- ICD-10-GM (json, xml)
+- LOINC (json, xml, csv)
+- OPS (json, xml)
+- ATC (json, xml)
+- UCUM (json)
 
-## 🛠️ Validator-Umgebung einrichten
+**Vorgehen:**
 
-### 2.1 MII FHIR Validator als Docker-Container starten
+1. Website besuchen → Downloads → Ausgewählte Version auswählen  
+2. JSON/XML-Paket herunterladen  
+3. Für Blaze-Termserv: JSON-Format nutzen
+
+___
+
+### 2.2 NLM (SNOMED-CT & LOINC)
+
+[https://www.nlm.nih.gov/healthit/snomedct/](https://www.nlm.nih.gov/healthit/snomedct/)
+
+**SNOMED-CT:**
+
+- International Release → RF2 (Compressed Delta-Files)  
+- Für Tests: SNOMED-CT International Edition ( miniature / simplified verfügbar)
+
+**LOINC:**
+
+- Direkter Download per API / Webinterface  
+- LOINC Table File (TSV) → JSON-Import für TermServ
+
+> 💡 **Hinweis:** SNOMED-CT ist groß (mehrere GB). Für lokale Tests reicht oft die „ miniature Edition“.
+
+___
+
+## <a id="blaze-termserv-einrichten"></a>🛠️ Blaze-Termserv einrichten
+
+Blaze bietet einen integrierten Terminologieserver an. Wir erweitern die `docker-compose.yml` von Exercise 2/2 um den TermServ.
+
+### 3.1 docker-compose.yml erweitern
+
+```yaml
+services:
+  blaze:
+    image: "samply/blaze:1.9.0"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx2g"
+    ports:
+      - "8080:8080"
+    volumes:
+      - "blaze-data:/app/data"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  blaze-term:
+    image: "samply/blaze:1.9.0"
+    command: ["java", "-Xmx1g", "-jar", "/app/blaze.jar", "terminology"]
+    ports:
+      - "8081:8080"
+    volumes:
+      - "blaze-term-data:/app/data"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  blaze-data:
+  blaze-term-data:
+```
+
+### 3.2 Container starten
 
 ```bash
-# Validator starten (mit lokal geladenen Codesystemen)
+# Server starten
+docker compose up -d
+
+# TermServ prüfen
+curl -v http://localhost:8081/fhir/metadata
+```
+
+___
+
+## 📦 Codesysteme importieren
+
+### 4.1 Import via REST-API
+
+Blaze offeriert einen REST-Endpunkt für den Import (`POST /_import`).
+
+#### ICD-10-GM importieren
+
+```bash
+# 1. ICD-10-GM von bfarm herunterladen (z. B. 2025 Version)
+wget https://terminologien.bfarm.de/media/downloads/icd-10-gm/icd-10-gm-2025-json.zip
+
+# 2. Entpacken (JSON-Datei)
+unzip icd-10-gm-2025-json.zip
+
+# 3. Import via curl (blaze-term:8081)
+curl -X POST http://localhost:8081/fhir/\_import \
+  -H "Content-Type: application/fhir+json" \
+  -d @icd-10-gm-2025.json
+```
+
+#### SNOMED-CT importieren (Ausblick)
+
+SNOMED-CT nutzt das **RF2-Format** (Compressed Delta-Files). Für den Import benötigt Blaze ein spezielles Format — alternativ: **SNOMED-CT JSON** (einfacher für Tests).
+
+```bash
+# Beispiel für kleine SNOMED-CT JSON (Ausblick)
+curl -X POST http://localhost:8081/fhir/\_import \
+  -H "Content-Type: application/fhir+json" \
+  -d @snomed-ct-minimal.json
+```
+
+> ⚠️ **Hinweis:** Der Import kann lange dauern (große Codesysteme). Der Status ist über `GET /_import` abrufbar.
+
+___
+
+### 4.2 Import über MII FHIR Validator (alternative)
+
+Der MII FHIR Validator bringt einen eigenen Terminologieserver mit (ausgestattet mit ICD-10-GM, LOINC, SNOMED-CT).
+
+**Vorteil:** „Out-of-the-box“ mit wichtigen Codesystemen  
+**Nachteil:** Weniger flexibel für benutzerdefinierte Versionen
+
+```bash
+# Validator starten (Docker)
 docker run -p 8082:8080 \
-  -v $(pwd)/validator-data:/app/data \
-  -d \
-  --name mii-validator \
+  -v $(pwd)/validator-data:/data \
   mii/fhir-validator:latest
-
-# Status prüfen
-docker ps | grep mii-validator
 ```
 
-> 💡 **Hinweis:** Der Validator läuft standardmäßig auf `http://localhost:8082`.
+> 💡 **Ex6** geht detailliert auf den MII Validator ein — hier nur als Hinweis.
 
----
+___
 
-### 2.2 Validator-Configuration (optional)
+## ✅ Überprüfung & Tests
 
-Der Validator kann über eine `config.json` konfiguriert werden:
-
-```json
-{
-  "validator": {
-    "codesystems": ["LOINC", "SNOMED-CT", "ICD-10-GM"],
-    "profiles": ["http://fhir.de/StructureDefinition/labor-befund"]
-  },
-  "output": {
-    "format": "json",
-    "includeExplanations": true
-  }
-}
-```
-
----
-
-## ✅ Validation-Beispiele
-
-### 3.1 Einzelne Ressource validieren
+### 5.1 Codesysteme abfragen
 
 ```bash
-# Beispiel: Eine Labor-Observation validieren
-curl -X POST http://localhost:8082/fhir/\$validate \
-  -H "Content-Type: application/fhir+json" \
-  -d @path/to/observation.json | jq
+# Alle geladenen Codesysteme
+curl -s "http://localhost:8081/fhir/CodeSystem" | jq '.entry[].resource | {id: .id, url: .url, version: .version, name: .name}'
+
+# ICD-10-GM prüfen
+curl -s "http://localhost:8081/fhir/CodeSystem?name=icd-10-gm" | jq '.entry[].resource | {url, version, count: .concept | length}'
+
+# LOINC prüfen
+curl -s "http://localhost:8081/fhir/CodeSystem?name=loinc" | jq '.entry[].resource | {url, version}'
 ```
 
-**Erwartetes Ergebnis:**
-
-```json
-{
-  "resourceType": "OperationOutcome",
-  "issue": [
-    {
-      "severity": "information",
-      "code": "informational",
-      "details": {
-        "text": "Validation successful"
-      }
-    }
-  ]
-}
-```
-
----
-
-### 3.2 Ressource gegen Profil validieren
+### 5.2 Code-Bestätigung testen
 
 ```bash
-# Beispiel: Observation gegen MII Labor-Profil validieren
-curl -X POST "http://localhost:8082/fhir/\$validate?profile=http://fhir.de/StructureDefinition/labor-befund" \
-  -H "Content-Type: application/fhir+json" \
-  -d @path/to/observation.json | jq '.issue[] | {severity, code, details}'
+# Code `4548-4` (LOINC) prüfen
+curl -s "http://localhost:8081/fhir/ValueSet/\$expand?url=http://loinc.org&code=4548-4" | jq '.expansion.contains[0]'
+
+# ICD-10-GM Code `I10` (Essentielle Hypertonie) prüfen
+curl -s "http://localhost:8081/fhir/ValueSet/\$expand?url=http://fhir.de/CodeSystem/bfarm/icd-10-gm&code=I10" | jq '.expansion.contains[0]'
 ```
 
----
+___
 
-### 3.3 Beispieldaten validieren (aus Ex2)
-
-```bash
-# Validiere das gesamte Bundle (UKSH-Musterdatenspende)
-curl -X POST http://localhost:8082/fhir/\$validate \
-  -H "Content-Type: application/fhir+json" \
-  --data @bundle-repaired.json | jq '.issue | length'
-```
-
-> ⚠️ **Hinweis:** Bei großen Bundles (8.400+ Ressourcen) kann die Validierung lange dauern. Für Tests: Bundle teilen.
-
----
-
-## 💻 Validation über CLI
-
-### 4.1 Validator CLI (Java JAR)
-
-Download des Validator-Publishers (siehe [MII FHIR Validator Repo](https://github.com/medizininformatik-initiative/mii-fhir-validator)).
-
-```bash
-# Validator JAR herunterladen
-curl -L https://github.com/medizininformatik-initiative/mii-fhir-validator/releases/latest/download/fhir-validator.jar -o fhir-validator.jar
-
-# Einzelne Ressource validieren
-java -jar fhir-validator.jar \
-  -i observation.json \
-  -p http://fhir.de/StructureDefinition/labor-befund \
-  -o output.json
-```
-
----
-
-### 4.2 Validation mit Codesystem-Check
-
-```bash
-# Codesystem-Code prüfen (z. B. LOINC#4548-4)
-java -jar fhir-validator.jar \
-  -code-system http://loinc.org \
-  -code 4548-4 \
-  -version 2.82.0
-```
-
----
-
-## 🏁 Zusammenfassung & Ausblick
+## 🏁 Ausblick & Zusammenfassung
 
 ### Zusammenfassung
 
 | Schritt | Kommando |
-|---------|----------|
-| **Validator starten** | `docker run -p 8082:8080 mii/fhir-validator:latest` |
-| **Ressource validieren** | `curl -X POST http://localhost:8082/fhir/\$validate -d@ressource.json` |
-| **Profil-Validierung** | `curl -X POST .../\$validate?profile=...` |
-| **CLI-Validierung** | `java -jar fhir-validator.jar -i input.json` |
+| ------- | -------- |
+| **Blaze-Termserv starten** | `docker compose up -d blaze-term` |
+| **Codesystem herunterladen** | `wget https://terminologien.bfarm.de/...` |
+| **Codesystem importieren** | `curl -X POST http://localhost:8081/fhir/\_import -d@code.json` |
+| **Import prüfen** | `curl http://localhost:8081/fhir/CodeSystem` |
+| **Code validieren** | `curl http://localhost:8081/fhir/ValueSet/\$expand?...` |
 
 ### Ausblick
 
-- **Ex6:** Validierungsberichte interpretieren (Errors, Warnings, häufige Issues)  
-- **DIZ-Alltag:** Validation vor Export, Import, oder bei Datenanfragen  
+- **Ex6:** Validierung — prüfen, ob Ressourcen/Profile mit den geladenen Codesystemen übereinstimmen  
+- **Ex7:** Validierungsreport interpretieren (Warnings, Errors)  
 
-### Tipps
+### Zukünftige Erweiterungen
 
-- ✅ **Regelmäßig validieren:** Nicht erst am Ende — bei jeder Ressourcenerschaffung  
-- ✅ **Frühzeitig prüfen:** „Fail fast“ — Fehler direkt im Build-Prozess (CI/CD)  
-- ✅ **Documentation:** Validierungsberichte archivieren (Audit!)  
-
----
-
-**Nächste Schritte:**  
-- Starte den Validator (Docker)  
-- Validiere die Ressourcen aus Ex0/Ex2  
-- Bereite dich auf Ex6 (Bericht-Interpretation) vor
+- **Automatisierung:** Import-Script für monatliche Updates (Cronjob)  
+- **Zentrale TermServ-Verwaltung:** MII SU-TermServ für alle DIZe  
+- **Versionierung:** Historie der Codesysteme (mehrere Versionen parallel)  
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

@@ -20,7 +20,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - Terminologie-Server `blaze` (TermServ)
 - Validierungsservice `MII FHIR Validator`
 
-## 🔵 🔵 Exercise 0 - [FHIR-Profilen definieren und Ressourcen generieren](exercises/exercise-0.md)
+## 🔵 🔵 Exercise 1 - [FHIR-Profilen definieren und Ressourcen generieren](exercises/exercise-1.md)
 
 > \> FSH-Compiler `sushi` eingerichtet. (NPM-Installation)
 
@@ -30,14 +30,14 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - Anwendungsfallbeispiel mit KDS-Bezug
 - IG generieren und Ressourcen visualisieren
 
-## 🟢 🟢 Exercise 1 - [Einfaches Beispiel FHIR-Search](exercises/exercise-1.md)
+## 🟢 🟢 Exercise 2 - [Einfaches Beispiel FHIR-Search](exercises/exercise-2.md)
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
 - Beispielressource in den FHIR Server hochladen
 - Beispielabfragen via HTTP REST
 
-## 🟡 🟡 Exercise 2 - [Beispiel-Daten in FHIR-Server laden](exercises/exercise-2.md)
+## 🟡 🟡 Exercise 3 - [Beispiel-Daten in FHIR-Server laden](exercises/exercise-3.md)
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
@@ -46,7 +46,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
   - Verwalten von FHIR-Packages (`~./fhir`)
 - Beispieldaten in den FHIR Server hochladen
 
-## 🟠 🟠 Exercise 3 - [Query von KDS-Daten](exercises/exercise-3.md)
+## 🟠 🟠 Exercise 4 - [Query von KDS-Daten](exercises/exercise-4.md)
 
 > \> (Lokalen) FHIR Store/Server gestartet. (Docker-Compose)
 
@@ -54,7 +54,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - Abfragen auf KDS-Profilen
 - Ausblick auf TORCH?
 
-## 🔴 🔴 Exercise 4 - [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-4.md)
+## 🔴 🔴 Exercise 5 - [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md)
 
 > \> Lokalen Terminologieserver gestartet. (Docker-Compose)
 
@@ -66,7 +66,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
   - SNOMED-CT
   - LOINC
 
-## 🟣 🟣 Exercise 5 - [Nutzen des MII FHIR Validators](exercises/exercise-5.md)
+## 🟣 🟣 Exercise 6 - [Nutzen des MII FHIR Validators](exercises/exercise-6.md)
 
 > \> MII FHIR Validator lokal eingerichtet und gestartet. (Docker-Compose)
 
@@ -75,7 +75,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - Einzelne Ressourcen validieren
 - Beispieldaten validieren
 
-## 🟤 🟤 Exercise 6 - [Interpretieren von Ergebnissen](exercises/exercise-6.md)
+## 🟤 🟤 Exercise 7 - [Interpretieren von Ergebnissen](exercises/exercise-7.md)
 
 > \> Validierungsreport erzeugt.
 
@@ -83,7 +83,7 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 - Häufige Warnings
 - Häufige Errors
 
-## ⚫ ⚫ Exercise 7 - [Ausblick: Sonstiges](exercises/exercise-7.md)
+## ⚫ ⚫ Exercise 8 - [Ausblick: Sonstiges](exercises/exercise-8.md)
 
 - Alternative Terminologieserver
 - Alternative Validierungsservices

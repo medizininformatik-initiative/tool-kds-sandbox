@@ -1,329 +1,295 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟠 Query von KDS-Daten
+# 🟡 KDS-Beispieldaten in FHIR-Server laden
 
-**Nächste Schritte:**  
+**Nächste Schritte:**
 
-- Teste die Abfragen lokal (Blaze muss laufen!)
-- Ersetze nachfolgend `PATIENT_ID` mit einer ID aus Deiner Datenbasis  
-- Erweitere die Abfragen um weitere Filter oder Ressourcen
+- Klone das Musterdatenspende-Repo und entpacke die ZIP-Datei
+- Erzeuge und repariere das Transaction-Bundle mittels vorbereiteter Skripte
+- Lade die Daten in den FHIR-Server und überprüfe den Upload
 
-___
 
-## Einführung & Kontext
+In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Exercise 1) und diese per `curl` in einen FHIR-Server hochzuladen und abzufragen (Exercise 2).
 
-In [Exercise 2](exercise-2.md) haben wir die **Musterdatenspende der DIZe** (UKSH-Standort) in einen lokalen FHIR-Server (Blaze) geladen — ca. 8.400 Ressourcen mit den „DIZ-Flavours“ der Universitätskliniken (UKHD, UKSH, UKW).
-
-In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durchzuführen. Du wirst FHIR-Search-Parameter (LOINC-Code, Chaining, AND, Sortierung, Pagination) auf echte KDS-Ressourcen anwenden und siehst, wie du die Daten für Analysen oder Auswertungen nutzen kannst.
-
-> 💡 **Warum FHIR-Search?**  
-> In der DIZ-Praxis greifen duale Auswertungen, Forschungsprojekte oder Export-Skripte fast immer über FHIR-Search auf die integrierten Daten zu. Der FHIR-Search-Standard erlaubt es, flexibel und standortübergreifend auf die Daten zuzugreifen — unabhängig vom zugrundeliegenden Datenbanksystem.
-
-> 💡 **Ausblick: TORCH & DIMP/DUP**  
-> Für komplexe Datenanforderungen (z. B. cohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
->
-> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH nutzt **CRTDL** (Clinical Resource Transfer Definition Language) und kann entweder CQL oder FLARE für die Kohorten definition verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
-> - **DIMP/DUP-Pipeline (aether-orchestriert)**: Die Infrastruktur zur automatisierten Datenbereitstellung und -pseudonymisierung für Forschungsprojekte. DIMP (Datenintegrations- und Musterspeicherpipeline) und DUP (Datenauslesepipeline) werden über die aether-Orchestrierung gesteuert — typischerweise im Hintergrund für Exportanfragen aktiv.
->
-> Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um Projekt-basierte, auditierbare Extraktionsketten.
-
-___
+Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative.  
+Konkret verwenden wir die **Musterdatenspende der DIZe** – das sind synthetische, aber klinisch realistische Datensätze mehrerer Universitätsklinika (UKHD, UKSH, UKW).  
+Anders als die rein technischen Testdaten enthalten sie die **unterschiedlichen "DIZ-Flavours"** (Modellierungsunterschiede zwischen den Standorten) und eignen sich daher besonders gut für realistische Analysen.
 
 📋 **Übersicht:**
 
-- [Grundlagen: FHIR-Search auf KDS-Profilen](#-fhir-search-auf-kds-profilen)
-- [Fachliche Beispieldaten-Abfragen](#-fachliche-beispieldaten-abfragen)
-- [Skriptbasierter Ausblick (R/Python)](#-skriptbasierter-ausblick-rpython)
-- [Zusammenfassung & Merkregeln](#-zusammenfassung--merkregeln)
+- [Musterdatenspende klonen & entpacken](#-musterdatenspende-klonen--entpacken)
+- [Transaction-Bundle bauen](#transaction-bundle-bauen)
+- [Referenzielle Integrität prüfen](#-referenzielle-integrität-prüfen)
+- [Bundle reparieren](#bundle-reparieren)
+- [Daten in Blaze hochladen](#-daten-in-blaze-hochladen)
+- [Upload überprüfen](#-upload-überprüfen)
 
 ___
 
-## 💻 FHIR-Search auf KDS-Profilen
+## 💻 Musterdatenspende klonen & entpacken
 
-FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( `_count`, `_sort`, `_summary`, `_contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
+### 📖 Hintergrund: Musterdaten vs. Testdaten
 
-> ⚠️ **Voraussetzung:** Blaze läuft noch auf `http://localhost:8080` (aus [Exercise 1/2](exercise-2.md#daten-in-blase-hochladen)). Sollte er nicht mehr laufen: `docker compose up -d` im Blaze-Verzeichnis.
+| | Musterdaten (Musterdatenspende) | Testdaten (MII-Testdaten) |
+| - | ----------------------------- | ------------------------- |
+| **Quelle** | DIZe (UKHD, UKSH, UKW) | Technisch generiert |
+| **Zweck** | Realistische Anwendungsfälle, verteilte Analysen | Struktur- und Semantiktests |
+| **DIZ-Flavour** | ✅ Ja – zeigt Heterogenität | Nein |
+| **Referenzielle Integrität** | ⚠️ Nicht immer gegeben | Meist gegeben |
 
-### 1.1 Ressourcentypen in der Musterdatenspende
+Wir arbeiten im Folgenden mit der **Musterdatenspende**.
 
-Prüfe, welche Ressourcentypen Du siehst (UKSH-Daten):
+### 🛠️ 1. Repository klonen
 
 ```bash
-curl -s "http://localhost:8080/fhir/metadata" | jq '.resource[] | select(.type != "CapabilityStatement" and .type != "StructureDefinition") | .type'
+git clone https://github.com/medizininformatik-initiative/musterdatenspende-diz.git
+cd musterdatenspende-diz
 ```
 
-Ergebnis (UKSH-Beispiel): `Patient`, `Observation`, `Condition`, `Encounter`, `DiagnosticReport`, `Procedure`, `Location`, `ServiceRequest`, `Practitioner`, `Organization`, `Coverage`, `CareTeam`, `CarePlan`, `Immunization`, `Media`, `DocumentReference`, `DiagnosticReport`, `Observation`, `QuestionnaireResponse`, `Specimen`.
-
-Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
-
-| Ressource | KDS-Modul-Bezug | Beispiel-Feld |
-|-----------|-----------------|---------------|
-| `Patient` | KDS-Basis | `name`, `birthDate`, `gender` |
-| `Observation` | Labor, Vitalwerte | `code`, `valueQuantity`, `subject` |
-| `Condition` | Diagnosen (ICD-10-GM) | `code`, `clinicalStatus`, `verificationStatus`, `subject` |
-| `Encounter` | Aufenthalte | `class`, `period`, `location`, `subject` |
-| `DiagnosticReport` | Befunde | `code`, `result`, `subject` |
-| `Procedure` | Eingriffe | `code`, `performedPeriod`, `subject` |
-
-___
-
-### 1.2 Standard-Search-Parameter
-
-#### **Hintergrund:** FHIR-Search-Parameter
-
-| Parameter | Funktion | Beispiel |
-| --------- | -------- | -------- |
-| `_id` | Nach ID filtern | `/Patient?_id=abc123` |
-| `_count` | Seite begrenzen | `/Patient?_count=5` (erste 5 Einträge) |
-| `_summary` | Response reduzieren | `/Patient?_summary=true` (nur `id`, `resourceType`, `meta`) |
-| `_sort` | Sortieren | `/Patient?_sort=_lastUpdated-desc` |
-| `_contained` / `_include` / `_revinclude` | Verknüpfte Ressourcen | `/Observation?_include=Observation:subject` |
-| `code` | Coding-Filter | `/Observation?code=http://loinc.org\|4548-4` |
-| `subject` | Referenz-Filter | `/Observation?subject=Patient/xyz` |
-
-___
-
-#### Praktische Übung: Basis-Abfragen
-
-##### **Abfrage 1: Alle Patienten (mit Pagination)**
+Das Repository enthält Daten von drei Standorten:
 
 ```bash
-# Erste 5 Patienten
-curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq '{
-  total: .total,
-  link: .link[].url,
-  entry_count: (.entry | length),
-  Beispiel: .entry[0].resource.name[0]
-}'
-
-# Nächste 5 (Pagination über `_offset` oder `_getpages`)
-curl -s "http://localhost:8080/fhir/Patient?_count=5&_offset=5" | jq '.total, .entry | length'
+UKHD/   # Universitätsklinikum Heidelberg
+UKSH/   # Universitätsklinikum Schleswig-Holstein
+UKW/    # Universitätsklinikum Würzburg
 ```
 
-> 💡 **Merke:** FHIR-Server antworten immer mit einem `Bundle` vom Typ `searchset`. `total` zeigt die Gesamtanzahl an, `entry` enthält die aktuellen Ressourcen für diese „Seite“.
+### 🛠️ 2. Daten entpacken
+
+Wähle einen Standort aus. Für dieses Tutorial verwenden wir **UKSH**:
+
+```bash
+unzip UKSH/UKSH-2025-11-11.zip
+```
+
+> ⚠️ **Hinweis:** Die ZIP-Datei enthält viele einzelne JSON-Dateien (eine pro Ressource). Diese sind als *Searchset*-Bundles formatiert – zum Hochladen müssen wir sie in ein *Transaction*-Bundle umwandeln.
+
+Das entpackte Verzeichnis enthält ca. 270 JSON-Dateien – eine pro Bundle.
+
+```bash
+ls UKSH-2025-11-11/ | wc -l
+```
 
 ___
 
-##### **Abfrage 2: Observation mit LOINC-Code (HbA1c)**
+## <a id="transaction-bundle-bauen"></a>🛠️ Transaction-Bundle bauen
 
-Nutze den festen LOINC-Code **4548-4** (aus [Exercise 0](exercise-0.md#studienprofil-anlegen)) und filtere nach KDS-Profil (`_profile`) falls verfügbar:
+Das Musterdatenspende-Repo enthält im Ordner `bin/` drei Hilfsskripte.  
+Das Skript `merge-bundles.sh` wandelt die einzelnen Searchset-Bundles in ein einziges **Transaction-Bundle** um – genau das, was Blaze (und andere FHIR-Server) für den Bulk-Import erwarten.
 
 ```bash
-# 1. Alle Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_count=3" | jq '{
-  total: .total,
-  Beispiele: (.entry | .[0:2]) | .[].resource | {
-    code: .code.coding[0].display,
-    value: .valueQuantity.value,
-    unit: .valueQuantity.unit,
-    patient: .subject.reference
-  }
-}'
+bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
 ```
 
-> 💡 **KDS-Hinweis:** Im KDS-Labor-Modul ist dieses Profil definiert. Falls der Server die Profile importiert hat, kannst Du zusätzlich filtern:
+### ✅ Zwischenkontrolle Bundle-Erzeugung
+
+Prüfe die Größe des erzeugten Bundles:
+
+```bash
+# Anzahl der Einträge
+jq '.total' transaction-bundle.json
+
+# Welche Ressourcentypen sind enthalten?
+bash bin/count-resourceTypes.sh UKSH-2025-11-11/*.json
+```
+
+Die Ausgabe sollte ca. **8.400 Einträge** mit folgenden Ressourcentypen anzeigen (die genauen Zahlen variieren je nach Standort und Version):
+
+```text
+## Ressourcen
+
+| Ressourcen     | Anzahl |
+| -------------- | ------ |
+| Condition      | 437    |
+| Consent        | 5      |
+| DiagnosticReport | 1283 |
+| Encounter      | 1391   |
+| Location       | 63     |
+| Observation    | 3537   |
+| Patient        | 272    |
+| Procedure      | 180    |
+| ServiceRequest | 1283   |
+```
+
+___
+
+## 🔍 Referenzielle Integrität prüfen
+
+### 📖 Was bedeutet "referenzielle Integrität"?
+
+In FHIR verweisen Ressourcen häufig aufeinander:
+
+- Eine `Observation` hat ein `subject` (`Patient/xyz`)
+- Ein `Encounter` hat eine `location` (`Location/xyz`)
+- Ein `DiagnosticReport` besteht aus `result`-Referenzen auf `Observation`
+
+Wenn Ressource A auf Ressource B verweist, Ressource B aber nicht im Bundle vorhanden ist, sprechen wir von einer **broken reference** (nicht aufgelösten Referenz).
+
+Die Musterdatenspende ist laut README **bewusst nicht referenziell integer** – ein Nebeneffekt der Anonymisierung. Das ist kein Fehler, aber beim Import müssen wir damit umgehen.
+
+### 🛠️ Broken References ermitteln
+
+Das Skript `unresolved-references.sh` aus dem Musterdatenspende-Repo zeigt dir alle Referenzen an, die im Bundle nicht aufgelöst werden können:
+
+```bash
+bash bin/unresolved-references.sh transaction-bundle.json
+```
+
+💡 **Erwartetes Ergebnis (UKSH):** Es werden ca. **44 fehlende Referenzen** angezeigt:
+
+- **33 Locations** – klinische Stationen wie `ITSG-HIGHMEDSTAT`, `KINA`, `LCHIR` etc.
+- **10 Encounter** – Behandlungsfälle (z. B. `PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385`)
+- **1 Encounter ohne zugehörigen Patienten** – Die Encounter-Dummy-Ressource verweist auf `Patient/dummy` (eine Platzhalter-ID)
+
+> 📌 **Warum fehlen ausgerechnet Locations und Encounter?**  
+> Stationskataloge und Behandlungsfall-IDs sind hochgradig standortspezifisch. Bei der Anonymisierung und Extraktion gehen diese Daten leichter verloren als Patientendaten.
+
+___
+
+## <a id="bundle-reparieren"></a>🛠️ Bundle reparieren
+
+### 📖 Zwei Wege zum Ziel
+
+Da **Blaze** (anders als z. B. HAPI) keine Option zum Deaktivieren der referenziellen Integrität bietet, müssen wir die fehlenden Ressourcen vor dem Import ergänzen. Dafür gibt es zwei Strategien:
+
+| Strategie | Vorgehen |
+|---|---|
+| **A) Dummy-Ressourcen generieren (empfohlen)** | Für jede fehlende Referenz eine minimale Ressource anlegen – die Daten bleiben vollständig. |
+| **B) Referenzierende Ressourcen entfernen** | Nicht empfohlen, da sonst wertvolle Daten verloren gehen. |
+
+Wir verwenden Strategie **A** – und dafür gibt es ein Hilfsskript.
+
+### 🛠️ Das repair-bundle.sh Skript
+
+Das Skript `repair-bundle.sh` (im Ordner `tmp-solution_exercise-3/` dieses Repos) macht Folgendes:
+
+1. Es analysiert dein Transaction-Bundle
+2. Es identifiziert alle Referenzen, die nicht im Bundle vorhanden sind
+3. Es generiert für jede fehlende Ressource eine **minimale Dummy-Ressource** (z. B. `Location`, `Encounter`)
+4. Es fügt diese als `PUT`-Einträge (mit selbst gewählter ID) in das Bundle ein
+5. Es gibt das reparierte Bundle auf der Standardausgabe aus
+
+So verwendest du es:
+
+```bash
+# Vom Hauptverzeichnis des Repos aus:
+bash tmp-solution_exercise-3/repair-bundle.sh path/to/transaction-bundle.json \
+  > bundle-repaired.json
+```
+
+> 💡 **Was passiert genau?**  
+> Für eine fehlende Location `ITSG-HIGHMEDSTAT` wird folgende minimale Ressource generiert:
 >
-> ```bash
-> curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&code=http://loinc.org\|4548-4"
+> ```json
+> {
+>   "resourceType": "Location",
+>   "id": "ITSG-HIGHMEDSTAT",
+>   "name": "ITSG-HIGHMEDSTAT",
+>   "status": "active"
+> }
 > ```
-
-___
-
-##### **Abfrage 3: Verknüpfte Suche (Chaining)**
-
-Alle Laborwerte eines bestimmten Patienten (via `subject`-Referenz):
-
-```bash
-# Zuerst: Einen Patienten nach_name suchen (z. B. "Muster")
-PATIENT_ID=$(curl -s "http://localhost:8080/fhir/Patient?name=Muster&_count=1" | jq -r '.entry[0].resource.id')
-
-echo "Gefundene Patient-ID: $PATIENT_ID"
-
-# Alle Observationen für diesen Patienten
-curl -s "http://localhost:8080/fhir/Observation?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {code: .code.coding[0].display, value: .valueQuantity.value, unit: .valueQuantity.unit}'
-```
-
-___
-
-##### **Abfrage 4: AND-Suche (Kombination)**
-
-Observationen mit **mehreren Kriterien** kombinieren (z. B. Laborwert > 48 mmol/mol für einen Patienten):
-
-```bash
-# Beispiel: Laborwert > 48 mmol/mol für einen Patienten (nach LOINC 4548-4)
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&value-quantity=gt48&subject=Patient/$PATIENT_ID&_count=3" | jq '.entry[].resource | {value: .valueQuantity.value, clinical: .clinicalCode?.coding[0].display}'
-```
-
-> 💡 **Merke:** Kombinierte Parameter werden als **AND** verknüpft. Ein `OR` erfordert komplexe `_filter`-Ausdrücke (nicht in dieser Übung).
-
-___
-
-##### **Abfrage 5: Sortierung & Limit**
-
-Laborwerte nach Datum sortieren (`issued` oder `effectiveDateTime`):
-
-```bash
-# 10 neueste Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_sort=-issued&_count=10" | jq '.entry[].resource | {date: .effectiveDateTime, value: .valueQuantity.value}'
-```
-
-___
-
-### 1.3 Suche auf KDS-Profilen (Ausblick)
-
-Möchtest Du gezielt KDS-Profil-Inhalte abfragen (z. B. alle Observationen aus dem KDS-Labor-Modul), nutze den `_profile`-Parameter mit dem **StructureDefinition-URL** des Profils:
-
-```bash
-# Beispiel (funktioniert nur, wenn der Server die KDS-Profile importiert hat):
-curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&_count=5" | jq '.entry[].resource.code.coding[0].display'
-```
-
-> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat. In einer echten DIZ-Umgebung wäre dies der Fall.
-
-___
-
-## 💻 Fachliche Beispieldaten-Abfragen
-
-Im Folgenden findest Du typische **Fachabfragen**, die Du im DIZ-Alltag benötigst (Diagnosen, Laborwerte, Aufenthalte). Nutze die Beispiel-ID `PATIENT_ID` aus Abfrage 3 oben.
-
-### 2.1 Alle Diagnosen eines Patienten (ICD-10-GM)
-
-```bash
-# Condition mit ICD-10-GM-Diagnosen
-curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  code: .code.coding[0].code,
-  display: .code.coding[0].display,
-  clinicalStatus: .clinicalStatus.coding[0].code,
-  verification: .verificationStatus.coding[0].code
-}'
-```
-
-### 2.2 Alle Aufenthalte eines Patienten (Encounter)
-
-```bash
-# Encounter mit Klassifizierung (AMB, INA, etc.)
-curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  class: .class.display,
-  period_start: .period.start,
-  period_end: .period.end,
-  location: (.location[]?.location.display // "ohne Station") | .[0:40]
-}'
-```
-
-### 2.3 Gesamtbild: Ressourcen-Verteilung pro Patient
-
-```bash
-# Anzahl aller Ressourcen pro Typ für einen Patienten
-for resource in Patient Observation Condition Encounter DiagnosticReport Procedure; do
-  count=$(curl -s "http://localhost:8080/fhir/$resource?subject=Patient/$PATIENT_ID&_summary=count" | jq '.total')
-  echo "$resource: $count"
-done
-```
-
-___
-
-## 💻 Skriptbasierter Ausblick (R/Python)
-
-Für wiederholte Abfragen, Komplexität oder statistische Auswertungen lohnt sich ein **Skriptansatz**. Hier zwei kurze Beispiele:
-
-### 3.1 Python: fhir-pyrate (Python Library)
-
-```bash
-# Installation (optional)
-pip install fhir-pyrate
-
-# Minimalbeispiel: Abfrage aller Laborwerte für einen Patienten
-python3 <<EOF
-from fhirclient import client
-from fhirclient.models import observation, patient
-
-settings = {
-    'app_id': 'my_app',
-    'api_base': 'http://localhost:8080/fhir'
-}
-smart = client.FHIRClient(settings=settings)
-
-# Patient suchen
-PATIENT_ID = '$PATIENT_ID'
-obs = observation.Observation.search({'subject': f'Patient/{PATIENT_ID}', 'code': 'http://loinc.org|4548-4'}).perform_resources(smart.server)
-
-print(f'Gefundene Laborwerte: {len(obs)}')
-for o in obs[:3]:
-    print(f'  {o.effectiveDateTime.isostring}: {o.valueQuantity.value} {o.valueQuantity.unit}')
-EOF
-```
-
-### 3.2 R: fhircrackr (Library)
-
-```r
-# Installation
-# install.packages("devtools")
-# devtools::install_github("POLAR-fhiR/fhircrackr")
-
-library(fhircrackr)
-library(dplyr)
-
-# Verbindung
-fhir_con <- fhir_connection("http://localhost:8080/fhir")
-
-# Observationen für einen Patienten abfragen
-obs_df <- fhir_query(
-  fhir_con,
-  resource_type = "Observation",
-  query = list(
-    subject = paste0("Patient/", PATIENT_ID),
-    code = "http://loinc.org|4548-4",
-    _count = 10
-  )
-)
-
-print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.unit))
-```
-
-> 💡 **Warum Skripte?**  
 >
-> - Automatisierung (tägliche exports, Cronjobs)  
-> - Komplexität (mehrere Filterschritte, Aggregationen)  
-> - Statistik (ggf. in R/Python direkt weiterarbeiten)  
-> - Wiederverwendbarkeit (Versionierung im Git)
+> Für fehlende Encounter wird eine minimale Encounter-Ressource mit `status: finished` und Klassifizierung `AMB` (ambulant) erzeugt. Die Encounter-Referenzen auf `Patient/dummy` bleiben bestehen – das ist bewusst so, weil die Originaldaten keinen konkreten Patienten für diese Fälle ausweisen.
 
-> ⚠️ **Hinweis:** Skript-Abfragen erfordern keine Authentifizierung, wenn Blaze ungeschützt läuft. In Live-DIZ muß OAuth/Certs eingerichtet werden (nicht in dieser Übung).
+Das Skript gibt außerdem eine Statistik aus:
+
+```text
+═══════════════════════════════════════════════════════════
+ repair-bundle.sh – Ergebnis
+═══════════════════════════════════════════════════════════
+ Fehlende Referenzen gefunden:  44
+ Generierte Dummy-Ressourcen:   44
+═══════════════════════════════════════════════════════════
+```
+
+### 🛠️ Arbeiten mit dem Lösungsskript (Hinweis)
+
+Das Skript `repair-bundle.sh` ist keine "Zauberei" – es wendet lediglich die gleichen Techniken an, die du in den vorherigen Übungen bereits kennengelernt hast:
+
+- **FHIR-Ressourcen definieren** (Exercise 1) – hier nur minimaler
+- **FHIR-Ressourcen per PUT hochladen** (Exercise 2) – genau das tun die generierten Entry-Objekte (`"method": "PUT"`)
+- **JSON verarbeiten mit `jq`** – das Herzstück des Skripts
+
+> 🚀 **Für Fortgeschrittene:**  
+> Versuche, das Skript zu erweitern: Was müsste sich ändern, damit auch andere fehlende Ressourcentypen wie `Practitioner` oder `Organization` automatisch ergänzt werden?
 
 ___
 
-## 🏁 Zusammenfassung & Merkregeln
+## 📤 Daten in Blaze hochladen
 
-### Warum FHIR-Search?
+Voraussetzung: Blaze läuft noch aus [Exercise 2](exercise-1.md#container-definieren-und-starten).
 
-> ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
-> ✅ **Standort-unabhängig** — Alle DIZ exportieren über die gleiche API  
-> ✅ **Flexibel** — Kombiniere Filter, Pagination, Sortierung  
+Jetzt laden wir das reparierte Bundle in den FHIR-Server:
 
-### Wichtigste Parameter im Alltag
+```bash
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @bundle-repaired.json
+```
 
-| Situation | Parameter | Beispiel |
-| --------- | --------- | -------- |
-| **ID-Suche** | `_id` | `/Patient?_id=abc123` |
-| **Code-Suche** | `code` | `/Observation?code=http://loinc.org\|4548-4` |
-| **Referenz-Suche** | `subject` | `/Observation?subject=Patient/xyz` |
-| **Chaining** | `subject` | `/Observation?subject=Patient/xyz` |
-| **AND-Suche** | Kombination | `?code=...&value-quantity=gt48` |
-| **Pagination** | `_count`, `_offset` | `?_count=5&_offset=10` |
-| **Sortierung** | `_sort` | `?_sort=-issued` |
-| **Komprimierung** | `_summary` | `?_summary=true` |
+Der Import von ca. 8.400 Ressourcen dauert einige Sekunden. Blaze antwortet mit einem Transaction-Bundle, das den Status jeder einzelnen Operation enthält.
+
+> ⚠️ **Hinweis:** Bei sehr großen Bundles kann Blaze mit einem `413 Payload Too Large` antworten. In dem Fall musst du das Bundle in kleineren Teilen hochladen. Für die UKSH-Daten (ca. 12 MB) sollte es problemlos funktionieren.
+
+### ✅ Zwischenkontrolle des Uploads
+
+Prüfe, ob der Server die Daten angenommen hat:
+
+```bash
+# Wie viele Patienten sind jetzt auf dem Server?
+curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
+
+# Wie viele Observationen?
+curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
+
+# Wie viele Locations (inkl. unserer Dummy-Locations)?
+curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
+```
+
+💡 **Erwartetes Ergebnis (für UKSH):**
+
+| Ressource | Erwartete Anzahl |
+| --------- | ---------------- |
+| `Patient` | 272 |
+| `Observation` | ~3.537 |
+| `Location` | ~96 (63 originale + 33 Dummy-Locations) |
+| `Encounter` | ~1.401 (1.391 originale + 10 Dummy-Encounters) |
+
+Sollte die Anzahl der Patienten nicht mit der Erwartung übereinstimmen, lohnt sich ein Blick auf die Blaze-Logs:
+
+```bash
+docker compose logs -f blaze
+```
+
+___
+
+## ✅ Upload überprüfen
+
+Wir führen noch eine fachliche Abfrage durch, um sicherzustellen, dass die Daten sinnvoll abfragbar sind:
+
+```bash
+# Alle Condition-Einträge zu einem Patienten
+curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PATIENTEN-ID>" | jq '.total'
+
+# Alle Laborwerte eines Patienten (aus Exercise 2 bekannt)
+curl -s "http://localhost:8080/fhir/Observation?subject=Patient/<PATIENTEN-ID>&_count=5" | jq '.entry[].resource.code.coding[] | select(.system == "http://loinc.org") | {code, display}'
+```
+
+> 🏁 **Geschafft!** Du hast erfolgreich echte MII-Musterdaten (mit DIZ-Flavour) in deinen lokalen FHIR-Server geladen – inklusive der Bewältigung des "referenzielle Integrität"-Problems.  
+> Im nächsten Schritt ([Exercise 4 – Query von KDS-Daten](exercise-3.md)) wirst du lernen, wie man strukturierte Abfragen auf diese Datenbestände durchführt.
 
 ### Ausblick
 
-- **Ex4:** Terminologien laden (bfarm, SNOMED), lokal verfügbar machen  
-- **Ex5:** MII FHIR Validator — Profile/Ressourcen checken  
-- **Ex6:** Validierungsreport interpretieren  
+- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)  
+- **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)  
+- **Ex6:** MII FHIR Validator nutzen (Ressourcen/Profile checken)
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

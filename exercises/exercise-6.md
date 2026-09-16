@@ -1,328 +1,222 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • **Exercise 6** • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • **Exercise 6** • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟤 Interpretieren von Ergebnissen
+# 🟣 Nutzen des MII FHIR Validators
+
+**Nächste Schritte:**  
+
+- Starte den Validator (Docker)  
+- Validiere die Ressourcen aus Ex1/Ex3  
+- Bereite dich auf Ex7 (Bericht-Interpretation) vor
+
+___
 
 ## Einführung & Kontext
 
-In [Exercise 5](exercise-5.md) hast du gelernt, wie du **FHIR-Ressourcen und -Profile validieren** kannst. Der Validator gibt dabei einen **OperationOutcome** zurück — die „Sprache“ des FHIR-Validierers.
+Nachdem wir in [Exercise 5](exercise-5.md) gelernt haben, **Codesysteme lokal zu laden**, ist der nächste Schritt die **Validierung** unserer FHIR-Ressourcen und -Profile.
 
-In dieser Übung lernst du, diesen Validierungsbericht zu **interpretieren** — was bedeutet ein `error` vs. ein `warning`? Welche Issues sind kritisch? Wie behebe ich typische Probleme?
+Der **MII FHIR Validator** ist ein wichtiger Bestandteil für die MII-Infrastruktur und dient dazu, sicherzustellen, dass alle Daten, die in die DIZe eingespeist werden, **konform** mit den definierten Profilen und Codesystemen sind.
 
-> 💡 **Warum Bericht-Interpretation?**  
-> - **Datenqualität-Management:** Fokus auf kritische Errors vs. akzeptable Warnings  
-> - **Fehlersuche:** Schnelle Lokalisierung von Ursachen  
-> - **DIZ-Alltag:** Bei der Validierung von Import-Daten oder Export-Pre-Check  
-> - **Audit:** Nachweisbarkeit von Datenqualitätsproblemen und deren Behebung
+> 💡 **Warum Validierung?**  
+>
+> - **Datenqualität:** Fehler frühzeitig erkennen (falsche Codes, fehlende Pflichtfelder)  
+> - **Standortübergreifende Konsistenz:** Alle DIZe(validieren auf demselben Standard)  
+> - **Audit & Compliance:** Nachweisbarkeit der Datenqualität  
+> - **DIZ-Alltag:** Vor dem Export, Integration, oder bei der Datenbereinigung
 
----
+> 💡 **Ausblick:** In [Exercise 7](exercise-7.md) lernst du, die Validierungsberichte **zu interpretieren** und typische Errors zu beheben.
+
+___
 
 📋 **Übersicht:**
 
-- [Hintergrund: OperationOutcome](#-hintergrund-operationoutcome)
-- [Häufige Warnings & Errors](#-häufige-warnings--errors)
-- [Beispiel: Bericht analysieren](#-beispiel-bericht-analysieren)
-- [Behebungstipps](#-behebungstipps)
-- [Zusammenfassung](#-zusammenfassung)
+- [Hintergrund: FHIR-Validation](#-hintergrund-fhir-validation)
+- [Validator-Umgebung einrichten](#validator-umgebung-einrichten)
+- [Validation-Beispiele](#-validation-beispiele)
+- [Validation über CLI](#-validation-über-cli)
+- [Zusammenfassung & Ausblick](#-zusammenfassung--ausblick)
 
----
+___
 
-## 💻 Hintergrund: OperationOutcome
+## 💻 Hintergrund: FHIR-Validation
 
-### 1.1 Struktur eines Validierungsberichts
+### 1.1 Welche Validierungen gibt es?
+
+| Ebene | Prüfung | Ziel |
+| ----- | ------- | ---- |
+| **Ressourcenebene** | Struktur & Pflichtfelder | Ist die Ressource syntaktisch korrekt? |
+| **Profil Ebene** | Profil-Constraint | Erfüllt die Ressource alle Profil-Regeln? |
+| **Codesystem-Ebene** | Code-Validität | Ist der verwendete Code im Codesystem enthalten? |
+| **Referenzielle Integrität** | Referenzen | Verweist die Ressource auf gültige Zielressourcen? |
+
+> ⚠️ **Hinweis:** FHIR-Validator prüft **nicht** fachliche Kontexte (z. B. „Ist ein Laborwert plausibel?“) — das muss die Geschäftslogik der Anwendung prüfen.
+
+___
+
+### 1.2 Validierungsbericht-Struktur
+
+Ein Validierungsbericht enthält typischerweise:
+
+| Feld | Inhalt |
+|------|--------|
+| **severity** | `error` / `warning` / `information` / `fatal` |
+| **code** | `invalid` / `structure` / `required` / `binding` |
+| **details` | Beschreibung des Issues (Text + Link zur HL7-Spezifikation) |
+| **location` | XML/JSON-Pfad zur fehlerhaften Zeile |
+
+___
+
+## <a id="validator-umgebung-einrichten"></a>🛠️ Validator-Umgebung einrichten
+
+### 2.1 MII FHIR Validator als Docker-Container starten
+
+```bash
+# Validator starten (mit lokal geladenen Codesystemen)
+docker run -p 8082:8080 \
+  -v $(pwd)/validator-data:/app/data \
+  -d \
+  --name mii-validator \
+  mii/fhir-validator:latest
+
+# Status prüfen
+docker ps | grep mii-validator
+```
+
+> 💡 **Hinweis:** Der Validator läuft standardmäßig auf `http://localhost:8082`.
+
+___
+
+### 2.2 Validator-Configuration (optional)
+
+Der Validator kann über eine `config.json` konfiguriert werden:
+
+```json
+{
+  "validator": {
+    "codesystems": ["LOINC", "SNOMED-CT", "ICD-10-GM"],
+    "profiles": ["http://fhir.de/StructureDefinition/labor-befund"]
+  },
+  "output": {
+    "format": "json",
+    "includeExplanations": true
+  }
+}
+```
+
+___
+
+## ✅ Validation-Beispiele
+
+### 3.1 Einzelne Ressource validieren
+
+```bash
+# Beispiel: Eine Labor-Observation validieren
+curl -X POST http://localhost:8082/fhir/\$validate \
+  -H "Content-Type: application/fhir+json" \
+  -d @path/to/observation.json | jq
+```
+
+**Erwartetes Ergebnis:**
 
 ```json
 {
   "resourceType": "OperationOutcome",
   "issue": [
     {
-      "severity": "error" | "warning" | "information" | "fatal",
-      "code": "invalid" | "structure" | "required" | "binding" | "code-invalid" | "value",
+      "severity": "information",
+      "code": "informational",
       "details": {
-        "coding": [
-          {
-            "system": "http://terminology.hl7.org/CodeSystem/validation-issue-type",
-            "code": "INVALID",
-            "display": "Invalid"
-          }
-        ],
-        "text": "Detailed error message"
-      },
-      "location": [
-        "Patient.name[0].family"
-      ],
-      "expression": [
-        "Patient.name"
-      ]
+        "text": "Validation successful"
+      }
     }
   ]
 }
 ```
 
-### 1.2 Severity-Ebenen
+___
 
-| Severity | Bedeutung | Handlung |
-|----------|-----------|----------|
-| **fatal** | Ressource ist komplett unbrauchbar | **Sofort beheben** — kein Export |
-| **error** | Kritische Verletzung des Standards | **Beheben** — Validierung fehlschlägt |
-| **warning** | Auffälligkeit, aber konform | **Prüfen** — ggf. Behebung sinnvoll |
-| **information** | Hinweis (z. B. „Best Practice“) | **Prüfen** — optional |
-
----
-
-### 1.3 Code-Typen (validation issue type)
-
-| Code | Beschreibung | Beispiel |
-|------|--------------|----------|
-| `invalid` | Ressource entspricht nicht dem Schema | Fehlendes Pflichtfeld |
-| `structure` | Struktur-Problem | Ungültiges JSON/XML |
-| `required` | Pflichtfeld fehlt | `Patient.name` fehlt |
-| `binding` | Code nicht im ValueSet | ICD-Code nicht in ICD-10-GM |
-| `code-invalid` | Code ungültig | Unbekannter LOINC-Code |
-| `value` | Wert außerhalb erlaubter Range | `valueQuantity.value = -10` bei positivem Wert verlangt |
-
----
-
-## ⚠️ Häufige Warnings & Errors
-
-### 2.1 Pflichtfelder fehlen (required)
-
-**Issue:**
-```json
-{
-  "severity": "error",
-  "code": "required",
-  "details": {"text": "Field ' Patient.name' is required but was not found"}
-}
-```
-
-**Ursache:** Das Pflichtfeld `name` fehlt in der Patienten-Ressource.
-
-**Lösung:**
-```json
-{
-  "name": [
-    {
-      "family": "Muster",
-      "given": ["Max"]
-    }
-  ]
-}
-```
-
----
-
-### 2.2 Code nicht im Codesystem (code-invalid / binding)
-
-**Issue:**
-```json
-{
-  "severity": "error",
-  "code": "code-invalid",
-  "details": {"text": "Code 'ABC123' not found in system 'http://loinc.org'"}
-}
-```
-
-**Ursache:** Der verwendete Code existiert nicht im LOINC-System (Tippfehler? falsche Version?)
-
-**Lösung:**
-- Prüfe den Code auf [loinc.org](https://loinc.org)  
-- Prüfe die **Version** (`version` im CodeSystem-Object)  
-- Korrigiere den Code oder passe die `version` an
-
----
-
-### 2.3 Referenz nicht auflösbar (reference)
-
-**Issue:**
-```json
-{
-  "severity": "error",
-  "code": "structure",
-  "details": {"text": "Reference 'Patient/xxx' does not resolve to a known resource"}
-}
-```
-
-**Ursache:** Eine Ressource (z. B. Observation) referenziert einen Patienten, der nicht im Server existiert.
-
-**Lösung:**
-- Patient existieren lassen (`GET /Patient/xxx` testen)  
-- ODER: Dummy-Ressourcen ergänzen (wie in [Ex2 `repair-bundle.sh`](exercise-2.md#bundle-reparieren))  
-- ACHTUNG: Nicht alle Validatoren erzwingen referenzielle Integrität
-
----
-
-### 2.4 ValueQuantity mit ungültiger Einheit (value)
-
-**Issue:**
-```json
-{
-  "severity": "warning",
-  "code": "value",
-  "details": {"text": "Unit 'mg' should be 'MMOL/L' for this LOINC code"}
-}
-```
-
-**Ursache:** Die Einheit entspricht nicht dem LOINC-Code-Anforderung (z. B. `HbA1c` erfordert `mmol/mol`, nicht `%`).
-
-**Lösung:**
-- Prüfe LOINC-Einheit (`UCUM`-Code im LOINC-Entry)  
-- passe `valueQuantity.unit` an (`mmol/mol` für `4548-4`)
-
----
-
-### 2.5 Profil-Constraint verletzt (structure)
-
-**Issue:**
-```json
-{
-  "severity": "error",
-  "code": "structure",
-  "details": {"text": "Cardinality violation: expected 1..1, found 0"}
-}
-```
-
-**Ursache:** Ein profildefiniertes Element hat falsche Kardinalität (z. B. `mustSupport = true` aber nicht gesetzt).
-
-**Lösung:**
-- Prüfe das Profil (StructureDefinition)  
-- Ergänze das fehlende Element oder passe das Profil an  
-- Bei MII-Profilen: siehe [KDS-Module auf GitHub](https://github.com/medizininformatik-initiative)
-
----
-
-## 📊 Beispiel: Bericht analysieren
-
-### 3.1 Validierungsbericht generieren
+### 3.2 Ressource gegen Profil validieren
 
 ```bash
-# Invalides Beispiel: Patient ohne name
-cat > bad-patient.json <<EOF
-{
-  "resourceType": "Patient",
-  "id": "test-patient",
-  "gender": "male",
-  "birthDate": "1970-01-01"
-}
-EOF
+# Beispiel: Observation gegen MII Labor-Profil validieren
+curl -X POST "http://localhost:8082/fhir/\$validate?profile=http://fhir.de/StructureDefinition/labor-befund" \
+  -H "Content-Type: application/fhir+json" \
+  -d @path/to/observation.json | jq '.issue[] | {severity, code, details}'
+```
 
-# Validieren
+___
+
+### 3.3 Beispieldaten validieren (aus Ex3)
+
+```bash
+# Validiere das gesamte Bundle (UKSH-Musterdatenspende)
 curl -X POST http://localhost:8082/fhir/\$validate \
   -H "Content-Type: application/fhir+json" \
-  -d @bad-patient.json | jq '.issue[] | {severity, code, details, location}'
+  --data @bundle-repaired.json | jq '.issue | length'
 ```
 
-**Ergebnis:**
-```json
-[
-  {
-    "severity": "error",
-    "code": "required",
-    "details": {"text": "Field 'Patient.name' is required but was not found"},
-    "location": ["Patient"]
-  }
-]
-```
+> ⚠️ **Hinweis:** Bei großen Bundles (8.400+ Ressourcen) kann die Validierung lange dauern. Für Tests: Bundle teilen.
 
----
+___
 
-### 3.2 Bericht filtern (Fokus auf Errors)
+## 💻 Validation über CLI
+
+### 4.1 Validator CLI (Java JAR)
+
+Download des Validator-Publishers (siehe [MII FHIR Validator Repo](https://github.com/medizininformatik-initiative/mii-fhir-validator)).
 
 ```bash
-# Nur Errors anzeigen
-curl -s ... | jq '.issue[] | select(.severity == "error") | {code, details}'
+# Validator JAR herunterladen
+curl -L https://github.com/medizininformatik-initiative/mii-fhir-validator/releases/latest/download/fhir-validator.jar -o fhir-validator.jar
+
+# Einzelne Ressource validieren
+java -jar fhir-validator.jar \
+  -i observation.json \
+  -p http://fhir.de/StructureDefinition/labor-befund \
+  -o output.json
 ```
 
----
+___
 
-### 3.3 Bericht aggregieren (Issues zählen)
+### 4.2 Validation mit Codesystem-Check
 
 ```bash
-# Wie viele Errors vs. Warnings?
-curl -s ... | jq '{
-  errors: [.issue[] | select(.severity == "error")] | length,
-  warnings: [.issue[] | select(.severity == "warning")] | length,
-  infos: [.issue[] | select(.severity == "information")] | length
-}'
+# Codesystem-Code prüfen (z. B. LOINC#4548-4)
+java -jar fhir-validator.jar \
+  -code-system http://loinc.org \
+  -code 4548-4 \
+  -version 2.82.0
 ```
 
----
+___
 
-## 🔧 Behebungstipps
+## 🏁 Zusammenfassung & Ausblick
 
-### 4.1 Fehler-First-Aufbau (CI/CD)
+### Zusammenfassung
 
-```
-1. Errors beheben → 2. Warnings prüfen → 3. Infos optional
-└─> Export erst, wenn Errors = 0!
-```
-
-### 4.2 Automatisierung (Beispiel: Script)
-
-**script/validate.sh**
-```bash
-#!/bin/bash
-FILE=$1
-
-RESULT=$(curl -s -X POST http://localhost:8082/fhir/\$validate \
-  -H "Content-Type: application/fhir+json" \
-  -d @$FILE)
-
-ERRORS=$(echo $RESULT | jq '[.issue[] | select(.severity == "error")] | length')
-WARNINGS=$(echo $RESULT | jq '[.issue[] | select(.severity == "warning")] | length')
-
-if [ $ERRORS -gt 0 ]; then
-  echo "❌ VALIDATION ERROR: $FILES errors found in $FILE"
-  echo $RESULT | jq '.issue[] | select(.severity == "error") | {"code", "details"}'
-  exit 1
-else
-  echo "✓ VALIDATION SUCCESS: $WARNINGS warnings (0 errors)"
-  exit 0
-fi
-```
-
-**Aufruf:**
-```bash
-bash script/validate.sh Patient-Muster.json
-```
-
----
-
-## 🏁 Zusammenfassung
-
-| Issue-Typ | Severity | Handlung |
-|-----------|----------|----------|
-| **Pflichtfeld fehlt** | `error/required` | Feld ergänzen |
-| **Code nicht im System** | `error/code-invalid` | Code prüfen/ersetzen |
-| **Referenz nicht aufgelöst** | `error/reference` | Zielressource laden oder Dummies ergänzen |
-| **Einheit falsch** | `warning/value` | UCUM-Einheit anpassen |
-| **Profil-Constraint** | `error/structure` | Element hinzufügen oder Profil prüfen |
-
-### Quick-Checkliste
-
-- [ ] Errors = 0? ❌ Wenn nein: Beheben  
-- [ ] Warnings akzeptabel? ❌ Wenn nein: Prüfen  
-- [ ] Validierungsbericht archiviert? ✅ Für Audit!  
-
----
+| Schritt | Kommando |
+| ------- | -------- |
+| **Validator starten** | `docker run -p 8082:8080 mii/fhir-validator:latest` |
+| **Ressource validieren** | `curl -X POST http://localhost:8082/fhir/\$validate -d@ressource.json` |
+| **Profil-Validierung** | `curl -X POST .../\$validate?profile=...` |
+| **CLI-Validierung** | `java -jar fhir-validator.jar -i input.json` |
 
 ### Ausblick
 
-- **Ex7:** Ausblick auf Alternativen, Versionierung, Lizenzen  
-- **DIZ-Alltag:** Validation in CI/CD-Pipeline (GitLab CI, GitHub Actions)  
+- **Ex7:** Validierungsberichte interpretieren (Errors, Warnings, häufige Issues)  
+- **DIZ-Alltag:** Validation vor Export, Import, oder bei Datenanfragen  
 
----
+### Tipps
 
-**Nächste Schritte:**  
-- Validiere deine Ressourcen und interpretiere die Berichte  
-- Bau ein Script für automatische Validierung  
-- Bereite dich auf Ex7 vor
+- ✅ **Regelmäßig validieren:** Nicht erst am Ende — bei jeder Ressourcenerschaffung  
+- ✅ **Frühzeitig prüfen:** „Fail fast“ — Fehler direkt im Build-Prozess (CI/CD)  
+- ✅ **Documentation:** Validierungsberichte archivieren (Audit!)  
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • **Exercise 6** • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • **Exercise 6** • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

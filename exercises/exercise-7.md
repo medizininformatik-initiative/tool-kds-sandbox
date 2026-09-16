@@ -1,189 +1,343 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7**
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# ⚫ Ausblick: Sonstiges
+# 🟤 Interpretieren von Ergebnissen
+
+**Nächste Schritte:**  
+
+- Validiere deine Ressourcen und interpretiere die Berichte
+- Bau ein Script für automatische Validierung  
+- Bereite dich auf Ex8 vor
+
+___
 
 ## Einführung & Kontext
 
-In den vorherigen Übungen hast du gelernt, **FHIR-Profile zu definieren**, **Daten in den Server zu laden**, **Abfragen durchzuführen**, **Terminologien zu laden** und **Ressourcen zu validieren**.
+In [Exercise 6](exercise-6.md) hast du gelernt, wie du **FHIR-Ressourcen und -Profile validieren** kannst. Der Validator gibt dabei einen **OperationOutcome** zurück — die „Sprache“ des FHIR-Validierers.
 
-In dieser letzten Übung schauen wir auf **Alternative Werkzeuge**, **Versionierung**, **Lizenzen** und **Zukunftsausblick** — ohne praktische Übung, aber mit dem nötigen Kontext, um im DIZ-Alltag informierte Entscheidungen zu treffen.
+In dieser Übung lernst du, diesen Validierungsbericht zu **interpretieren** — was bedeutet ein `error` vs. ein `warning`? Welche Issues sind kritisch? Wie behebe ich typische Probleme?
 
----
+> 💡 **Warum Bericht-Interpretation?**  
+>
+> - **Datenqualität-Management:** Fokus auf kritische Errors vs. akzeptable Warnings  
+> - **Fehlersuche:** Schnelle Lokalisierung von Ursachen  
+> - **DIZ-Alltag:** Bei der Validierung von Import-Daten oder Export-Pre-Check  
+> - **Audit:** Nachweisbarkeit von Datenqualitätsproblemen und deren Behebung
+
+___
 
 📋 **Übersicht:**
 
-- [Alternative Werkzeuge](#-alternative-werkzeuge)
-- [Versionierung von Codesystemen](#-versionierung-von-codesystemen)
-- [Lizenzen](#-lizenzen)
-- [Zukunft: Erweiterungen](#-zukunft-erweiterungen)
-- [Abschluss](#-zusammenfassung)
+- [Hintergrund: OperationOutcome](#-hintergrund-operationoutcome)
+- [Häufige Warnings & Errors](#häufige-warnings--errors)
+- [Beispiel: Bericht analysieren](#-beispiel-bericht-analysieren)
+- [Behebungstipps](#-behebungstipps)
+- [Zusammenfassung](#-zusammenfassung)
 
----
+___
 
-## 🔧 Alternative Werkzeuge
+## 💻 Hintergrund: OperationOutcome
 
-### 1.1 Terminologieserver
-
-| Server | Vorteile |  Einsatz |
-|--------|----------|----------|
-| **Blaze TermServ** (MII-Standard) | Einfach, integriert mit Blaze, Open Source | DIZ-Standard |
-| **HAPI FHIR** | Reife Implementation, viele Features, großes Community | Alt-DIZ, migrierte Systeme |
-| **SMART on FHIR** | App-Plattform | Apps, externe Integration |
-| **MII SU-TermServ** (zentral) | Aktuelle Codes, support durch MII | Alle DIZe (zusätzlich zu lokal) |
-
----
-
-### 1.2 Validierungsservices
-
-| Service | Vorteile |
-|---------|----------|
-| **MII FHIR Validator** (lokal) | Konformität zu MII-Standards, ICD-10-GM/LOINC/SNOMED |
-| **HAPI Validator** | Universell, alle FHIR-Versionen |
-| **Firely Validator** | Schnell, modern, CLI-Tool |
-| **Simplifier.net** (Web) | Visuell, gute UX, Community-Profiles |
-
----
-
-### 1.3 FHIR-Server
-
-| Server | Vorteile |
-|--------|----------|
-| **Blaze** (MII-Standard) | Einfach, Open Source, gut dokumentiert |
-| **HAPI FHIR** | Reif, viele Erweiterungen (web UI, full-text) |
-| **AWS HealthLake** | Skalierbar, AWS-Integration |
-| **Azure FHIR Service** | Azure-Integration, Managed |
-
----
-
-## 🔢 Versionierung von Codesystemen
-
-### 2.1 Warum Versionierung?
-
-| Szenario | Problem ohne Versionierung |
-|----------|----------------------------|
-| **Neuer LOINC-Code** | Alte Daten mit altem Code bleiben gültig, neue mit neuem Code — aber wie kombinieren? |
-| **ICD-10-GM Update** | Diagnosen im Jahr 2024 mit ICD-10-GM 2024, 2025 mit 2025 — wie Abfragen? |
-| **Audit & Nachvollziehbarkeit** | Wie weiß man, welcher Code zum Zeitpunkt X verwendet wurde? |
-
----
-
-### 2.2 FHIR-Approach: `code.system` + `code.version`
-
-In FHIR kannst Du eine **Version** angucken:
+### 1.1 Struktur eines Validierungsberichts
 
 ```json
 {
-  "code": {
-    "coding": [
-      {
-        "system": "http://loinc.org",
-        "code": "4548-4",
-        "version": "2.82.0",
-        "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
-      }
-    ]
-  }
+  "resourceType": "OperationOutcome",
+  "issue": [
+    {
+      "severity": "error" | "warning" | "information" | "fatal",
+      "code": "invalid" | "structure" | "required" | "binding" | "code-invalid" | "value",
+      "details": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/validation-issue-type",
+            "code": "INVALID",
+            "display": "Invalid"
+          }
+        ],
+        "text": "Detailed error message"
+      },
+      "location": [
+        "Patient.name[0].family"
+      ],
+      "expression": [
+        "Patient.name"
+      ]
+    }
+  ]
 }
 ```
 
----
+### 1.2 Severity-Ebenen
 
-### 2.3 Praxis-Tipps
+| Severity | Bedeutung | Handlung |
+| -------- | --------- | -------- |
+| **fatal** | Ressource ist komplett unbrauchbar | **Sofort beheben** — kein Export |
+| **error** | Kritische Verletzung des Standards | **Beheben** — Validierung fehlschlägt |
+| **warning** | Auffälligkeit, aber konform | **Prüfen** — ggf. Behebung sinnvoll |
+| **information** | Hinweis (z. B. „Best Practice“) | **Prüfen** — optional |
 
-| Praxis-Problem | Lösung |
-|----------------|--------|
-| **Mehrere Versionen parallel** | Verwende `code.version` in allen Ressourcen |
-| **Versions-Migration** | Update-Skripte (z. B. `4548-4|2.81.0` → `4548-4\|2.82.0`) |
-| **Validierung mit alter Version** | Validator mit `?version=2.81.0` aufrufen (falls supported) |
+___
 
-> ⚠️ **Hinweis:** Nicht alle Validatoren unterstützen `code.version`. Prüfe vor dem Einsatz!
+### 1.3 Code-Typen (validation issue type)
 
----
+| Code | Beschreibung | Beispiel |
+| ---- | ------------ | -------- |
+| `invalid` | Ressource entspricht nicht dem Schema | Fehlendes Pflichtfeld |
+| `structure` | Struktur-Problem | Ungültiges JSON/XML |
+| `required` | Pflichtfeld fehlt | `Patient.name` fehlt |
+| `binding` | Code nicht im ValueSet | ICD-Code nicht in ICD-10-GM |
+| `code-invalid` | Code ungültig | Unbekannter LOINC-Code |
+| `value` | Wert außerhalb erlaubter Range | `valueQuantity.value = -10` bei positivem Wert verlangt |
 
-## 📜 Lizenzen
+___
 
-### 3.1 Codesystem-Lizenzen im Überblick
+## <a id="häufige-warnings--errors"></a>⚠️ Häufige Warnings & Errors
 
-| Codesystem | Lizenz | Kosten | Download |
-|------------|--------|--------|----------|
-| **LOINC** | Apache 2.0 (ab 2025) | Kostenlos | [loinc.org](https://loinc.org) |
-| **SNOMED-CT** | SNOMED International License | Kosten (Country License) | [snomed.org](https://snomed.org) |
-| **ICD-10-GM** | public domain (BFarm) | Kostenlos | [terminologien.bfarm.de](https://terminologien.bfarm.de) |
-| **OPS** | public domain (BFarm) | Kostenlos | [terminologien.bfarm.de](https://terminologien.bfarm.de) |
-| **UCUM** | BSD 3-Clause | Kostenlos | [ucum.org](https://ucum.org) |
+### 2.1 Pflichtfelder fehlen (required)
 
-> 💡 **Hinweis:** SNOMED-CT ist in Deutschland **kostenpflichtig** (via BIH/DAISM). Im Rahmen der MII sollten die meisten DIZ inzwischen über eine SNOMED CT-Lizenz verfügen.
+**Issue:**
 
----
+```json
+{
+  "severity": "error",
+  "code": "required",
+  "details": {"text": "Field ' Patient.name' is required but was not found"}
+}
+```
 
-### 3.2 Lizenzkompatibilität
+**Ursache:** Das Pflichtfeld `name` fehlt in der Patienten-Ressource.
 
-- **Apache 2.0 + MIT + BSD** → ✅ Kompatibel (kann zu Apache 2.0 kombiniert werden)  
-- **GPL** → ❌ Nicht kompatibel mit Apache 2.0 (außer双重 Lizenz)  
-- **SNOMED International** → 🟡 Einschränkungen (Verbreitung, Embedding)
+**Lösung:**
 
----
+```json
+{
+  "name": [
+    {
+      "family": "Muster",
+      "given": ["Max"]
+    }
+  ]
+}
+```
 
-### 3.3 Lizenz-Hinweise in DIZ
+___
 
-- ✅ **Doku führen:** Welche Lizenzen wurden heruntergeladen? (Audit!)  
-- ✅ **Hinweise geben:** Im DIZ-Handbuch: Benutzungsbedingungen (z. B. „Nicht weiterverbreiten“)  
-- ✅ **Lizenz-Updates:** Monatliche Prüfung (z. B. für ICD-10-GM Updates)
+### 2.2 Code nicht im Codesystem (code-invalid / binding)
 
----
+**Issue:**
 
-## 🚀 Zukunft: Weitere Inhalte
+```json
+{
+  "severity": "error",
+  "code": "code-invalid",
+  "details": {"text": "Code 'ABC123' not found in system 'http://loinc.org'"}
+}
+```
 
-### 4.1 Ausblick: Themen für zukünftige Übungen
+**Ursache:** Der verwendete Code existiert nicht im LOINC-System (Tippfehler? falsche Version?)
 
-| Themenbereich | Inhalt | Relevanz |
-|---------------|--------|----------|
-| **Pseudonymisierung** | Anonymisierung von FHIR-Ressourcen (de-idenfikation, k-Anonymity) | ✅✅✅ Kritisch für Forschungsdaten |
-| **Datenanalyse mit Skripten** | Externe Forschende liefern R-Skripte/Python-Skripte | ✅✅✅ Alltag in DIZ |
-| **DIMP/DUP-Pipeline** | aether-orchestrierte Datenbereitstellung | ✅✅✅ Backend für Forschungsanfragen |
-| ** consent-Management** | MII Consent-Validierung (DSTU2 vs. R4) | ✅✅✅ Rechtliche Compliance |
-| **FHIR-Konformance** | CapabilityStatement, StructureDefinition-Validation | ✅✅ Technische Qualität |
+**Lösung:**
 
----
+- Prüfe den Code auf [loinc.org](https://loinc.org)  
+- Prüfe die **Version** (`version` im CodeSystem-Object)  
+- Korrigiere den Code oder passe die `version` an
 
-### 4.2 Konkrete Ideen für weitere Übungen
+___
 
-#### **Exercise 8: Pseudonymisierung von FHIR-Daten**
- 
-- MII FHIR-Pseudonymizer
+### 2.3 Referenz nicht auflösbar (reference)
 
-#### **Exercise 9: Analyse mit externen Skripten**
+**Issue:**
 
-- R-Script / Python-Script von Forschendem bekommen  
-- Ergebnis exportieren (CSV, JSON, FHIR-Bundle)
+```json
+{
+  "severity": "error",
+  "code": "structure",
+  "details": {"text": "Reference 'Patient/xxx' does not resolve to a known resource"}
+}
+```
 
-#### **Exercise 10: DIMP/DUP-Pipeline (Ausblick)**
+**Ursache:** Eine Ressource (z. B. Observation) referenziert einen Patienten, der nicht im Server existiert.
 
-- Welche Daten werden in die Pipeline eingespeist?  
-- Wie wird eine Forschungsanfrage bearbeitet? (DIMP → DUP → Export)  
-- Aether-Orchestrierung (Kubernetes, ArgoCD)
+**Lösung:**
 
----
+- Patient existieren lassen (`GET /Patient/xxx` testen)  
+- ODER: Dummy-Ressourcen ergänzen (wie in [Ex3 `repair-bundle.sh`](exercise-2.md#bundle-reparieren))  
+- ACHTUNG: Nicht alle Validatoren erzwingen referenzielle Integrität
+
+___
+
+### 2.4 ValueQuantity mit ungültiger Einheit (value)
+
+**Issue:**
+
+```json
+{
+  "severity": "warning",
+  "code": "value",
+  "details": {"text": "Unit 'mg' should be 'MMOL/L' for this LOINC code"}
+}
+```
+
+**Ursache:** Die Einheit entspricht nicht dem LOINC-Code-Anforderung (z. B. `HbA1c` erfordert `mmol/mol`, nicht `%`).
+
+**Lösung:**
+
+- Prüfe LOINC-Einheit (`UCUM`-Code im LOINC-Entry)  
+- passe `valueQuantity.unit` an (`mmol/mol` für `4548-4`)
+
+___
+
+### 2.5 Profil-Constraint verletzt (structure)
+
+**Issue:**
+
+```json
+{
+  "severity": "error",
+  "code": "structure",
+  "details": {"text": "Cardinality violation: expected 1..1, found 0"}
+}
+```
+
+**Ursache:** Ein profildefiniertes Element hat falsche Kardinalität (z. B. `mustSupport = true` aber nicht gesetzt).
+
+**Lösung:**
+
+- Prüfe das Profil (StructureDefinition)  
+- Ergänze das fehlende Element oder passe das Profil an  
+- Bei MII-Profilen: siehe [KDS-Module auf GitHub](https://github.com/medizininformatik-initiative)
+
+___
+
+## 📊 Beispiel: Bericht analysieren
+
+### 3.1 Validierungsbericht generieren
+
+```bash
+# Invalides Beispiel: Patient ohne name
+cat > bad-patient.json <<EOF
+{
+  "resourceType": "Patient",
+  "id": "test-patient",
+  "gender": "male",
+  "birthDate": "1970-01-01"
+}
+EOF
+
+# Validieren
+curl -X POST http://localhost:8082/fhir/\$validate \
+  -H "Content-Type: application/fhir+json" \
+  -d @bad-patient.json | jq '.issue[] | {severity, code, details, location}'
+```
+
+**Ergebnis:**
+
+```json
+[
+  {
+    "severity": "error",
+    "code": "required",
+    "details": {"text": "Field 'Patient.name' is required but was not found"},
+    "location": ["Patient"]
+  }
+]
+```
+
+___
+
+### 3.2 Bericht filtern (Fokus auf Errors)
+
+```bash
+# Nur Errors anzeigen
+curl -s ... | jq '.issue[] | select(.severity == "error") | {code, details}'
+```
+
+___
+
+### 3.3 Bericht aggregieren (Issues zählen)
+
+```bash
+# Wie viele Errors vs. Warnings?
+curl -s ... | jq '{
+  errors: [.issue[] | select(.severity == "error")] | length,
+  warnings: [.issue[] | select(.severity == "warning")] | length,
+  infos: [.issue[] | select(.severity == "information")] | length
+}'
+```
+
+___
+
+## 🔧 Behebungstipps
+
+### 4.1 Fehler-First-Aufbau (CI/CD)
+
+```text
+1. Errors beheben → 2. Warnings prüfen → 3. Infos optional
+└─> Export erst, wenn Errors = 0!
+```
+
+### 4.2 Automatisierung (Beispiel: Script)
+
+**script/validate.sh**
+
+```bash
+#!/bin/bash
+FILE=$1
+
+RESULT=$(curl -s -X POST http://localhost:8082/fhir/\$validate \
+  -H "Content-Type: application/fhir+json" \
+  -d @$FILE)
+
+ERRORS=$(echo $RESULT | jq '[.issue[] | select(.severity == "error")] | length')
+WARNINGS=$(echo $RESULT | jq '[.issue[] | select(.severity == "warning")] | length')
+
+if [ $ERRORS -gt 0 ]; then
+  echo "❌ VALIDATION ERROR: $FILES errors found in $FILE"
+  echo $RESULT | jq '.issue[] | select(.severity == "error") | {"code", "details"}'
+  exit 1
+else
+  echo "✓ VALIDATION SUCCESS: $WARNINGS warnings (0 errors)"
+  exit 0
+fi
+```
+
+**Aufruf:**
+
+```bash
+bash script/validate.sh Patient-Muster.json
+```
+
+___
 
 ## 🏁 Zusammenfassung
 
-### Zusammenfassung: Womit du im DIZ-Arbeitsalltag arbeitest
+| Issue-Typ | Severity | Handlung |
+| --------- | -------- | -------- |
+| **Pflichtfeld fehlt** | `error/required` | Feld ergänzen |
+| **Code nicht im System** | `error/code-invalid` | Code prüfen/ersetzen |
+| **Referenz nicht aufgelöst** | `error/reference` | Zielressource laden oder Dummies ergänzen |
+| **Einheit falsch** | `warning/value` | UCUM-Einheit anpassen |
+| **Profil-Constraint** | `error/structure` | Element hinzufügen oder Profil prüfen |
 
-| Werkzeug | Getestet | Lokal/remote? | Lizenz |
-|----------|-----------|---------------|--------|
-| **Blaze Server** | ✅ Ja | ✅ Lokal | Apache 2.0 |
-| **MII SU-TermServ** | ✅ Ja | ✅ Beides | — |
-| **MII FHIR Validator** | ✅ Ja | ✅ Lokal | Apache 2.0 |
-| **LOINC** | ✅ Ja | ✅ Kostenlos | Apache 2.0 |
-| **ICD-10-GM/OPS** | ✅ Ja | ✅ Kostenlos | public domain |
-| **SNOMED-CT** | ✅ Ja | ❌ kostenpflichtig | SNOMED International |
+### Quick-Checkliste
+
+- [ ] Errors = 0? ❌ Wenn nein: Beheben  
+- [ ] Warnings akzeptabel? ❌ Wenn nein: Prüfen  
+- [ ] Validierungsbericht archiviert? ✅ Für Audit!  
+
+___
+
+### Ausblick
+
+- **Ex8:** Ausblick auf Alternativen, Versionierung, Lizenzen  
+- **DIZ-Alltag:** Validation in CI/CD-Pipeline (GitLab CI, GitHub Actions)  
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7**
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
 ___
 ___

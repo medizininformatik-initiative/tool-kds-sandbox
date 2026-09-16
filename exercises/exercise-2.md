@@ -1,282 +1,249 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟡 KDS-Beispieldaten in FHIR-Server laden
+# 🟢 Einfaches Beispiel FHIR-Search
 
-In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Exercise 0) und diese per `curl` in einen FHIR-Server hochzuladen und abzufragen (Exercise 1).
+**Nächste Schritte:**
 
-Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative.  
-Konkret verwenden wir die **Musterdatenspende der DIZe** – das sind synthetische, aber klinisch realistische Datensätze mehrerer Universitätsklinika (UKHD, UKSH, UKW).  
-Anders als die rein technischen Testdaten enthalten sie die **unterschiedlichen "DIZ-Flavours"** (Modellierungsunterschiede zwischen den Standorten) und eignen sich daher besonders gut für realistische Analysen.
+- Prüfe, dass Blaze auf `http://localhost:8080` läuft (`docker compose ps`)
+- Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
+- Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-📋 **Übersicht:**
+In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_ZuckWatch_Labor_Hemo") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ()"Example-ZuckWatch-Labor-Hemo-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
-- [Musterdatenspende klonen & entpacken](#-musterdatenspende-klonen--entpacken)
-- [Transaction-Bundle bauen](#transaction-bundle-bauen)
-- [Referenzielle Integrität prüfen](#-referenzielle-integrität-prüfen)
-- [Bundle reparieren](#bundle-reparieren)
-- [Daten in Blaze hochladen](#-daten-in-blaze-hochladen)
-- [Upload überprüfen](#-upload-überprüfen)
+Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
-___
+📋 Übersicht:
 
-## 💻 Musterdatenspende klonen & entpacken
-
-### 📖 Hintergrund: Musterdaten vs. Testdaten
-
-| | Musterdaten (Musterdatenspende) | Testdaten (MII-Testdaten) |
-| - | ----------------------------- | ------------------------- |
-| **Quelle** | DIZe (UKHD, UKSH, UKW) | Technisch generiert |
-| **Zweck** | Realistische Anwendungsfälle, verteilte Analysen | Struktur- und Semantiktests |
-| **DIZ-Flavour** | ✅ Ja – zeigt Heterogenität | Nein |
-| **Referenzielle Integrität** | ⚠️ Nicht immer gegeben | Meist gegeben |
-
-Wir arbeiten im Folgenden mit der **Musterdatenspende**.
-
-### 🛠️ 1. Repository klonen
-
-```bash
-git clone https://github.com/medizininformatik-initiative/musterdatenspende-diz.git
-cd musterdatenspende-diz
-```
-
-Das Repository enthält Daten von drei Standorten:
-
-```bash
-UKHD/   # Universitätsklinikum Heidelberg
-UKSH/   # Universitätsklinikum Schleswig-Holstein
-UKW/    # Universitätsklinikum Würzburg
-```
-
-### 🛠️ 2. Daten entpacken
-
-Wähle einen Standort aus. Für dieses Tutorial verwenden wir **UKSH**:
-
-```bash
-unzip UKSH/UKSH-2025-11-11.zip
-```
-
-> ⚠️ **Hinweis:** Die ZIP-Datei enthält viele einzelne JSON-Dateien (eine pro Ressource). Diese sind als *Searchset*-Bundles formatiert – zum Hochladen müssen wir sie in ein *Transaction*-Bundle umwandeln.
-
-Das entpackte Verzeichnis enthält ca. 270 JSON-Dateien – eine pro Bundle.
-
-```bash
-ls UKSH-2025-11-11/ | wc -l
-```
+- [Docker einrichten (vorbereitend)](#docker-einrichten)
+- [Container definieren und via docker-compose starten](#container-definieren-und-starten)
+- [Ressourcen hochladen](#ressourcen-hochladen)
+- [Ressourcen abfragen](#ressourcen-abfragen)
 
 ___
 
-## <a id="transaction-bundle-bauen"></a>🛠️ Transaction-Bundle bauen
+## 💻 (Lokaler) FHIR-Server via Docker-Compose gestartet. 💻
 
-Das Musterdatenspende-Repo enthält im Ordner `bin/` drei Hilfsskripte.  
-Das Skript `merge-bundles.sh` wandelt die einzelnen Searchset-Bundles in ein einziges **Transaction-Bundle** um – genau das, was Blaze (und andere FHIR-Server) für den Bulk-Import erwarten.
+Sollte Docker noch nicht auf deinem System vorhanden sein, [installiere dir die für dein Betriebssystem passende Version](https://docs.docker.com/compose/install/linux/#install-using-the-repository).
 
-```bash
-bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
-```
+### Docker einrichten
 
-### ✅ Zwischenkontrolle Bundle-Erzeugung
-
-Prüfe die Größe des erzeugten Bundles:
+- Installation (für Ubuntu/Debian):
 
 ```bash
-# Anzahl der Einträge
-jq '.total' transaction-bundle.json
-
-# Welche Ressourcentypen sind enthalten?
-bash bin/count-resourceTypes.sh UKSH-2025-11-11/*.json
+sudo apt update && sudo apt install -y docker.io docker-compose-v2
 ```
 
-Die Ausgabe sollte ca. **8.400 Einträge** mit folgenden Ressourcentypen anzeigen (die genauen Zahlen variieren je nach Standort und Version):
+- Prüfe nach der Installation, ob Docker erfolgreich läuft:
+
+```bash
+docker --version
+docker compose version
+```
+
+- Standardmäßig benötigt Docker unter Ubuntu Root-Rechte:
+
+```bash
+sudo docker run hello-world
+```
+
+### Container definieren und starten
+
+Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zum Samply/Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [Github-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker-Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten lege eine docker-compose.yml an:
+
+```bash
+services:
+  blaze:
+    image: "samply/blaze:1.9.0@sha256:cba859fb460df3938792226f16ba9bde32bf8dd9edeeadffbd818bccdcce56dc"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx2g"
+    ports:
+    - "8080:8080"
+    volumes:
+    - "blaze-data:/app/data"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+volumes:
+  blaze-data:
+```
+
+- Im Ordner mit der Docker-Compose Datei lässt sich der Dienst danach wie folgt starten und der erfolgreiche Start prüfen:
+
+```bash
+# Server starten
+docker compose up -d
+
+# Status prüfen (Container Status "Up" und "(healthy)")
+docker ps
+
+# Verbindung testen (Gibt das CapabilityStatement zurück)
+curl -v http://localhost:8080/fhir/metadata
+```
+
+- Optional: Installation von `jq` bspw. via `sudo apt  install jq -y`, um mit `curl -v http://localhost:8080/fhir/metadata | jq` eine einfacher menschenlesbare Darstellung zu erhalten.
+
+- Die Anzeige der laufenden Container sollte den Blaze-FHIR-Server wie folgt auflisten:
 
 ```text
-## Ressourcen
+IMAGE                STATUS         PORTS
+samply/blaze:1.9.0   Up (healthy)   0.0.0.0:8080->8080/tcp
+```
 
-| Ressourcen     | Anzahl |
-| -------------- | ------ |
-| Condition      | 437    |
-| Consent        | 5      |
-| DiagnosticReport | 1283 |
-| Encounter      | 1391   |
-| Location       | 63     |
-| Observation    | 3537   |
-| Patient        | 272    |
-| Procedure      | 180    |
-| ServiceRequest | 1283   |
+- Sollte der Dienst anders als erwartet verhalten, lassen sich die Docker-Logs einsehen:
+
+```bash
+docker compose logs -f -t
 ```
 
 ___
 
-## 🔍 Referenzielle Integrität prüfen
+## 💻 FHIR-Server nutzen
 
-### 📖 Was bedeutet "referenzielle Integrität"?
+### Ressourcen hochladen
 
-In FHIR verweisen Ressourcen häufig aufeinander:
+Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später im Tutorial werden wir auch noch FHIR-Bundles nutzen, um mehrere Ressourcen gleichzeitig an den FHIR-Server zu übermitteln.
 
-- Eine `Observation` hat ein `subject` (`Patient/xyz`)
-- Ein `Encounter` hat eine `location` (`Location/xyz`)
-- Ein `DiagnosticReport` besteht aus `result`-Referenzen auf `Observation`
+####  Upload Patient
 
-Wenn Ressource A auf Ressource B verweist, Ressource B aber nicht im Bundle vorhanden ist, sprechen wir von einer **broken reference** (nicht aufgelösten Referenz).
-
-Die Musterdatenspende ist laut README **bewusst nicht referenziell integer** – ein Nebeneffekt der Anonymisierung. Das ist kein Fehler, aber beim Import müssen wir damit umgehen.
-
-### 🛠️ Broken References ermitteln
-
-Das Skript `unresolved-references.sh` aus dem Musterdatenspende-Repo zeigt dir alle Referenzen an, die im Bundle nicht aufgelöst werden können:
+- Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
 ```bash
-bash bin/unresolved-references.sh transaction-bundle.json
-```
-
-💡 **Erwartetes Ergebnis (UKSH):** Es werden ca. **44 fehlende Referenzen** angezeigt:
-
-- **33 Locations** – klinische Stationen wie `ITSG-HIGHMEDSTAT`, `KINA`, `LCHIR` etc.
-- **10 Encounter** – Behandlungsfälle (z. B. `PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385`)
-- **1 Encounter ohne zugehörigen Patienten** – Die Encounter-Dummy-Ressource verweist auf `Patient/dummy` (eine Platzhalter-ID)
-
-> 📌 **Warum fehlen ausgerechnet Locations und Encounter?**  
-> Stationskataloge und Behandlungsfall-IDs sind hochgradig standortspezifisch. Bei der Anonymisierung und Extraktion gehen diese Daten leichter verloren als Patientendaten.
-
-___
-
-## <a id="bundle-reparieren"></a>🛠️ Bundle reparieren
-
-### 📖 Zwei Wege zum Ziel
-
-Da **Blaze** (anders als z. B. HAPI) keine Option zum Deaktivieren der referenziellen Integrität bietet, müssen wir die fehlenden Ressourcen vor dem Import ergänzen. Dafür gibt es zwei Strategien:
-
-| Strategie | Vorgehen |
-|---|---|
-| **A) Dummy-Ressourcen generieren (empfohlen)** | Für jede fehlende Referenz eine minimale Ressource anlegen – die Daten bleiben vollständig. |
-| **B) Referenzierende Ressourcen entfernen** | Nicht empfohlen, da sonst wertvolle Daten verloren gehen. |
-
-Wir verwenden Strategie **A** – und dafür gibt es ein Hilfsskript.
-
-### 🛠️ Das repair-bundle.sh Skript
-
-Das Skript `repair-bundle.sh` (im Ordner `tmp-solution_exercise-2/` dieses Repos) macht Folgendes:
-
-1. Es analysiert dein Transaction-Bundle
-2. Es identifiziert alle Referenzen, die nicht im Bundle vorhanden sind
-3. Es generiert für jede fehlende Ressource eine **minimale Dummy-Ressource** (z. B. `Location`, `Encounter`)
-4. Es fügt diese als `PUT`-Einträge (mit selbst gewählter ID) in das Bundle ein
-5. Es gibt das reparierte Bundle auf der Standardausgabe aus
-
-So verwendest du es:
-
-```bash
-# Vom Hauptverzeichnis des Repos aus:
-bash tmp-solution_exercise-2/repair-bundle.sh path/to/transaction-bundle.json \
-  > bundle-repaired.json
-```
-
-> 💡 **Was passiert genau?**  
-> Für eine fehlende Location `ITSG-HIGHMEDSTAT` wird folgende minimale Ressource generiert:
->
-> ```json
-> {
->   "resourceType": "Location",
->   "id": "ITSG-HIGHMEDSTAT",
->   "name": "ITSG-HIGHMEDSTAT",
->   "status": "active"
-> }
-> ```
->
-> Für fehlende Encounter wird eine minimale Encounter-Ressource mit `status: finished` und Klassifizierung `AMB` (ambulant) erzeugt. Die Encounter-Referenzen auf `Patient/dummy` bleiben bestehen – das ist bewusst so, weil die Originaldaten keinen konkreten Patienten für diese Fälle ausweisen.
-
-Das Skript gibt außerdem eine Statistik aus:
-
-```text
-═══════════════════════════════════════════════════════════
- repair-bundle.sh – Ergebnis
-═══════════════════════════════════════════════════════════
- Fehlende Referenzen gefunden:  44
- Generierte Dummy-Ressourcen:   44
-═══════════════════════════════════════════════════════════
-```
-
-### 🛠️ Arbeiten mit dem Lösungsskript (Hinweis)
-
-Das Skript `repair-bundle.sh` ist keine "Zauberei" – es wendet lediglich die gleichen Techniken an, die du in den vorherigen Übungen bereits kennengelernt hast:
-
-- **FHIR-Ressourcen definieren** (Exercise 0) – hier nur minimaler
-- **FHIR-Ressourcen per PUT hochladen** (Exercise 1) – genau das tun die generierten Entry-Objekte (`"method": "PUT"`)
-- **JSON verarbeiten mit `jq`** – das Herzstück des Skripts
-
-> 🚀 **Für Fortgeschrittene:**  
-> Versuche, das Skript zu erweitern: Was müsste sich ändern, damit auch andere fehlende Ressourcentypen wie `Practitioner` oder `Organization` automatisch ergänzt werden?
-
-___
-
-## 📤 Daten in Blaze hochladen
-
-Voraussetzung: Blaze läuft noch aus [Exercise 1](exercise-1.md#container-definieren-und-starten).
-
-Jetzt laden wir das reparierte Bundle in den FHIR-Server:
-
-```bash
-curl -X POST http://localhost:8080/fhir \
+curl -X POST http://localhost:8080/fhir/Patient \
   -H "Content-Type: application/fhir+json" \
-  --data @bundle-repaired.json
+  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
 ```
 
-Der Import von ca. 8.400 Ressourcen dauert einige Sekunden. Blaze antwortet mit einem Transaction-Bundle, das den Status jeder einzelnen Operation enthält.
+- Antwort des Servers:
 
-> ⚠️ **Hinweis:** Bei sehr großen Bundles kann Blaze mit einem `413 Payload Too Large` antworten. In dem Fall musst du das Bundle in kleineren Teilen hochladen. Für die UKSH-Daten (ca. 12 MB) sollte es problemlos funktionieren.
-
-### ✅ Zwischenkontrolle des Uploads
-
-Prüfe, ob der Server die Daten angenommen hat:
-
-```bash
-# Wie viele Patienten sind jetzt auf dem Server?
-curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
-
-# Wie viele Observationen?
-curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
-
-# Wie viele Locations (inkl. unserer Dummy-Locations)?
-curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
+```json
+{
+  "resourceType": "Patient",
+  "id": "DHYSYTWMKTNZRTNP",
+  "meta": {
+    "versionId": "3",
+    "lastUpdated": "2026-06-29T09:45:23.426Z",
+    "profile": [
+      "http://example.org/StructureDefinition/MyPatient"
+    ]
+  },
+  "name": [
+    {
+      "family": "Pond",
+      "given": [
+        "James"
+      ]
+    }
+  ]
+}
 ```
 
-💡 **Erwartetes Ergebnis (für UKSH):**
+#### Upload Observation
 
-| Ressource | Erwartete Anzahl |
-| --------- | ---------------- |
-| `Patient` | 272 |
-| `Observation` | ~3.537 |
-| `Location` | ~96 (63 originale + 33 Dummy-Locations) |
-| `Encounter` | ~1.401 (1.391 originale + 10 Dummy-Encounters) |
+- Bevor wir die Observation hochladen, müssen wir sicherstellen, dass die referenzielle Integrität gewahrt bleibt. In unserem Fall mit der Ressource `Patient` und einer Ressource `Observation` ist für die Verknüpfung das Element `subject` der Observation-Ressource, welches auf eine Patienten-Ressource verweist, relevant.
 
-Sollte die Anzahl der Patienten nicht mit der Erwartung übereinstimmen, lohnt sich ein Blick auf die Blaze-Logs:
+- Da der Server bei einem POST-Request IDs zufällig generiert (z. B. "DHYSYTWMKTNZRTNP"), würde unsere Observation keine gültige Zuordnung haben, wenn sie hart auf `subject`:`Patient/example-patient` referenziert.
 
-```bash
-docker compose logs -f blaze
+##### Feste IDs via HTTP PUT erzwingen
+
+- Um dieses Problem zu lösen, nutzen wir anstelle von `POST` die HTTP-Methode `PUT`. Damit bestimmen wir die ID der Ressource direkt beim Upload selbst.
+
+##### Patient mit selbst festgelegter ID hochladen (`HTTP PUT`):
+
+- Hierbei übergeben wir die ID "example-patient" direkt am Ende der Endpunkt-URL.
+
+```Bash
+curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
+  -H "Content-Type: application/fhir+json" \
+  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
 ```
+
+##### Observation hochladen (PUT):
+
+- Da unsere in Exercise 1 definierte Observation (`EXA_ZuckWatch_Labor_Hemo.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten. Wir laden nun auch die Observation (mit einer festen ID) via PUT hoch:
+
+```Bash
+curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
+  -H "Content-Type: application/fhir+json" \
+  -d @ExampleIG/fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
+```
+
+<h3>💡 Merkregel für FHIR-Server:</h3>
+
+    > POST: Der Server generiert eine zufällige ID (z. B. /fhir/Patient/DHYSYTWMKTNZRTNP).
+
+    > PUT: Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. /fhir/Patient/<EIGENE_ID>).
+
+#### Ressourcen abfragen
+- Zur Abfrage von Ressourcen wird ein "FHIR-Search-String" als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
+
+##### Beispielabfrage via HTTP-REST
+- Um zu überprüfen, welche Patienten aktuell auf dem Server existieren, nutzen wir einen standardmäßigen GET-Request auf den Ressourcen-Endpunkt:
+
+```Bash
+curl -X GET "http://localhost:8080/fhir/Patient" | jq
+```
+
+<h3> 💡 Merkregel für FHIR-Server:</h3>
+
+    > FHIR-Server antworten bei Suchabfragen immer mit eine Container-Ressource vom Typ Bundle (mit dem Attribut `type`: `searchset`).
+
+    > Das Feld `total` verrät dir sofort die Anzahl der gefundenen Ressourcen.
+
+    > Die eigentlichen Patientendaten liegen verschachtelt im Array "entry".
+
+##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
+- FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Due kann die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
+
+1. Suche nach einem spezifischen LOINC-Code  
+Möchtest du alle Laborwerte abfragen, die den in unserer Studie fixierten HbA1c-Code aufweisen, filterst du über den Parameter code. Das Trennzeichen | separiert dabei das Codesystem (LOINC) vom eigentlichen Code:
+
+    ```Bash
+    curl -X GET "http://localhost:8080/fhir/Observation?code=http://loinc.org|4548-4" | jq
+    ```
+
+2. Verknüpfte Suche nach dem Patienten (Chaining / Reference Search)  
+Du kannst gezielt alle Laborwerte abfragen, die exakt zu unserem zuvor angelegten Patienten gehören, indem du über die Patienten-Referenz filterst:
+
+    ```Bash
+    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient" | jq
+    ```
+
+3. Kombination mehrerer Parameter (AND-Suche)  
+FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombinieren. Die folgende Abfrage sucht nach Observations, die sowohl zum Patienten `example-patient` gehören als auch den Status `final` besitzt und der zugehörige Messwert `>40` ist:
+
+    ```Bash
+    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final&value-quantity=gt40" | jq
+    ```
+
+    Eine Suche nach einem Messwert `<40` mit `value-quantity=lt40` würde in unserem Fall, falls keine weiteren Ressourcen hochgeladen wurden eine leeres Antwortbundle zurückliefern.
+
+##### Ressourcen löschen (FHIR-Delete)
+
+- Sollten sich Fehler in deine Testdaten eingeschlichen haben oder Du möchtest  den Server von einer Ressource bereinigen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
+
+```Bash
+curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>"
+```
+
+- Hintergrundwissen (Soft Delete):  
+Ein FHIR-Server löscht Daten in der Regel nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert.
+Wenn du versucht, diese ID danach erneut direkt via GET aufzurufen, antwortet der Server folgerichtig mit dem HTTP-Status 410 Gone. Bei einer allgemeinen Suchabfrage taucht sie standardmäßig nicht mehr auf.
+
+### Ausblick
+
+- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, repair-bundle, referenzielle Integrität)  
+- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)  
+- **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
 
 ___
-
-## ✅ Upload überprüfen
-
-Wir führen noch eine fachliche Abfrage durch, um sicherzustellen, dass die Daten sinnvoll abfragbar sind:
-
-```bash
-# Alle Condition-Einträge zu einem Patienten
-curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PATIENTEN-ID>" | jq '.total'
-
-# Alle Laborwerte eines Patienten (aus Exercise 1 bekannt)
-curl -s "http://localhost:8080/fhir/Observation?subject=Patient/<PATIENTEN-ID>&_count=5" | jq '.entry[].resource.code.coding[] | select(.system == "http://loinc.org") | {code, display}'
-```
-
-> 🏁 **Geschafft!** Du hast erfolgreich echte MII-Musterdaten (mit DIZ-Flavour) in deinen lokalen FHIR-Server geladen – inklusive der Bewältigung des "referenzielle Integrität"-Problems.  
-> Im nächsten Schritt ([Exercise 3 – Query von KDS-Daten](exercise-3.md)) wirst du lernen, wie man strukturierte Abfragen auf diese Datenbestände durchführt.
-
 ___
-___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

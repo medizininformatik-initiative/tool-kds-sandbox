@@ -1,234 +1,468 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟢 Einfaches Beispiel FHIR-Search
+# 🔵 FHIR-Profile definieren und Ressourcen generieren
 
-In [Exercise 0](exercise-0.md) haben wir eine HL7 FHIR Structure Definition ("PR_ZuckWatch_Labor_Hemo") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ()"Example-ZuckWatch-Labor-Hemo-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+**Nächste Schritte:**
 
-Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
+- Prüfe die Installation von `sushi` und `fhir` CLI-Tools
+- Erstelle dein eigenes SUSHI-Projekt mittels `SUSHI init`
+- Experimentiere mit verschiedenen FSH-Definitionen
+
+Grundsätzlich lassen sich FHIR-Profile auf verschiedene Weise spezifizieren. Generell werden Profile in interdisziplinärer Zusammenarbeit von Domänenexpert:innen aus dem medizinischen Bereich und technischen Expert:innen aus dem Datenmanagement und der Modellierung geplant, abgestimmt und umgesetzt.
+
+Dies ist auch beim MII-Kerndatensatz (KDS) der Fall. Der MII-KDS ist in Basis- und Erweiterungsmodule unterteilt und wird kontinuierlich weiterentwickelt. Während die Basismodule fachlich übergreifend definiert sind (z. B. Basis, Labor, Medikation), fokussieren sich die Erweiterungsmodule auf spezifische Anwendungs- und Fachgebiete (z. B. Intensivmedizin, Kardiologie). Weitere Informationen findest du direkt beim [MII Kerndatensatz](https://www.medizininformatik-initiative.de/de/der-kerndatensatz-der-medizininformatik-initiative).
+
+In dieser Übung nutzen wir `FHIR Shorthand` (kurz `FSH`, gesprochen "Fish"). Dies ist eine für die Spezifikation von FHIR entwickelte, domänenspezifische Auszeichnungssprache, mit der sich FHIR-Profile und -Instanzen effizient und lesbar definieren lassen. Die Festlegungen in den `.fsh`-Dateien werden anschließend vom zugehörigen Compiler `SUSHI` verarbeitet, um die finalen FHIR-Strukturdefinitionen (JSON/XML) zu generieren.
 
 📋 Übersicht:
 
-- [Docker einrichten (vorbereitend)](#docker-einrichten)
-- [Container definieren und via docker-compose starten](#container-definieren-und-starten)
-- [Ressourcen hochladen](#ressourcen-hochladen)
-- [Ressourcen abfragen](#ressourcen-abfragen)
+- [SUSHI einrichten (vorbereitend)](#-fsh-compiler-sushi-eingerichtet-npm-installation-)
+- [Ressourcen builden (praktisch; basics)](#️-ressourcen-mittels-sushi-builden-️)
+- [Anwendungsfallbeispiel (praktisch; KDS-Bezug)](#-beispielprofil-und-beispielressource-in-fsh-definieren-)
+- [IG generieren (praktisch; Visualisierung)](#-generierte-ressourcen-menschenlesbar-anzeigen-)
 
 ___
 
-## 💻 (Lokaler) FHIR-Server via Docker-Compose gestartet. 💻
+## 💻 FSH-Compiler `SUSHI` eingerichtet. (NPM-Installation) 💻
 
-Sollte Docker noch nicht auf deinem System vorhanden sein, [installiere dir die für dein Betriebssystem passende Version](https://docs.docker.com/compose/install/linux/#install-using-the-repository).
+SUSHI basiert auf Node.js. Für die Installation nutzen wir den Node Package Manager (npm).
 
-### Docker einrichten
-
-- Installation (für Ubuntu/Debian):
+- NPM und Node.js installieren (Beispiel für Linux/Debian):
 
 ```bash
-sudo apt update && sudo apt install -y docker.io docker-compose-v2
+sudo apt update && sudo apt install npm nodejs -y
 ```
 
-- Prüfe nach der Installation, ob Docker erfolgreich läuft:
+- SUSHI installieren und Installation überprüfen:
 
 ```bash
-docker --version
-docker compose version
+npm install -g fsh-sushi
+sushi -v
 ```
 
-- Standardmäßig benötigt Docker unter Ubuntu Root-Rechte:
+Für das Schreiben von FSH-Code wird ein Texteditor mit entsprechender Syntax-Unterstützung empfohlen:
+
+- Visual Studio Code (Empfehlung): Installiere dir hierzu die Extension "FHIR Shorthand" für Syntax-Highlighting, Autocomplete und Fehlererkennung in Echtzeit.
+- Alternative (CLI): nano oder vim direkt im Terminal.
+
+Um FHIR-Package für den Build-Process zu verwalten emfpiehlt sich die Installation des `Firely Terminals`:
+
+- `.NET` & `Firely Terminal` installieren
 
 ```bash
-sudo docker run hello-world
-```
+# 1. .NET installieren (lädt das Skript direkt in die Bash)
+wget -qO- https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 8.0 --runtime dotnet
 
-### Container definieren und starten
+# 2. Umgebungsvariablen automatisch am Ende der ~/.bashrc anhängen
+echo -e 'export DOTNET_ROOT=$HOME/.dotnet\nexport PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools' >> ~/.bashrc
 
-Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zum Samply/Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [Github-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker-Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten lege eine docker-compose.yml an:
+# 3. Änderungen für das aktuelle Terminal-Fenster aktivieren
+source ~/.bashrc
 
-```bash
-services:
-  blaze:
-    image: "samply/blaze:1.9.0@sha256:cba859fb460df3938792226f16ba9bde32bf8dd9edeeadffbd818bccdcce56dc"
-    environment:
-      JAVA_TOOL_OPTIONS: "-Xmx2g"
-    ports:
-    - "8080:8080"
-    volumes:
-    - "blaze-data:/app/data"
-    healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-volumes:
-  blaze-data:
-```
+# 4. Firely Terminal global installieren
+dotnet tool install -g firely.terminal
 
-- Im Ordner mit der Docker-Compose Datei lässt sich der Dienst danach wie folgt starten und der erfolgreiche Start prüfen:
-
-```bash
-# Server starten
-docker compose up -d
-
-# Status prüfen (Container Status "Up" und "(healthy)")
-docker ps
-
-# Verbindung testen (Gibt das CapabilityStatement zurück)
-curl -v http://localhost:8080/fhir/metadata
-```
-
-- Optional: Installation von `jq` bspw. via `sudo apt  install jq -y`, um mit `curl -v http://localhost:8080/fhir/metadata | jq` eine einfacher menschenlesbare Darstellung zu erhalten.
-
-- Die Anzeige der laufenden Container sollte den Blaze-FHIR-Server wie folgt auflisten:
-
-```text
-IMAGE                STATUS         PORTS
-samply/blaze:1.9.0   Up (healthy)   0.0.0.0:8080->8080/tcp
-```
-
-- Sollte der Dienst anders als erwartet verhalten, lassen sich die Docker-Logs einsehen:
-
-```bash
-docker compose logs -f -t
+# 5. Installation überprüfen
+dotnet --version
+fhir --version
 ```
 
 ___
 
-## 💻 FHIR-Server nutzen
+## 🛠️ Ressourcen mittels `SUSHI` builden 🛠️
 
-### Ressourcen hochladen
+### 🛠️ Praktische Übung
 
-Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später im Tutorial werden wir auch noch FHIR-Bundles nutzen, um mehrere Ressourcen gleichzeitig an den FHIR-Server zu übermitteln.
+Um uns der Spezifikation von Profilen und Ressourcen praktisch anzunähern, initiieren wir nun mit SUSHI ein neues FSH-Projekt und starten den Build-Process mit der erzeugten Beispiel-FSH-Datei.
 
-####  Upload Patient
+#### Erster Schritt
 
-- Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
+Wechseln in dein Arbeitsverzeichnis und starten das Projekt-Setup (bspw. mit default Werten) mittels:
 
 ```bash
-curl -X POST http://localhost:8080/fhir/Patient \
-  -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
+SUSHI init
+cd <PROJECT/FOLDER-NAME>
 ```
 
-- Antwort des Servers:
+`SUSHI` erzeugt insbesondere die `sushi-config.yaml` und `.fsh`-Definition unter `/input/fsh`.  
+Die initiierte Struktur sieht wie folgt aus:
 
-```json
-{
-  "resourceType": "Patient",
-  "id": "DHYSYTWMKTNZRTNP",
-  "meta": {
-    "versionId": "3",
-    "lastUpdated": "2026-06-29T09:45:23.426Z",
-    "profile": [
-      "http://example.org/StructureDefinition/MyPatient"
-    ]
-  },
-  "name": [
-    {
-      "family": "Pond",
-      "given": [
-        "James"
-      ]
-    }
-  ]
-}
+```bash
+.
+├── _build.bat
+├── _build.sh
+├── ig.ini
+├── input
+│   ├── fsh
+│   │   └── patient.fsh
+│   ├── ignoreWarnings.txt
+│   └── pagecontent
+│       └── index.md
+└── sushi-config.yaml
+
+4 directories, 7 files
 ```
 
-#### Upload Observation
+#### Nächster Schritt
 
-- Bevor wir die Observation hochladen, müssen wir sicherstellen, dass die referenzielle Integrität gewahrt bleibt. In unserem Fall mit der Ressource `Patient` und einer Ressource `Observation` ist für die Verknüpfung das Element `subject` der Observation-Ressource, welches auf eine Patienten-Ressource verweist, relevant.
+Im Projektverzeichnis die bereits existierende Beispieldatei `patient.fsh` builden mittels:
 
-- Da der Server bei einem POST-Request IDs zufällig generiert (z. B. "DHYSYTWMKTNZRTNP"), würde unsere Observation keine gültige Zuordnung haben, wenn sie hart auf `subject`:`Patient/example-patient` referenziert.
-
-##### Feste IDs via HTTP PUT erzwingen
-
-- Um dieses Problem zu lösen, nutzen wir anstelle von `POST` die HTTP-Methode `PUT`. Damit bestimmen wir die ID der Ressource direkt beim Upload selbst.
-
-##### Patient mit selbst festgelegter ID hochladen (`HTTP PUT`):
-- Hierbei übergeben wir die ID "example-patient" direkt am Ende der Endpunkt-URL.
-
-```Bash
-curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
-  -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
+```bash
+sushi
 ```
 
-##### Observation hochladen (PUT):
-- Da unsere in Exercise 0 definierte Observation (`EXA_ZuckWatch_Labor_Hemo.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten. Wir laden nun auch die Observation (mit einer festen ID) via PUT hoch:
+Im dadurch gestarteten Build-Process löst `SUSHI` Abhängigkeiten auf, lädt notwendige Packages und generiert die FHIR Strukturdefinitionen (JSON). Die generierten Dateien sind im Ordner fsh-generated zu finden. Dies sieht wie folgt aus:
 
-```Bash
-curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
-  -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
+```bash
+.
+├── _build.bat
+├── _build.sh
+├── fsh-generated
+│   ├── data
+│   │   └── fsh-index.json
+│   ├── fsh-index.txt
+│   ├── includes
+│   │   ├── fsh-link-references.md
+│   │   └── menu.xml
+│   └── resources
+│       ├── ImplementationGuide-fhir.example.json
+│       ├── Patient-PatientExample.json
+│       └── StructureDefinition-MyPatient.json
+├── ig.ini
+├── input
+│   ├── fsh
+│   │   └── patient.fsh
+│   ├── ignoreWarnings.txt
+│   └── pagecontent
+│       └── index.md
+└── sushi-config.yaml
+
+8 directories, 14 files
 ```
 
-<h3>💡 Merkregel für FHIR-Server:</h3>
+Die im Ordner `fsh-generated/resources` auffindbaren JSON-Dateien sind gültige FHIR-Ressourcen passend zu den Definitionen in `/input/fsh/patient.fsh`. Diese sehen wie folgt aus:
 
-    > POST: Der Server generiert eine zufällige ID (z. B. /fhir/Patient/DHYSYTWMKTNZRTNP).
+```bash
+// This is a simple example of a FSH file.
+// This file can be renamed, and additional FSH files can be added.
+// SUSHI will look for definitions in any file using the .fsh ending.
+Profile: MyPatient
+Parent: Patient
+Description: "An example profile of the Patient resource."
+* name 1..* MS
 
-    > PUT: Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. /fhir/Patient/<EIGENE_ID>).
-
-#### Ressourcen abfragen
-- Zur Abfrage von Ressourcen wird ein "FHIR-Search-String" als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
-
-##### Beispielabfrage via HTTP-REST
-- Um zu überprüfen, welche Patienten aktuell auf dem Server existieren, nutzen wir einen standardmäßigen GET-Request auf den Ressourcen-Endpunkt:
-
-```Bash
-curl -X GET "http://localhost:8080/fhir/Patient" | jq
+Instance: PatientExample
+InstanceOf: MyPatient
+Description: "An example of a patient with a license to krill."
+* name
+  * given[0] = "James"
+  * family = "Pond"
 ```
 
-<h3> 💡 Merkregel für FHIR-Server:</h3>
+Eine Übersicht über die Syntax von `FHIR-Shorthand` ist durch HL7 veröffentlicht:  
+[HL7 FHIR Shorthand Overview](https://hl7.org/fhir/uv/shorthand/overview.html).
 
-    > FHIR-Server antworten bei Suchabfragen immer mit eine Container-Ressource vom Typ Bundle (mit dem Attribut `type`: `searchset`).
+Die KDS-Module sind aktuell mit `FHIR-Shorthand` umgesetzt und öffentlich auf GitHub einsehbar:  
+[MII KDS repositories auf GitHub](https://github.com/orgs/medizininformatik-initiative/repositories?q=kerndatensatz).
 
-    > Das Feld `total` verrät dir sofort die Anzahl der gefundenen Ressourcen.
+___
 
-    > Die eigentlichen Patientendaten liegen verschachtelt im Array "entry".
+## 💻 Beispielprofil und Beispielressource in `fsh` definieren 💻
 
-##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
-- FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Due kann die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
+Wir werden nun ein eigenes Profil definieren, das von einem bestehenden MII-Basisprofil erbt, dieses für den Kontext einer fiktiven klinischen Studie sinnvoll einschränken und abschließend eine passende Beispielressource (Example-Instanz) dazu bauen.
 
-1. Suche nach einem spezifischen LOINC-Code  
-Möchtest du alle Laborwerte abfragen, die den in unserer Studie fixierten HbA1c-Code aufweisen, filterst du über den Parameter code. Das Trennzeichen | separiert dabei das Codesystem (LOINC) vom eigentlichen Code:
+### 📖 Anwendungsfallbeispiel Studie "ZuckerWatch-2026" (Typ-2-Diabetes-Monitoring )
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?code=http://loinc.org|4548-4" | jq
-    ```
+Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) extrem homogen zu modellieren.
 
-2. Verknüpfte Suche nach dem Patienten (Chaining / Reference Search)  
-Du kannst gezielt alle Laborwerte abfragen, die exakt zu unserem zuvor angelegten Patienten gehören, indem du über die Patienten-Referenz filterst:
+Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehalten, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver einschränken, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient" | jq
-    ```
+1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
 
-3. Kombination mehrerer Parameter (AND-Suche)  
-FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombinieren. Die folgende Abfrage sucht nach Observations, die sowohl zum Patienten `example-patient` gehören als auch den Status `final` besitzt und der zugehörige Messwert `>40` ist:
+2. Einheitliche Metrik: Um Berechnungsfehler in der Auswertung zu vermeiden, darf der Laborwert ausschließlich in der UCUM-Einheit mmol/mol angegeben werden (andere Einheiten wie % werden für diese Studie ausgeschlossen).
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final&value-quantity=gt40" | jq
-    ```
+3. Verpflichtende Werte: Der eigentliche Messwert (valueQuantity.value) muss zwingend angegeben sein (Must Support und Kardinalität 1..1).
 
-    Eine Suche nach einem Messwert `<40` mit `value-quantity=lt40` würde in unserem Fall, falls keine weiteren Ressourcen hochgeladen wurden eine leeres Antwortbundle zurückliefern.
+#### 🛠️ Praktische Übung 2
 
-##### Ressourcen löschen (FHIR-Delete)
-- Sollten sich Fehler in deine Testdaten eingeschlichen haben oder Du möchtest  den Server von einer Ressource bereinigen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
+Gehe nun wie folgt vor, um das Studienprofil und eine dazugehörige Patientendaten-Instanz zu erstellen:
 
-```Bash
-curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>"
+##### Abhängigkeit in sushi-config.yaml eintragen
+
+Öffne die `sushi-config.yaml` und füge unter `dependencies:` das Laborbefund-Modul der MII hinzu, damit SUSHI die Eltern-Strukturdefinitionen auflösen kann:
+
+```bash
+dependencies:
+  de.medizininformatikinitiative.kerndatensatz.laborbefund: 2026.0.0
 ```
 
-- Hintergrundwissen (Soft Delete):  
-Ein FHIR-Server löscht Daten in der Regel nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert.
-Wenn du versucht, diese ID danach erneut direkt via GET aufzurufen, antwortet der Server folgerichtig mit dem HTTP-Status 410 Gone. Bei einer allgemeinen Suchabfrage taucht sie standardmäßig nicht mehr auf.
+❗Aktuelle Versionen des KDS findest du in der ["Übersicht über Versionen der Kerndatensatz-Module"](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Übersicht-über-Versionen-der-Kerndatensatz‐Module).
+
+##### Verschiedene Ressourcen im Projekt strukturieren
+
+`SUSHI` verwendet alle `.fsh`-Dateien im Ordner `/input/fsh` für die Generierung. Die Dateien lassen sich daher flexibel strukturiert ablegen. Für unser Beispiel verwenden wir die Unterordner "profiles" und "examples".
+
+##### Studienprofil anlegen
+
+`input/fsh/profiles/PR_ZuckWatch_Labor_Hemo.fsh`
+
+❗ Im Kontext MII KDS sollten die [Namenskonventionen für FHIR-Ressourcen in der MII](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Namenskonventionen-für-FHIR‐Ressourcen-in-der-MII) berücksichtigt werden.
+
+Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_ZuckWatch_Labor_Hemo.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must support) um.
+
+Neues Profil mit entsprechenden Einschränkungen in `.fsh`-Datei definieren:
+
+```bash
+Profile: PR_ZuckWatch_Labor_Hemo
+Parent: MII_PR_Labor_Laboruntersuchung
+Id: pr-zuckwatch-labor-hemo
+Title: "ZuckerWatch 2026 - HbA1c Laboruntersuchung"
+Description: "Spezifisches Profil für die ZuckerWatch-2026 Studie zur Erfassung des HbA1c-Wertes. Erbt vom MII-Kerndatensatz Modul Labor."
+
+// 1. Fixierung auf den LOINC-Code 4548-4 und die LOINC Version 2.82.0
+* code.coding[loinc] 1..1
+* code.coding[loinc].version = "2.82.0"
+* code.coding[loinc].code = #4548-4
+* code.coding[loinc].display = "Hemoglobin A1c/Hemoglobin.total in Blood"
+
+// 2. Verpflichtender Messwert (Kardinalität 1..1 und Must Support)
+* valueQuantity 1..1 MS
+* valueQuantity.value 1..1 MS
+
+// 3. Einheitliche Metrik: Fixierung auf UCUM-Einheit mmol/mol
+* valueQuantity.system = "http://unitsofmeasure.org"
+* valueQuantity.code = #mmol/mol
+* valueQuantity.unit = "mmol/mol"
+```
+
+Unser Ordner sieht damit wie folgt aus:
+
+```bash
+./input/fsh/
+├── examples
+├── patient.fsh
+└── profiles
+    └── PR_ZuckWatch_Labor_Hemo.fsh
+
+3 directories, 2 files
+```
+
+##### 🛠️ Valide Beispielressource (Instanz) schreiben
+
+`input/fsh/examples/EXA_ZuckWatch_Labor_Hemo.fsh`
+
+Schreibe in einer separaten `.fsh`-Datei eine Instance eines fiktiven Patienten-Messwerts. Nutze als `InstanceOf` das neu erstellte Studienprofil `PR_ZuckWatch_Labor_Hemo` und befülle es mit einem realistischen Testwert (z. B. 48 mmol/mol).
+
+Definition der Instance unseres "PR_ZuckWatch_Labor_Hemo"-Profils:
+
+```bash
+Instance: Example-ZuckWatch-Labor-Hemo-01
+InstanceOf: PR_ZuckWatch_Labor_Hemo
+Title: "Beispiel-Instanz für HbA1c Laboruntersuchung"
+Description: "Ein konkretes Datenbeispiel (Instance) für die ZuckerWatch-2026 Studie, das die Kriterien des Profils erfüllt."
+Usage: #example
+
+// Vom MII-Laboruntersuchungs-Basisprofil geforderte Pflichtfelder
+* identifier[analyseBefundCode].type.coding[observationInstanceV2].system = "http://terminology.hl7.org/CodeSystem/v2-0203"
+* identifier[analyseBefundCode].type.coding[observationInstanceV2].code = #OBI
+* identifier[analyseBefundCode].type.text = "Analyse Befund Code"
+
+* identifier[analyseBefundCode].system = "http://www.acme.com/identifiers/patient"
+* identifier[analyseBefundCode].value = "LAB-2026-98765"
+
+* identifier[analyseBefundCode].assigner.reference = "Organization/beispiel-labor"
+* identifier[analyseBefundCode].assigner.display = "Zentrallabor Universitätsmedizin"
+
+* status = #final
+
+* category.coding[loinc-observation] = http://loinc.org#26436-6 "Laboratory studies (set)"
+* category.coding[observation-category] = http://terminology.hl7.org/CodeSystem/observation-category#laboratory "Laboratory"
+
+* subject = Reference(Patient/example-patient) // Verweis auf unsere (fiktive) Beispiel-Patienten-Instance
+
+* issued = "2026-06-13T16:35:00+02:00"
+
+* effectiveDateTime = 2026-06-17
+* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.system = "https://www.medizininformatik-initiative.de/fhir/core/modul-labor/CodeSystem/QuelleKlinischesBezugsdatum"
+* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.code = #Probenentnahme
+* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.display = "Datum der Probenentnahme"
+
+// 1. Dein fixierter LOINC-Code (wird hier exakt belegt)
+* code.coding[0].version = "2.82.0"
+* code.coding[0].system = "http://loinc.org"
+* code.coding[0].code = #4548-4
+* code.coding[0].display = "Hemoglobin A1c/Hemoglobin.total in Blood"
+
+// 2. Der konkrete Messwert (als Quantity)
+* valueQuantity.value = 42.5
+
+// 3. Die fixierte UCUM-Einheit
+* valueQuantity.system = "http://unitsofmeasure.org"
+* valueQuantity.code = #mmol/mol
+* valueQuantity.unit = "mmol/mol"
+```
+
+Unser Ordner sieht damit wie folgt aus:
+
+```bash
+./input/fsh/
+├── examples
+│   └── EXA_ZuckWatch_Labor_Hemo.fsh
+├── patient.fsh
+└── profiles
+    └── PR_ZuckWatch_Labor_Hemo.fsh
+
+3 directories, 3 files
+```
+
+###### ⚠️ Häufiger Fehler beim folgenden Build-Process - Missing Snapshot
+
+**Hintergrund:**
+
+- **FHIR Packages** sind komprimierte Module (wie npm-Pakete), die FHIR-Ressourcen (Profiles, Extensions, ValueSets) für ein bestimmtes Projekt oder einen Leitfaden bündeln.
+- Ein **Snapshot** ist die vollständig ausformulierte, berechnete Version eines FHIR-Profils. Er enthält alle vererbten Elemente der Basis-Ressource. Fehlt der Snapshot, enthält das Profil nur die Abweichungen (das sogenannte *Differential*).
+
+**Das Problem:** Tools wie **SUSHI** benötigen zwingend die vollständigen Snapshots der Paket-Abhängigkeiten, um deine Ressourcen korrekt zu validieren und zu generieren. Wenn ein Paket (z. B. durch automatische Downloads anderer Tools) ohne Snapshots in deinem lokalen FHIR-Cache (`~/.fhir/packages/`) landet, bricht SUSHI mit Fehlermeldungen ab.
+
+Mit den folgenden Varianten erzwingst du das Herunterladen und Generieren bei fehlenden Snapshots:
+
+Variante 1 - Lokale FHIR-Packages verwalten:
+
+```bash
+# 1. Das von SUSHI installierte Package ohne Snapshots löschen
+rm -r ~/.fhir/packages/de.medizininformatikinitiative.kerndatensatz.laborbefund#2026.0.0
+
+# 2. Das Package frisch installieren
+fhir install de.medizininformatikinitiative.kerndatensatz.laborbefund@2026.0.0
+
+# 3. Falls nicht bereits bei der Installation inflated, das Package inflaten und dabei Snapshots generieren lassen
+fhir inflate --package de.medizininformatikinitiative.kerndatensatz.laborbefund@2026.0.0 --snapshot --expand --force
+
+# 4. Mit Sushi erfolgreich Ressourcen generieren
+sushi .
+```
+
+Variante 2 - Package (mit Snapshots) manuell hinterlegen:
+
+Unter `~/.fhir/packages/` das vorhandene Package löschen. Manuell bspw. auf Simplifier das Package (mit Snapshots) herunterladen und in `~/.fhir/packages/` in den zugehörigen Ordner entpacken.
+
+##### ✅ Generierung und Überprüfung
+
+Führe nun abschließend `SUSHI` im Hauptverzeichnis aus. Kontrolliere im Terminal, ob der Build fehlerfrei durchläuft, und prüfe im Ordner `fsh-generated/resources/`, ob die neuen JSON-Strukturdefinitionen erfolgreich erzeugt wurden.
+
+```bash
+sushi .
+```
+
+Die Rückmeldung von `SUSHI` sollte nun wie folgt aussehen (Wortwitz des Compilers kann abweichen):  
+
+```bash
+╔════════════════════════ SUSHI RESULTS ══════════════════════════╗
+║ ╭───────────────┬──────────────┬──────────────┬───────────────╮ ║
+║ │    Profiles   │  Extensions  │   Logicals   │   Resources   │ ║
+║ ├───────────────┼──────────────┼──────────────┼───────────────┤ ║
+║ │       2       │      0       │      0       │       0       │ ║
+║ ╰───────────────┴──────────────┴──────────────┴───────────────╯ ║
+║ ╭────────────────────┬───────────────────┬────────────────────╮ ║
+║ │      ValueSets     │    CodeSystems    │     Instances      │ ║
+║ ├────────────────────┼───────────────────┼────────────────────┤ ║
+║ │         0          │         0         │         2          │ ║
+║ ╰────────────────────┴───────────────────┴────────────────────╯ ║
+║                                                                 ║
+╠═════════════════════════════════════════════════════════════════╣
+║ That went swimmingly!                  0 Errors      0 Warnings ║
+╚═════════════════════════════════════════════════════════════════╝
+```
+
+## 🏁 Generierte Ressourcen menschenlesbar anzeigen 🏁
+
+**Hintergrund:** FHIR-Ressourcen und Implementation Guides (IGs) liegen im Quellcode als reine JSON-, XML- oder FSH-Dateien vor. Für das menschliche Auge – und insbesondere für die spätere Abstimmung mit medizinischem Fachpersonal oder Entwicklern – sind diese Textwüsten schwer lesbar.
+
+Um Profile, ValueSets und Leitfäden in eine strukturierte, interaktive HTML-Ansicht mit Baumstrukturen (ähnlich wie auf Simplifier oder in den offiziellen HL7-Spezifikationen) zu verwandeln, müssen die Daten gerendert werden.
+
+Je nachdem, ob du lokal die vollständige Dokumentation bauen oder nur schnell ein einzelnes Profil prüfen möchtest, stehen dir dafür verschiedene Wege zur Verfügung:
+
+### 💻  Methode 1: Den Publisher mit `Java` ausführen
+
+- Lade die aktuellste Version des `FHIR IG Publishers` herunter und platziere sie einfach auch in deinem SUSHI-Projektordner:
+
+```bash
+curl -L https://github.com/HL7/fhir-ig-publisher/releases/latest/download/publisher.jar -o org.hl7.fhir.publisher.jar
+```
+
+Hier eine Übersicht über die relevanten Dateien:
+
+```bash
+mein-sushi-projekt/
+├── input/
+│   └── fsh/                # Nur deine .fsh-Dateien
+├── ig.ini                  # Konfigurationsdatei für den Publisher
+├── sushi-config.yaml       # Hier steuert SUSHI die Seiten
+└── org.hl7.fhir.publisher.jar
+```
+
+- Starte den Build-Prozess mit Java:
+
+```bash
+java -jar org.hl7.fhir.publisher.jar -ig ig.ini -clean
+```
+
+**Ergebnis:** Der Publisher lädt die nötigen Abhängigkeiten herunter und generiert einen Ordner namens output/. Darin findest du die fertigen HTML-Dateien (inklusive index.html), die du einfach im Browser betrachten und navigieren kannst.
+
+🔍 Der erzeugte Implementation Guide (IG) kann bspw. über `ExampleIG/output/en/StructureDefinition-pr-zuckwatch-labor-hemo.html` im Browser geöffnet und die definierten Ressourcen in übersichtlicher Darstellung, wie aus Quellen von HL7 oder Simplifier gewohnt, betrachtet und die verschiedenen Ressourcen über Verlinkungen navigiert werden.
+
+Je nach Umfang an zu verarbeitetenden Dateien oder verwendeten Codierungen dauert das IG builden ungefähr 10 Minuten (bei komplexeren Projekten evtl. mehrere Stunden).
+
+Der `FHIR IG Publisher` basiert auf `Java` und nutzt im Hintergrund den statischen Webseiten-Generator `Jekyll` (basierend auf der Programmiersprache Ruby). Ohne `Jekyll` kann der Publisher die HTML-Seiten nicht final rendern. Solltest du `Java` & `Jekyll` noch nicht installiert haben, hier eine kurze Installationsanleitung:
+
+```bash
+# 1. Java installieren für Ubuntu / Debian (WSL)
+sudo apt update && sudo apt install default-jre default-jdk -y
+
+# 2. Jekyll installieren für Ubuntu / Debian (WSL)
+sudo apt update && sudo apt install jekyll -y
+
+# Überprüfung der Installation (erfordert mindestens Java 11 oder höher)
+java -version
+jekyll -v
+```
+
+### 🧩 Alternative "Simplifier.net"
+
+Wenn du deine Profile und die IG online verwalten und als HTML darstellen möchtest:
+
+- Erstelle einen kostenlosen Account auf Simplifier.net.
+- Erstelle ein neues Projekt und lade deine ImplementationGuide-JSON sowie die dazugehörigen Ressourcen (wie das Profil `StructureDefinition/MyPatient`) hoch.
+
+`Simplifier` generiert automatisch eine Online-Oberfläche, in der du deine IG direkt im Browser als strukturierte HTML-Ansicht betrachten und teilen kannst.
+
+### 🧩 Methode 3: Schnelle Vorschau via Online-Tools (FHIR Toolbox || FSH School)
+
+Wenn du keine lokale `Java`-Umgebung einrichten willst und nur schnell sehen möchtest, wie das Ganze als Baumstruktur aussieht, kannst du Online-Tools aus dem FHIR-Ökosystem nutzen:
+
+- Schau auf [FHIR Toolbox](https://fhirtoolbox.com/visualizer) vorbei.
+- Schau auf [FSH School / SUSHI Online Compiler](https://fshonline.fshschool.org/#/) vorbei.
+
+❗Die `FHIRToolbox` bietet noch weitere praktische Werkzeuge zum Arbeiten mit FHIR und entwickeln rund um FHIR.
+
+## 🔍 Weiterführende Materialien 🔍
+
+Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR Profilen und Ressourcen eingerichtet.
+
+Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
+
+### Ausblick
+
+- **Ex2:** Einfaches Beispiel FHIR-Search (lokal, Ressourcen uploaden, Search)  
+- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, repair-bundle)  
+- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
