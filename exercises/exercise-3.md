@@ -6,6 +6,14 @@ ___
 
 # 🟠 Query von KDS-Daten
 
+**Nächste Schritte:**  
+
+- Teste die Abfragen lokal (Blaze muss laufen!)
+- Ersetze nachfolgend `PATIENT_ID` mit einer ID aus Deiner Datenbasis  
+- Erweitere die Abfragen um weitere Filter oder Ressourcen
+
+___
+
 ## Einführung & Kontext
 
 In [Exercise 2](exercise-2.md) haben wir die **Musterdatenspende der DIZe** (UKSH-Standort) in einen lokalen FHIR-Server (Blaze) geladen — ca. 8.400 Ressourcen mit den „DIZ-Flavours“ der Universitätskliniken (UKHD, UKSH, UKW).
@@ -17,12 +25,13 @@ In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durch
 
 > 💡 **Ausblick: TORCH & DIMP/DUP**  
 > Für komplexe Datenanforderungen (z. B. cohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
+>
 > - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH nutzt **CRTDL** (Clinical Resource Transfer Definition Language) und kann entweder CQL oder FLARE für die Kohorten definition verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
 > - **DIMP/DUP-Pipeline (aether-orchestriert)**: Die Infrastruktur zur automatisierten Datenbereitstellung und -pseudonymisierung für Forschungsprojekte. DIMP (Datenintegrations- und Musterspeicherpipeline) und DUP (Datenauslesepipeline) werden über die aether-Orchestrierung gesteuert — typischerweise im Hintergrund für Exportanfragen aktiv.
 >
 > Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um Projekt-basierte, auditierbare Extraktionsketten.
 
----
+___
 
 📋 **Übersicht:**
 
@@ -31,11 +40,11 @@ In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durch
 - [Skriptbasierter Ausblick (R/Python)](#-skriptbasierter-ausblick-rpython)
 - [Zusammenfassung & Merkregeln](#-zusammenfassung--merkregeln)
 
----
+___
 
 ## 💻 FHIR-Search auf KDS-Profilen
 
-FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( ` _count`, `_sort`, `_summary`, ` _contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
+FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( `_count`, `_sort`, `_summary`, `_contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
 
 > ⚠️ **Voraussetzung:** Blaze läuft noch auf `http://localhost:8080` (aus [Exercise 1/2](exercise-2.md#daten-in-blase-hochladen)). Sollte er nicht mehr laufen: `docker compose up -d` im Blaze-Verzeichnis.
 
@@ -60,14 +69,14 @@ Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
 | `DiagnosticReport` | Befunde | `code`, `result`, `subject` |
 | `Procedure` | Eingriffe | `code`, `performedPeriod`, `subject` |
 
----
+___
 
 ### 1.2 Standard-Search-Parameter
 
 #### **Hintergrund:** FHIR-Search-Parameter
 
 | Parameter | Funktion | Beispiel |
-|-----------|----------|----------|
+| --------- | -------- | -------- |
 | `_id` | Nach ID filtern | `/Patient?_id=abc123` |
 | `_count` | Seite begrenzen | `/Patient?_count=5` (erste 5 Einträge) |
 | `_summary` | Response reduzieren | `/Patient?_summary=true` (nur `id`, `resourceType`, `meta`) |
@@ -76,7 +85,7 @@ Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
 | `code` | Coding-Filter | `/Observation?code=http://loinc.org\|4548-4` |
 | `subject` | Referenz-Filter | `/Observation?subject=Patient/xyz` |
 
----
+___
 
 #### Praktische Übung: Basis-Abfragen
 
@@ -97,7 +106,7 @@ curl -s "http://localhost:8080/fhir/Patient?_count=5&_offset=5" | jq '.total, .e
 
 > 💡 **Merke:** FHIR-Server antworten immer mit einem `Bundle` vom Typ `searchset`. `total` zeigt die Gesamtanzahl an, `entry` enthält die aktuellen Ressourcen für diese „Seite“.
 
----
+___
 
 ##### **Abfrage 2: Observation mit LOINC-Code (HbA1c)**
 
@@ -117,11 +126,12 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_c
 ```
 
 > 💡 **KDS-Hinweis:** Im KDS-Labor-Modul ist dieses Profil definiert. Falls der Server die Profile importiert hat, kannst Du zusätzlich filtern:
+>
 > ```bash
 > curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&code=http://loinc.org\|4548-4"
 > ```
 
----
+___
 
 ##### **Abfrage 3: Verknüpfte Suche (Chaining)**
 
@@ -137,7 +147,7 @@ echo "Gefundene Patient-ID: $PATIENT_ID"
 curl -s "http://localhost:8080/fhir/Observation?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {code: .code.coding[0].display, value: .valueQuantity.value, unit: .valueQuantity.unit}'
 ```
 
----
+___
 
 ##### **Abfrage 4: AND-Suche (Kombination)**
 
@@ -150,7 +160,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&va
 
 > 💡 **Merke:** Kombinierte Parameter werden als **AND** verknüpft. Ein `OR` erfordert komplexe `_filter`-Ausdrücke (nicht in dieser Übung).
 
----
+___
 
 ##### **Abfrage 5: Sortierung & Limit**
 
@@ -161,7 +171,7 @@ Laborwerte nach Datum sortieren (`issued` oder `effectiveDateTime`):
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_sort=-issued&_count=10" | jq '.entry[].resource | {date: .effectiveDateTime, value: .valueQuantity.value}'
 ```
 
----
+___
 
 ### 1.3 Suche auf KDS-Profilen (Ausblick)
 
@@ -174,7 +184,7 @@ curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/Structur
 
 > ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat. In einer echten DIZ-Umgebung wäre dies der Fall.
 
----
+___
 
 ## 💻 Fachliche Beispieldaten-Abfragen
 
@@ -214,7 +224,7 @@ for resource in Patient Observation Condition Encounter DiagnosticReport Procedu
 done
 ```
 
----
+___
 
 ## 💻 Skriptbasierter Ausblick (R/Python)
 
@@ -275,6 +285,7 @@ print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.un
 ```
 
 > 💡 **Warum Skripte?**  
+>
 > - Automatisierung (tägliche exports, Cronjobs)  
 > - Komplexität (mehrere Filterschritte, Aggregationen)  
 > - Statistik (ggf. in R/Python direkt weiterarbeiten)  
@@ -282,20 +293,20 @@ print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.un
 
 > ⚠️ **Hinweis:** Skript-Abfragen erfordern keine Authentifizierung, wenn Blaze ungeschützt läuft. In Live-DIZ muß OAuth/Certs eingerichtet werden (nicht in dieser Übung).
 
----
+___
 
 ## 🏁 Zusammenfassung & Merkregeln
 
 ### Warum FHIR-Search?
 
 > ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
+> ✅ **Standort-unabhängig** — Alle DIZ exportieren über die gleiche API  
 > ✅ **Flexibel** — Kombiniere Filter, Pagination, Sortierung  
-> ✅ **Standort-unabhängig** — DIZ-intern und exportiert gleiches API  
 
 ### Wichtigste Parameter im Alltag
 
 | Situation | Parameter | Beispiel |
-|-----------|-----------|----------|
+| --------- | --------- | -------- |
 | **ID-Suche** | `_id` | `/Patient?_id=abc123` |
 | **Code-Suche** | `code` | `/Observation?code=http://loinc.org\|4548-4` |
 | **Referenz-Suche** | `subject` | `/Observation?subject=Patient/xyz` |
@@ -310,13 +321,6 @@ print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.un
 - **Ex4:** Terminologien laden (bfarm, SNOMED), lokal verfügbar machen  
 - **Ex5:** MII FHIR Validator — Profile/Ressourcen checken  
 - **Ex6:** Validierungsreport interpretieren  
-
----
-
-**Nächste Schritte:**  
-- Teste die Abfragen lokal (Blaze muss laufen!)  
-- Ersetze `PATIENT_ID` mit einer echten ID aus Deiner Datenbasis  
-- Erweitere die Abfragen um weitere Filter oder Ressourcen
 
 ___
 ___
