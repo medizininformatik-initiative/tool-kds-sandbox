@@ -15,9 +15,9 @@ Anders als die rein technischen Testdaten enthalten sie die **unterschiedlichen 
 📋 **Übersicht:**
 
 - [Musterdatenspende klonen & entpacken](#-musterdatenspende-klonen--entpacken)
-- [Transaction-Bundle bauen](#-transaction-bundle-bauen)
+- [Transaction-Bundle bauen](#transaction-bundle-bauen)
 - [Referenzielle Integrität prüfen](#-referenzielle-integrität-prüfen)
-- [Bundle reparieren](#-bundle-reparieren)
+- [Bundle reparieren](#bundle-reparieren)
 - [Daten in Blaze hochladen](#-daten-in-blaze-hochladen)
 - [Upload überprüfen](#-upload-überprüfen)
 
@@ -28,7 +28,7 @@ ___
 ### 📖 Hintergrund: Musterdaten vs. Testdaten
 
 | | Musterdaten (Musterdatenspende) | Testdaten (MII-Testdaten) |
-|---|---|---|
+| - | ----------------------------- | ------------------------- |
 | **Quelle** | DIZe (UKHD, UKSH, UKW) | Technisch generiert |
 | **Zweck** | Realistische Anwendungsfälle, verteilte Analysen | Struktur- und Semantiktests |
 | **DIZ-Flavour** | ✅ Ja – zeigt Heterogenität | Nein |
@@ -69,7 +69,7 @@ ls UKSH-2025-11-11/ | wc -l
 
 ___
 
-## 🛠️ Transaction-Bundle bauen
+## <a id="transaction-bundle-bauen"></a>🛠️ Transaction-Bundle bauen
 
 Das Musterdatenspende-Repo enthält im Ordner `bin/` drei Hilfsskripte.  
 Das Skript `merge-bundles.sh` wandelt die einzelnen Searchset-Bundles in ein einziges **Transaction-Bundle** um – genau das, was Blaze (und andere FHIR-Server) für den Bulk-Import erwarten.
@@ -78,7 +78,7 @@ Das Skript `merge-bundles.sh` wandelt die einzelnen Searchset-Bundles in ein ein
 bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
 ```
 
-### ✅ Zwischenkontrolle
+### ✅ Zwischenkontrolle Bundle-Erzeugung
 
 Prüfe die Größe des erzeugten Bundles:
 
@@ -133,6 +133,7 @@ bash bin/unresolved-references.sh transaction-bundle.json
 ```
 
 💡 **Erwartetes Ergebnis (UKSH):** Es werden ca. **44 fehlende Referenzen** angezeigt:
+
 - **33 Locations** – klinische Stationen wie `ITSG-HIGHMEDSTAT`, `KINA`, `LCHIR` etc.
 - **10 Encounter** – Behandlungsfälle (z. B. `PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385`)
 - **1 Encounter ohne zugehörigen Patienten** – Die Encounter-Dummy-Ressource verweist auf `Patient/dummy` (eine Platzhalter-ID)
@@ -142,7 +143,7 @@ bash bin/unresolved-references.sh transaction-bundle.json
 
 ___
 
-## 🛠️ Bundle reparieren
+## <a id="bundle-reparieren"></a>🛠️ Bundle reparieren
 
 ### 📖 Zwei Wege zum Ziel
 
@@ -175,6 +176,7 @@ bash tmp-solution_exercise-2/repair-bundle.sh path/to/transaction-bundle.json \
 
 > 💡 **Was passiert genau?**  
 > Für eine fehlende Location `ITSG-HIGHMEDSTAT` wird folgende minimale Ressource generiert:
+>
 > ```json
 > {
 >   "resourceType": "Location",
@@ -183,6 +185,7 @@ bash tmp-solution_exercise-2/repair-bundle.sh path/to/transaction-bundle.json \
 >   "status": "active"
 > }
 > ```
+>
 > Für fehlende Encounter wird eine minimale Encounter-Ressource mit `status: finished` und Klassifizierung `AMB` (ambulant) erzeugt. Die Encounter-Referenzen auf `Patient/dummy` bleiben bestehen – das ist bewusst so, weil die Originaldaten keinen konkreten Patienten für diese Fälle ausweisen.
 
 Das Skript gibt außerdem eine Statistik aus:
@@ -225,7 +228,7 @@ Der Import von ca. 8.400 Ressourcen dauert einige Sekunden. Blaze antwortet mit 
 
 > ⚠️ **Hinweis:** Bei sehr großen Bundles kann Blaze mit einem `413 Payload Too Large` antworten. In dem Fall musst du das Bundle in kleineren Teilen hochladen. Für die UKSH-Daten (ca. 12 MB) sollte es problemlos funktionieren.
 
-### ✅ Zwischenkontrolle
+### ✅ Zwischenkontrolle des Uploads
 
 Prüfe, ob der Server die Daten angenommen hat:
 
@@ -243,7 +246,7 @@ curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
 💡 **Erwartetes Ergebnis (für UKSH):**
 
 | Ressource | Erwartete Anzahl |
-|---|---|
+| --------- | ---------------- |
 | `Patient` | 272 |
 | `Observation` | ~3.537 |
 | `Location` | ~96 (63 originale + 33 Dummy-Locations) |
