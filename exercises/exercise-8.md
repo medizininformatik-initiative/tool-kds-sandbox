@@ -34,8 +34,8 @@ ___
 
 ### 1.1 Terminologieserver
 
-| Server | Vorteile |  Einsatz |
-| ------ | -------- | -------- |
+| Server | Vorteile | Einsatz |
+| ------ | -------- | ------- |
 | **Blaze TermServ** (MII-Standard) | Einfach, integriert mit Blaze, Open Source | DIZ-Standard |
 | **HAPI FHIR** | Reife Implementation, viele Features, großes Community | Alt-DIZ, migrierte Systeme |
 | **SMART on FHIR** | App-Plattform | Apps, externe Integration |
@@ -101,7 +101,7 @@ ___
 ### 2.3 Praxis-Tipps
 
 | Praxis-Problem | Lösung |
-|--------------- | ------ |
+| -------------- | ------ |
 | **Mehrere Versionen parallel** | Verwende `code.version` in allen Ressourcen |
 | **Versions-Migration** | Update-Skripte (z. B. `4548-4\|2.81.0` → `4548-4\|2.82.0`) |
 | **Validierung mit alter Version** | Validator mit `?version=2.81.0` aufrufen (falls supported) |
@@ -115,7 +115,7 @@ ___
 ### 3.1 Codesystem-Lizenzen im Überblick
 
 | Codesystem | Lizenz | Kosten | Download |
-|------------|--------|--------|----------|
+| ---------- | ------ | ------ | -------- |
 | **LOINC** | Apache 2.0 (ab 2025) | Kostenlos | [loinc.org](https://loinc.org) |
 | **SNOMED-CT** | SNOMED International License | Kosten (Country License) | [snomed.org](https://snomed.org) |
 | **ICD-10-GM** | public domain (BFarm) | Kostenlos | [terminologien.bfarm.de](https://terminologien.bfarm.de) |
@@ -159,7 +159,7 @@ ___
 ### 4.2 Konkrete Ideen für weitere Übungen
 
 #### **Exercise 8: Pseudonymisierung von FHIR-Daten**
- 
+
 - MII FHIR-Pseudonymizer
 
 #### **Exercise 9: Analyse mit externen Skripten**

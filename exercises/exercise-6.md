@@ -61,7 +61,7 @@ ___
 Ein Validierungsbericht enthält typischerweise:
 
 | Feld | Inhalt |
-|------|--------|
+| ---- | ------ |
 | **severity** | `error` / `warning` / `information` / `fatal` |
 | **code** | `invalid` / `structure` / `required` / `binding` |
 | **details` | Beschreibung des Issues (Text + Link zur HL7-Spezifikation) |

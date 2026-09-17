@@ -12,7 +12,6 @@ ___
 - Erzeuge und repariere das Transaction-Bundle mittels vorbereiteter Skripte
 - Lade die Daten in den FHIR-Server und überprüfe den Upload
 
-
 In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Exercise 1) und diese per `curl` in einen FHIR-Server hochzuladen und abzufragen (Exercise 2).
 
 Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative.  
@@ -157,7 +156,7 @@ ___
 Da **Blaze** (anders als z. B. HAPI) keine Option zum Deaktivieren der referenziellen Integrität bietet, müssen wir die fehlenden Ressourcen vor dem Import ergänzen. Dafür gibt es zwei Strategien:
 
 | Strategie | Vorgehen |
-|---|---|
+| --------- | -------- |
 | **A) Dummy-Ressourcen generieren (empfohlen)** | Für jede fehlende Referenz eine minimale Ressource anlegen – die Daten bleiben vollständig. |
 | **B) Referenzierende Ressourcen entfernen** | Nicht empfohlen, da sonst wertvolle Daten verloren gehen. |
 

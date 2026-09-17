@@ -61,7 +61,7 @@ Ergebnis (UKSH-Beispiel): `Patient`, `Observation`, `Condition`, `Encounter`, `D
 Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
 
 | Ressource | KDS-Modul-Bezug | Beispiel-Feld |
-|-----------|-----------------|---------------|
+| --------- | --------------- | ------------- |
 | `Patient` | KDS-Basis | `name`, `birthDate`, `gender` |
 | `Observation` | Labor, Vitalwerte | `code`, `valueQuantity`, `subject` |
 | `Condition` | Diagnosen (ICD-10-GM) | `code`, `clinicalStatus`, `verificationStatus`, `subject` |

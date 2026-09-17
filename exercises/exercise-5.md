@@ -48,7 +48,7 @@ ___
 ### 1.1 Codesysteme für DIZ-Anwendungen
 
 | Codesystem | Quelle | Nutzen im DIZ |
-|------------|--------|---------------|
+| ---------- | ------ | ------------- |
 | **ICD-10-GM** | [bfarma](https://terminologien.bfarm.de) | Diagnosekodierung (OPDR, MELD, etc.) |
 | **SNOMED-CT** | [NLM](https://www.nlm.nih.gov/healthit/snomedct/) | Klinische Befunde (Observation.code, Condition.code) |
 | **LOINC** | [NLM](https://loinc.org) | Laborcodes (Observation.code) |
