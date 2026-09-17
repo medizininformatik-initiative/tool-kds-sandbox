@@ -7,7 +7,7 @@
 # Die Musterdatenspende-Daten sind nicht immer referenziell
 # integer (siehe README des Repos). Dieses Skript identifiziert
 # Referenzen, die im Bundle nicht aufgelöst werden können, und
-# generiert minimale Dummy-Ressourcen (Location, Encounter),
+# generiert minimale Dummy-Ressourcen (Location, Encounter, Patient, und andere),
 # damit der Import in Blaze (oder einen anderen FHIR-Server mit
 # referenzieller Integrität) funktioniert.
 #
@@ -57,6 +57,18 @@ BROKEN_REFS=$(comm -13 \
   | grep -v '^[[:space:]]*$' || true)
 
 # -----------------------------------------------------------
+# Schritt 3b: Patient für Encounter-Dummies hinzufügen
+# -----------------------------------------------------------
+# Encounter-Dummy-Ressourcen benötigen eine Subject-Referenz auf einen Patienten.
+# Da die Encounter-Dummies auf Patient/dummy-patient-for-encounter verweisen,
+# müssen wir diesen Patienten ebenfalls als Dummy erstellen, damit die
+# referenzielle Integrität gewährleistet ist.
+UUID_PATIENT="Patient/dummy-patient-for-encounter"
+if ! echo "$EXISTING_IDS" | grep -qF "$UUID_PATIENT"; then
+  BROKEN_REFS=$(echo -e "$BROKEN_REFS\n$UUID_PATIENT" | sort | uniq)
+fi
+
+# -----------------------------------------------------------
 # Schritt 4: Dummy-Ressourcen generieren
 # -----------------------------------------------------------
 GENERATED=""
@@ -75,6 +87,8 @@ while IFS=/ read -r TYPE ID; do
           status: "active"
         }')
       ;;
+    # Encounter-Dummy-Ressourcen benötigen eine Subject-Referenz auf einen Patienten.
+# Wir verwenden einen gemeinsamen Dummy-Patienten für alle fehlenden Encounters.
     Encounter)
       DUMPS=$(jq -n \
         --arg id "$ID" \
@@ -88,8 +102,25 @@ while IFS=/ read -r TYPE ID; do
             "display": "ambulatory"
           },
           "subject": {
-            "reference": "urn:uuid:dummy-patient-for-encounter"
+            "reference": "Patient/dummy-patient-for-encounter"
           }
+        }')
+      ;;
+    Patient)
+      # Dieser Patient wird benötigt, damit die Encounter-Dummies auf ihn referenzieren.
+      # Er ist als "DUMMY-Patient-..." gekennzeichnet, um Verwechslungen mit echten
+      # Patienten zu vermeiden.
+      DUMPS=$(jq -n \
+        --arg id "$ID" \
+        '{
+          resourceType: "Patient",
+          id: $id,
+          active: true,
+          name: [{text: ("DUMMY-Patient-" + $id)}],
+          identifier: [{
+            system: "https://dummy.example.org/patient-id",
+            value: $id
+          }]
         }')
       ;;
     *)
