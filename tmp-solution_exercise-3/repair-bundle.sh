@@ -57,6 +57,30 @@ BROKEN_REFS=$(comm -13 \
   | grep -v '^[[:space:]]*$' || true)
 
 # -----------------------------------------------------------
+# Schritt 3a: Fehlende Patienten automatisch erkennen
+# -----------------------------------------------------------
+# Prüfen, ob alle referenzierten Patienten auch im Bundle existieren
+PATIENT_REFS=$(jq -r '
+  [.entry[] | .resource | .. | objects | .reference?
+   | select(. != null and . != "" and type == "string")
+   | select(startswith("Patient/"))] | unique[]
+' "$BUNDLE")
+
+# Fehlende Patienten identifizieren
+MISSING_PATIENTS=$(comm -13 \
+  <(echo "$EXISTING_IDS" | grep '^Patient/' | sort) \
+  <(echo "$PATIENT_REFS" | sort) \
+  | grep -v '^[[:space:]]*$' || true)
+
+# Fehlende Patienten zu BROKEN_REFS hinzufügen
+if [[ -n "$MISSING_PATIENTS" ]]; then
+  BROKEN_REFS=$(echo "$BROKEN_REFS" > /tmp/broken_refs.tmp && \
+                echo "$MISSING_PATIENTS" >> /tmp/broken_refs.tmp && \
+                sort /tmp/broken_refs.tmp | uniq && \
+                rm /tmp/broken_refs.tmp)
+fi
+
+# -----------------------------------------------------------
 # Schritt 3b: Patient für Encounter-Dummies hinzufügen
 # -----------------------------------------------------------
 # Encounter-Dummy-Ressourcen benötigen eine Subject-Referenz auf einen Patienten.
@@ -65,7 +89,10 @@ BROKEN_REFS=$(comm -13 \
 # referenzielle Integrität gewährleistet ist.
 UUID_PATIENT="Patient/dummy-patient-for-encounter"
 if ! echo "$EXISTING_IDS" | grep -qF "$UUID_PATIENT"; then
-  BROKEN_REFS=$(echo -e "$BROKEN_REFS\n$UUID_PATIENT" | sort | uniq)
+  BROKEN_REFS=$(echo "$BROKEN_REFS" > /tmp/broken_refs.tmp && \
+                echo "$UUID_PATIENT" >> /tmp/broken_refs.tmp && \
+                sort /tmp/broken_refs.tmp | uniq && \
+                rm /tmp/broken_refs.tmp)
 fi
 
 # -----------------------------------------------------------
@@ -88,7 +115,7 @@ while IFS=/ read -r TYPE ID; do
         }')
       ;;
     # Encounter-Dummy-Ressourcen benötigen eine Subject-Referenz auf einen Patienten.
-# Wir verwenden einen gemeinsamen Dummy-Patienten für alle fehlenden Encounters.
+    # Wir verwenden einen gemeinsamen Dummy-Patienten für alle fehlenden Encounters.
     Encounter)
       DUMPS=$(jq -n \
         --arg id "$ID" \
@@ -150,18 +177,29 @@ NEW_ENTRIES=$(echo "$GENERATED" | jq -s '
 ')
 
 # -----------------------------------------------------------
-# Schritt 6: Ins Bundle einfügen
+# Schritt 6: POST → PUT umwandeln und Bundle reparieren
 # -----------------------------------------------------------
-jq \
-  --argjson new_entries "$NEW_ENTRIES" \
-  '
-  .entry += $new_entries
+# Zuerst alle POST-Requests zu PUT umwandeln, dann Dummy-Ressourcen hinzufügen
+jq --argjson new_entries "$NEW_ENTRIES" '
+  # POST → PUT umwandeln
+  .entry |= map(
+    if .request.method == "POST" then
+      .request.method = "PUT"
+      | .request.url = (.resource.resourceType + "/" + .resource.id)
+    else
+      .
+    end
+  )
+  # Dummy-Ressourcen hinzufügen
+  | .entry += $new_entries
   | .total = (.entry | length)
-  ' "$BUNDLE"
+' "$BUNDLE"
 
 # -----------------------------------------------------------
 # Schritt 7: Statistik ausgeben (stderr)
 # -----------------------------------------------------------
+NUM_POST=$(jq '[.entry[] | select(.request.method == "POST")] | length' "$BUNDLE")
+NUM_PUT=$(jq '[.entry[] | select(.request.method == "PUT")] | length' "$BUNDLE")
 NUM_BROKEN=$(echo "$BROKEN_REFS" | grep -c '.' 2>/dev/null || echo 0)
 NUM_GENERATED=$(echo "$GENERATED" | jq -s 'length' 2>/dev/null || echo 0)
 
@@ -169,7 +207,8 @@ echo "" >&2
 echo "═══════════════════════════════════════════════════════════" >&2
 echo " repair-bundle.sh – Ergebnis" >&2
 echo "═══════════════════════════════════════════════════════════" >&2
-echo " Fehlende Referenzen gefunden:  $NUM_BROKEN" >&2
-echo " Generierte Dummy-Ressourcen:   $NUM_GENERATED" >&2
+echo " POST → PUT umgewandelt:      $NUM_POST" >&2
+echo " Fehlende Referenzen:         $NUM_BROKEN" >&2
+echo " Generierte Dummy-Ressourcen: $NUM_GENERATED" >&2
 echo "═══════════════════════════════════════════════════════════" >&2
 echo "" >&2
