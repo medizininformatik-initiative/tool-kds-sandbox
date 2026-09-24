@@ -157,7 +157,7 @@ Removed by resource type:
 ===================================
 ```
 
-### Schritt B: Verification
+### Schritt B: Verifikation
 
 Prüfe, ob die Bereinigung erfolgreich war:
 
@@ -167,33 +167,37 @@ bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/sol
 
 ✅ **Erwartetes Ergebnis:** `[]` (leere Liste = keine fehlenden Referenzen)
 
+### Schritt C: Bundle anpassen – POST → PUT umwandeln
+
+> **Warum?** `merge-bundles.sh` setzt für jeden Eintrag die HTTP-Methode **POST**.  
+> **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID.  
+> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die festen IDs (z. B. `PID-013b...`) erhalten und die Referenzen der anderen Ressourcen bleiben auflösbar.
+
+```bash
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./convert_to_put.sh transaction-bundle_cleaned.json
+# → erzeugt: transaction-bundle_cleaned_put.json
+```
+
+Prüfen:
+
+```bash
+jq '[.entry[].request.method] | unique' transaction-bundle_cleaned_put.json
+# → ["PUT"]
+```
 ___
 
 ## 📤 6. Upload via manual `curl`
 
-> **Ziel:** Die Upload-Syntax selbst ausführen – das ist ein zentraler FHIR REST API Aufruf.
+> **Ziel:** Den Upload ausführen – das ist ein zentraler FHIR REST API Aufruf.
 
 ```bash
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned.json
+  --data @transaction-bundle_cleaned_put.json
 ```
 
-Die Antwort sollte so aussehen (Auszug):
-
-```json
-{
-  "resourceType": "Bundle",
-  "type": "transaction-response",
-  "entry": [{
-    "response": {
-      "status": "201",
-      "location": "Patient/PID-013b68fc80dc51ce452717eb1647c91c9f26c8008755988e6baa0045/_history/123",
-      "etag": "W/\"123\""
-    }
-  }]
-}
-```
+Die Response des Servers umfasst den HTTP-Status jeder einzelnen Ressourcen des Bundles.
 
 ✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `201 Created`).
 
@@ -209,19 +213,19 @@ curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
 
 # Observationen
 curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
-
-# Locations (inkl. derjenigen, die wir bewusst nicht entfernt haben)
-curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
 ```
 
 ### Schritt B: Einzelne Ressource abfragen
 
 ```bash
-# Einen Patienten finden
-curl -s "http://localhost:8080/fhir/Patient?_count=1" | jq '.entry[0].resource.id'
+# Eine Condition mit Angabe des zugehörigen Patienten finden
+curl -s "http://localhost:8080/fhir/Condition?_count=1" | jq '.entry[0].resource | {id, subject, code: .code.coding}'
 
-# Mit dieser ID eine Condition abfragen
-curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<ID>&_count=3" | jq '.entry[].resource.code.coding'
+# Alternativ: Einen Patienten mit mindestens einer Condition finden
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:patient&_count=1" | jq '.entry[0].resource.id'
+
+# Mit dieser ID alle Conditions des Patienten abfragen
+curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PID>" | jq '.entry[].resource | {id, code: .code.coding}'
 ```
 
 ___
@@ -269,7 +273,7 @@ Ein `batch` Bundle hingegen:
 
 ```bash
 # 1. Kopiere das Skript
-cp ~/tool-kds-sandbox/tmp-solution_exercise-3/prepare_upload.sh /tmp/
+cp ~/tool-kds-sandbox/solution-exercise-3/prepare_upload.sh /tmp/
 
 # 2. Bereinigen (wie bei UKSH)
 bash /tmp/clean_bundle.sh UKW/UKW-2025-12-05.json
