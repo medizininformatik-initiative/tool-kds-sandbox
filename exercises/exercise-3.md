@@ -18,7 +18,7 @@ In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen 
 
 Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative – die **Musterdatenspende der DIZe** (UKSH, UKHD, UKW).
 
----
+___
 
 ## 📋 Schnellübersicht: Musterdatensätze im Vergleich
 
@@ -35,7 +35,7 @@ Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative –
 > Das Problem ist also **nicht** die Bundle-Form, sondern die **referenzielle Integrität** (fehlende Referenzen).  
 > Das lernst du in dieser Übung – und danach weißt du auch, was du mit UKW/UKHD machen musst.
 
----
+___
 
 ## 🚀 1. Musterdatenspende klonen & UKSH entpacken
 
@@ -48,7 +48,7 @@ cd musterdatenspende-diz
 unzip UKSH/UKSH-2025-11-11.zip
 ```
 
----
+___
 
 ## 🛠️ 2. Transaction-Bundle bauen
 
@@ -63,7 +63,7 @@ jq '.entry | length' transaction-bundle.json  # → ~8.400 Einträge
 
 > ✅ **Ergebnis:** Du hast ein `transaction` bundle – genau das Format, das Blaze erwartet.
 
----
+___
 
 ## 🚫 3. Versuch 1: Direct Upload (scheitert!)
 
@@ -114,10 +114,11 @@ Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
 ```
 
 💡 **Erklärung:**  
+
 - Die `Encounter` Ressourcen verweisen auf `Location`, aber diese sind im Bundle nicht enthalten.
 - Ein `Encounter` verweist auf `Patient/dummy`, aber diesen Patienten gibt es nicht.
 
----
+___
 
 ## 🧹 5. Lösung: Daten bereinigen (`clean_bundle.sh`)
 
@@ -126,19 +127,19 @@ Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
 ### Schritt A: Das Bereinigungsskript nutzen
 
 ```bash
-# Kopiere das Skript aus dem Lösungsordner nach /tmp
-cp ~/tool-kds-sandbox/tmp-solution_exercise-3/clean_bundle.sh /tmp/
+# Kopiere das im Musterdatenspende-Repo erzeugte JSON in unseren Übungsordner  
+cp ./transaction-bundle.json ~/tool-kds-sandbox/solution-exercise-3/
 
 # Bereinigen:
-cd ~/musterdatenspende-diz
-bash /tmp/clean_bundle.sh transaction-bundle.json
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./clean_bundle.sh transaction-bundle.json
 ```
 
 ### Ergebnis
 
 Es entsteht `transaction-bundle_cleaned.json` mit einer Zusammenfassung:
 
-```
+```text
 ===================================
 Bundle cleaning summary
 ===================================
@@ -161,12 +162,12 @@ Removed by resource type:
 Prüfe, ob die Bereinigung erfolgreich war:
 
 ```bash
-bash bin/unresolved-references.sh transaction-bundle_cleaned.json
+bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/solution-exercise-3/transaction-bundle_cleaned.json
 ```
 
 ✅ **Erwartetes Ergebnis:** `[]` (leere Liste = keine fehlenden Referenzen)
 
----
+___
 
 ## 📤 6. Upload via manual `curl`
 
@@ -196,7 +197,7 @@ Die Antwort sollte so aussehen (Auszug):
 
 ✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `201 Created`).
 
----
+___
 
 ## ✅ 7. Upload überprüfen
 
@@ -223,17 +224,17 @@ curl -s "http://localhost:8080/fhir/Patient?_count=1" | jq '.entry[0].resource.i
 curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<ID>&_count=3" | jq '.entry[].resource.code.coding'
 ```
 
----
+___
 
 ## 🔄 8. Optional: Andere Bundles vorbereiten (UKW, UKHD)
 
 ### Vergleichstabelle
 
-| Bundle | Type | Benötigt zusätzlich | Warum? |
+| Bundle | Type | Benötigt  | Warum? |
 | :--- | :--- | :--- | :--- |
-| **UKSH** | `transaction` | ✅ Keine | Passt direkt zum Upload nach der Bereinigung |
-| **UKW** | `searchset` | 🔁 `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
-| **UKHD** | `searchset` | 🔁 `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
+| **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` | Passt direkt zum Upload nach der Bereinigung |
+| **UKW** | `searchset` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
+| **UKHD** | `searchset` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
 
 ### Warum `searchset` → `batch`?
 
@@ -283,7 +284,7 @@ curl -X POST http://localhost:8080/fhir \
   --data @UKW/UKW-2025-12-05_upload_ready.json
 ```
 
----
+___
 
 ## 📊 Übersicht: Ergebnisse aller drei Standorte
 
@@ -293,7 +294,7 @@ curl -X POST http://localhost:8080/fhir \
 | **UKW** | 235 | 234 | 1 (`MedicationAdministration`) | ✅ Erfolg |
 | **UKHD** | 1,287 | 739 | 548 (`Medication`, `MedicationRequest`) | ✅ Erfolg |
 
----
+___
 
 ## 🎯 Was du gelernt hast
 
@@ -304,7 +305,7 @@ curl -X POST http://localhost:8080/fhir \
 | **Automatisierte Bereinigung** | Entferne defekte Ressourcen statt manuell zu reparieren – schneller und konsistent. |
 | **curl für FHIR** | `POST /fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
 
----
+___
 
 ## 🚀 Ausblick: Nächste Schritte
 
@@ -312,7 +313,7 @@ curl -X POST http://localhost:8080/fhir \
 - **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
 - **Ex6:** MII FHIR Validator nutzen (Ressourcen/Profile checken)
 
----
+___
 
 ___
 ___
