@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # prepare_upload.sh - Prepares a cleaned FHIR bundle for upload
-# Converts searchset bundles to batch and adds request objects if missing
+# Converts searchset bundles to transaction and adds request objects if missing
 # Usage: ./prepare_upload.sh <cleaned-bundle-file.json>
 
 set -e
@@ -18,30 +18,54 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
-OUTPUT_FILE="${INPUT_FILE%.json}_upload_ready.json"
+# Output is NOT upload-ready yet: convert_to_put.sh (POST -> PUT) still has to
+# run afterwards. Name it "_prepared" to avoid implying it is final.
+OUTPUT_FILE="${INPUT_FILE%.json}_prepared.json"
 
 echo "Preparing: $INPUT_FILE"
 
 # Check bundle type
 bundle_type=$(jq -r '.type' "$INPUT_FILE")
 
+# Deduplicate resource IDs and add POST request objects to all entries.
+# Some searchset bundles (e.g. UKW) contain distinct resources that share the
+# same ID. When these are later converted to PUT (url = resourceType/id), the
+# duplicates collide on the same URL and the server answers with HTTP 409
+# Conflict. We therefore rename duplicate IDs by appending a suffix.
+#
+# We convert to a "transaction" bundle (not "batch"): the UKW/UKHD data contain
+# circular references (Condition.encounter <-> Encounter.diagnosis[].condition).
+# In a "batch" the server checks referential integrity per entry immediately, so
+# a Condition referencing an Encounter that is not yet stored fails with HTTP 409
+# ("Referential integrity violated"). In a "transaction" the server resolves
+# references inside the bundle and stores everything atomically, so circular
+# references work.
+DEDUP_JQ='
+    .type = "transaction" |
+    .entry = (
+        [.entry[] | select(.resource != null)] as $entries |
+        reduce range(0; $entries|length) as $i (
+            {seen: {}, out: []};
+            $entries[$i] as $e |
+            ($e.resource.resourceType + "/" + $e.resource.id) as $key |
+            if .seen[$key] then
+                .seen[$key] += 1 |
+                ($e.resource.id + "-dup" + (.seen[$key]|tostring)) as $newid |
+                .out += [{resource: ($e.resource | .id = $newid), request: {method: "POST", url: $e.resource.resourceType}}]
+            else
+                .seen[$key] = 1 |
+                .out += [{resource: $e.resource, request: {method: "POST", url: $e.resource.resourceType}}]
+            end
+        ) | .out
+    )
+'
+
 if [ "$bundle_type" = "searchset" ]; then
-    echo "  Bundle type is 'searchset'. Converting to 'batch'..."
+    echo "  Bundle type is 'searchset'. Converting to 'transaction'..."
     echo "  Adding request objects to all entries..."
-    
-    jq '
-        .type = "batch" |
-        .entry = [.entry[] | 
-            select(.resource != null) |
-            {
-                resource: .resource,
-                request: {
-                    method: "POST",
-                    url: .resource.resourceType
-                }
-            }
-        ]
-    ' "$INPUT_FILE" > "$OUTPUT_FILE"
+    echo "  Renaming duplicate resource IDs (if any)..."
+
+    jq "$DEDUP_JQ" "$INPUT_FILE" > "$OUTPUT_FILE"
 else
     echo "  Bundle type is '$bundle_type'. Checking for request objects..."
     
@@ -53,18 +77,8 @@ else
         cp "$INPUT_FILE" "$OUTPUT_FILE"
     else
         echo "  Adding request objects to all entries..."
-        jq '
-            .entry = [.entry[] | 
-                select(.resource != null) |
-                {
-                    resource: .resource,
-                    request: {
-                        method: "POST",
-                        url: .resource.resourceType
-                    }
-                }
-            ]
-        ' "$INPUT_FILE" > "$OUTPUT_FILE"
+        echo "  Renaming duplicate resource IDs (if any)..."
+        jq "$DEDUP_JQ" "$INPUT_FILE" > "$OUTPUT_FILE"
     fi
 fi
 

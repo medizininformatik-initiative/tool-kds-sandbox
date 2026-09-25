@@ -236,57 +236,36 @@ ___
 
 | Bundle | Type | Benötigt  | Warum? |
 | :--- | :--- | :--- | :--- |
-| **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` | Passt direkt zum Upload nach der Bereinigung |
-| **UKW** | `searchset` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
-| **UKHD** | `searchset` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + `prepare_upload.sh` | Server akzeptiert nur `batch`/`transaction` |
+| **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + tool-kds-sandbox/`convert_to_put.sh` | Passt direkt zum Upload nach der Bereinigung |
+| **UKW** | `searchset` | ??? | Server akzeptiert kein `searchset` |
+| **UKHD** | `searchset` | ??? | Server akzeptiert kein `searchset` |
 
-### Warum `searchset` → `batch`?
-
-Ein `searchset` Bundle sieht so aus:
-
-```json
-{
-  "type": "searchset",
-  "entry": [{
-    "resource": { "resourceType": "Patient", ... },
-    "search": { "mode": "match" }  // ← Für Suchergebnisse
-  }]
-}
-```
-
-Ein `batch` Bundle hingegen:
-
-```json
-{
-  "type": "batch",
-  "entry": [{
-    "resource": { "resourceType": "Patient", ... },
-    "request": {                    // ← Für Write-Operationen
-      "method": "POST",
-      "url": "Patient"
-    }
-  }]
-}
-```
-
-### Schritt-für-Schritt für UKW/UKHD
+### Schritt-für-Schritt für UKW
 
 ```bash
-# 1. Kopiere das Skript
-cp ~/tool-kds-sandbox/solution-exercise-3/prepare_upload.sh /tmp/
 
-# 2. Bereinigen (wie bei UKSH)
-bash /tmp/clean_bundle.sh UKW/UKW-2025-12-05.json
+# 1. Bereinigen (wie bei UKSH)
+cd ~/tool-kds-sandbox/solution-exercise-3
+bash clean_bundle.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json
 
-# 3. Vorbereiten (nur bei searchset)
-bash /tmp/prepare_upload.sh UKW/UKW-2025-12-05_cleaned.json
+# 2. transaction-Bundle vorbereiten (nur bei searchset)
+bash prepare_upload.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned.json
 # → erzeugt UKW-2025-12-05_upload_ready.json
 
+# 3. Upload Methode zu PUT konvertieren
+bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_prepared.json
+
 # 4. Upload
+cd ~/musterdatenspende-diz/UKW/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @UKW/UKW-2025-12-05_upload_ready.json
+  --data @UKW-2025-12-05_prepared_put.json
 ```
+
+--->> "upload_ready" datei ist nicht upload ready --> muss umbenannt werden im output des skripts bzw skript angepasst
+--->> transaction statt batch, da zirkuläre referenzen...?
+
+____>>TODO UKHD???!
 
 ___
 
@@ -305,7 +284,7 @@ ___
 | Konzept | Erklärung |
 | :--- | :--- |
 | **Referenzielle Integrität** | In FHIR müssen Referenzen immer auf existierende Ressourcen zeigen. |
-| **searchset vs. batch/transaction** | `searchset` = Read/Result, `batch`/`transaction` = Write/Operation (Server erwartet后者). |
+| **searchset vs. batch/transaction** | `searchset` = Read/Result (Response), `batch`/`transaction` = Write/Operation (Request). |
 | **Automatisierte Bereinigung** | Entferne defekte Ressourcen statt manuell zu reparieren – schneller und konsistent. |
 | **curl für FHIR** | `POST /fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
 
