@@ -238,9 +238,9 @@ ___
 | :--- | :--- | :--- | :--- |
 | **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + tool-kds-sandbox/`convert_to_put.sh` | Passt direkt zum Upload nach der Bereinigung |
 | **UKW** | `searchset` | ??? | Server akzeptiert kein `searchset` |
-| **UKHD** | `searchset` | ??? | Server akzeptiert kein `searchset` |
+| **UKHD** | `transaction` | ??? | Server akzeptiert kein `searchset` |
 
-### Schritt-für-Schritt für UKW
+### Schritt-für-Schritt für UKW/UKHD
 
 ```bash
 
@@ -248,25 +248,33 @@ ___
 cd ~/tool-kds-sandbox/solution-exercise-3
 bash clean_bundle.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json
 
+
 # 2. transaction-Bundle vorbereiten (nur bei searchset)
 bash prepare_upload.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned.json
 # → erzeugt UKW-2025-12-05_upload_ready.json
 
 # 3. Upload Methode zu PUT konvertieren
-bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_prepared.json
+bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned_prepared.json
 
 # 4. Upload
 cd ~/musterdatenspende-diz/UKW/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @UKW-2025-12-05_prepared_put.json
+  --data @UKW-2025-12-05_cleaned_prepared_put.json
 ```
 
---->> "upload_ready" datei ist nicht upload ready --> muss umbenannt werden im output des skripts bzw skript angepasst
---->> transaction statt batch, da zirkuläre referenzen...?
+### Schritt-für-Schritt für UKHD (analog zu UKSH)
 
-____>>TODO UKHD???!
-
+cd ~/musterdatenspende-diz/UKHD/
+unzip ~/musterdatenspende-diz/UKHD/UKHD-2025-12-02.zip
+bash bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./clean_bundle.sh ~/musterdatenspende-diz//UKHD/transaction-bundle.json
+bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.json
+cd ~/musterdatenspende-diz/UKHD/
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle_cleaned_put.json
 ___
 
 ## 📊 Übersicht: Ergebnisse aller drei Standorte
