@@ -137,9 +137,6 @@ bash bin/unresolved-references.sh transaction-bundle.json
 - **10 Encounter** – Behandlungsfälle (z. B. `PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385`)
 - **1 Encounter ohne zugehörigen Patienten** – Die Encounter-Dummy-Ressource verweist auf `Patient/dummy` (eine Platzhalter-ID)
 
-> 📌 **Warum fehlen ausgerechnet Locations und Encounter?**  
-> Stationskataloge und Behandlungsfall-IDs sind hochgradig standortspezifisch. Bei der Anonymisierung und Extraktion gehen diese Daten leichter verloren als Patientendaten.
-
 ___
 
 ## 🛠️ Bundle reparieren
@@ -204,9 +201,6 @@ Das Skript `repair-bundle.sh` ist keine "Zauberei" – es wendet lediglich die g
 - **FHIR-Ressourcen per PUT hochladen** (Exercise 1) – genau das tun die generierten Entry-Objekte (`"method": "PUT"`)
 - **JSON verarbeiten mit `jq`** – das Herzstück des Skripts
 
-> 🚀 **Für Fortgeschrittene:**  
-> Versuche, das Skript zu erweitern: Was müsste sich ändern, damit auch andere fehlende Ressourcentypen wie `Practitioner` oder `Organization` automatisch ergänzt werden?
-
 ___
 
 ## 📤 Daten in Blaze hochladen
@@ -222,8 +216,6 @@ curl -X POST http://localhost:8080/fhir \
 ```
 
 Der Import von ca. 8.400 Ressourcen dauert einige Sekunden. Blaze antwortet mit einem Transaction-Bundle, das den Status jeder einzelnen Operation enthält.
-
-> ⚠️ **Hinweis:** Bei sehr großen Bundles kann Blaze mit einem `413 Payload Too Large` antworten. In dem Fall musst du das Bundle in kleineren Teilen hochladen. Für die UKSH-Daten (ca. 12 MB) sollte es problemlos funktionieren.
 
 ### ✅ Zwischenkontrolle
 
