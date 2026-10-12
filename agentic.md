@@ -31,23 +31,23 @@ git checkout develop && git pull
 | Übung | Status | Datei | Bemerkung |
 |---|---|---|---|
 | ✅ Prerequisites | **Fertig** | `exercises/prerequisites.md` | Enthält Emoji-Referenz (wichtig für Stil) |
-| ✅ Exercise 0 | **Fertig** | `exercises/exercise-0.md` | FSH-Profile + SUSHI + IG-Publishing |
-| ✅ Exercise 1 | **Fertig** | `exercises/exercise-1.md` | Blaze starten, Ressourcen uploaden, FHIR Search |
-| ✅ Exercise 2 | **Fertig** | `exercises/exercise-2.md` | **Zuletzt bearbeitet.** Musterdatenspende laden, repair-bundle.sh |
-| ❌ Exercise 3 | **Leer** | `exercises/exercise-3.md` | Query von KDS-Daten – **nächster Schritt** |
-| ❌ Exercise 4 | **Leer (nur Links)** | `exercises/exercise-4.md` | Terminologieserver aufsetzen |
-| ❌ Exercise 5 | **Leer (nur Links)** | `exercises/exercise-5.md` | MII FHIR Validator nutzen |
-| ❌ Exercise 6 | **Leer** | `exercises/exercise-6.md` | Ergebnisse interpretieren |
-| ❌ Exercise 7 | **Leer** | `exercises/exercise-7.md` | Ausblick, Lizenzen, Alternativen |
+| ✅ Exercise 1 | **Fertig** | `exercises/exercise-1.md` | FSH-Profile + SUSHI + IG-Publishing |
+| ✅ Exercise 2 | **Fertig** | `exercises/exercise-2.md` | Blaze starten, Ressourcen uploaden, FHIR Search |
+| ✅ Exercise 3 | **Fertig** | `exercises/exercise-3.md` | **Zuletzt bearbeitet.** Musterdatenspende laden, repair-bundle.sh |
+| ❌ Exercise 4 | **Leer** | `exercises/exercise-4.md` | Query von KDS-Daten – **nächster Schritt** |
+| ❌ Exercise 5 | **Leer (nur Links)** | `exercises/exercise-5.md` | Terminologieserver aufsetzen |
+| ❌ Exercise 6 | **Leer (nur Links)** | `exercises/exercise-6.md` | MII FHIR Validator nutzen |
+| ❌ Exercise 7 | **Leer** | `exercises/exercise-7.md` | Ergebnisse interpretieren |
+| ❌ Exercise 8 | **Leer** | `exercises/exercise-8.md` | Ausblick, Lizenzen, Alternativen |
 
 ### Lösungs-Ordner (tmp-solution_exercise-N/)
 
 | Ordner | Status | Inhalt |
 |---|---|---|
-| `tmp-solution_exercise-0/` | ✅ | `ExampleIG/` – komplettes SUSHI-Projekt (FSH-Dateien, sushi-config.yaml) |
-| `tmp-solution_exercise-1/` | ✅ | Gleiches `ExampleIG/` (für Upload-Übung) |
-| `tmp-solution_exercise-2/` | ✅ | `repair-bundle.sh` + `README.md` |
-| `tmp-solution_exercise-3/` bis `-7/` | ❌ | Nur `.gitkeep` |
+| `tmp-solution_exercise-1/` | ✅ | `ExampleIG/` – komplettes SUSHI-Projekt (FSH-Dateien, sushi-config.yaml) |
+| `tmp-solution_exercise-2/` | ✅ | Gleiches `ExampleIG/` (für Upload-Übung) |
+| `tmp-solution_exercise-3/` | ✅ | `repair-bundle.sh` + `README.md` |
+| `tmp-solution_exercise-4/` bis `-7/` | ❌ | Nur `.gitkeep` |
 
 ---
 
@@ -103,7 +103,7 @@ ___
 **Muss exakt so sein** – inklusive Leerzeichen um `•` und Fettung der aktuellen Übung:
 
 ```
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 8](exercise-8.md) • [Exercise 8](exercise-8.md) • **Exercise 2** • [Exercise 8](exercise-8.md) • [Exercise 8](exercise-8.md) • [Exercise 8](exercise-8.md) • [Exercise 8](exercise-8.md) • [Exercise 8](exercise-8.md)
 ```
 
 Die Breadcrumb muss **sowohl in der ersten als auch in der letzten Zeile (vor den abschließenden `___`)**
@@ -134,7 +134,7 @@ Die Breadcrumb muss **sowohl in der ersten als auch in der letzten Zeile (vor de
 
 ### Querverweise
 
-- Auf andere Übungen: `[Exercise 1](exercise-1.md)` (mit geschütztem Leerzeichen vor der Nummer)
+- Auf andere Übungen: `[Exercise 2](exercise-1.md)` (mit geschütztem Leerzeichen vor der Nummer)
 - Auf externe URLs: Normale Markdown-Links
 - Auf Abschnitte innerhalb der Datei: `[Schrittname](#abschchnitt-id)`
 
@@ -165,14 +165,14 @@ Die Breadcrumb muss **sowohl in der ersten als auch in der letzten Zeile (vor de
 
 ## 6. Nächste Schritte (Backlog)
 
-1. **Exercise 3 – Query von KDS-Daten** (als nächstes)
-   - Inhalt: Strukturierte Abfragen auf die in Ex 2 geladenen Musterdaten
+1. **Exercise 4 – Query von KDS-Daten** (als nächstes)
+   - Inhalt: Strukturierte Abfragen auf die in Ex 3 geladenen Musterdaten
    - Schwerpunkte: FHIR Search Parameter, Chaining, `_include`, `_revinclude`, `_filter`
    - Ausblick auf TORCH
-2. **Exercise 4** – Terminologieserver (Blaze TermServ)
-3. **Exercise 5** – MII FHIR Validator
-4. **Exercise 6** – Ergebnisse interpretieren
-5. **Exercise 7** – Ausblick (Lizenzen, Alternativen)
+2. **Exercise 5** – Terminologieserver (Blaze TermServ)
+3. **Exercise 6** – MII FHIR Validator
+4. **Exercise 7** – Ergebnisse interpretieren
+5. **Exercise 8** – Ausblick (Lizenzen, Alternativen)
 
 ---
 

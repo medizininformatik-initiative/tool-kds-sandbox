@@ -1,323 +1,313 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
-# 🟠 Query von KDS-Daten
+# 🟡 KDS-Beispieldaten in FHIR-Server laden
 
-## Einführung & Kontext
+**Nächste Schritte:**
 
-In [Exercise 2](exercise-2.md) haben wir die **Musterdatenspende der DIZe** (UKSH-Standort) in einen lokalen FHIR-Server (Blaze) geladen — ca. 8.400 Ressourcen mit den „DIZ-Flavours“ der Universitätskliniken (UKHD, UKSH, UKW).
+- Klone das Musterdatenspende-Repo und entpacke das UKSH-Bundle
+- Baue das Transaction-Bundle und versuche den Upload
+- Entdecke das "Referenzielle Integrität"-Problem
+- Bereinige die Daten automatisch
+- Lade die Daten in den FHIR-Server und überprüfe den Upload
 
-In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durchzuführen. Du wirst FHIR-Search-Parameter (LOINC-Code, Chaining, AND, Sortierung, Pagination) auf echte KDS-Ressourcen anwenden und siehst, wie du die Daten für Analysen oder Auswertungen nutzen kannst.
+In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Exercise 1) und diese per `curl` in einen FHIR-Server hochzuladen (Exercise 2).
 
-> 💡 **Warum FHIR-Search?**  
-> In der DIZ-Praxis greifen duale Auswertungen, Forschungsprojekte oder Export-Skripte fast immer über FHIR-Search auf die integrierten Daten zu. Der FHIR-Search-Standard erlaubt es, flexibel und standortübergreifend auf FHIR-Daten zuzugreifen.
+Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative – die **Musterdatenspende der DIZe** (UKSH, UKHD, UKW).
 
-> 💡 **Ausblick: TORCH & DIMP/DUP**  
-> Für komplexe Datenanforderungen (z. B. kohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
-> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH nutzt **CRTDL** (Clinical Resource Transfer Definition Language) und kann entweder CQL oder FLARE für die Kohortendefinition verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
-> - **DIMP/DUP-Pipeline (aether-orchestriert)**: Die Infrastruktur zur automatisierten Datenbereitstellung für Datennutzungsprojekte / Forschungsprojekte (Data Usage Projects = DUP). Definierte DIMP (De-Identifikation, Maskierung und Pseudonymisierung) -Schritte werden über die aether orchestriert.
->
-> Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um projekt-basierte, auditierbare Extraktionsketten.
+___
 
----
+## 📋 Schnellübersicht: Musterdatensätze im Vergleich
 
-📋 **Übersicht:**
+| | **UKSH** | **UKW** | **UKHD** |
+| :--- | :--- | :--- | :--- |
+| **Datei** | `transaction-bundle.json` | `UKW/UKW-2025-12-05.json` | `UKHD/UKHD-2025-12-02/0002690836.json` |
+| **Bundle Type** | `transaction` | `searchset` | `searchset` |
+| **Gesamt Ressourcen** | ~8.400 | ~235 | ~1.300 |
+| **Referenzielle Integrität** | ❌ Nicht gegeben | ❌ Nicht gegeben | ❌ Nicht gegeben |
+| **Für diesen Workflow** | ✅ Hauptübung | 🔁 Nach UKSH | 🔁 Nach UKSH |
 
-- [Grundlagen: FHIR-Search auf KDS-Profilen](#-fhir-search-auf-kds-profilen)
-- [Fachliche Beispieldaten-Abfragen](#-fachliche-beispieldaten-abfragen)
-- [Skriptbasierter Ausblick (R/Python)](#-skriptbasierter-ausblick-rpython)
-- [Zusammenfassung & Merkregeln](#-zusammenfassung--merkregeln)
+> 💡 **Warum ist UKSH der Hauptweg?**  
+> UKSH erzeugt mit `merge-bundles.sh` ein `transaction` bundle – das ist **exakt das Format**, das Blaze erwartet.  
+> Das Problem ist also **nicht** die Bundle-Form, sondern die **referenzielle Integrität** (fehlende Referenzen).  
+> Das lernst du in dieser Übung – und danach weißt du auch, was du mit UKW/UKHD machen musst.
 
----
+___
 
-## 💻 FHIR-Search auf KDS-Profilen
-
-FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( ` _count`, `_sort`, `_summary`, ` _contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
-
-> ⚠️ **Voraussetzung:** Blaze läuft noch auf `http://localhost:8080` (aus [Exercise 1/2](exercise-2.md#daten-in-blase-hochladen)). Sollte er nicht mehr laufen: `docker compose up -d` im Blaze-Verzeichnis.
-
-### 1.1 Ressourcentypen in der Musterdatenspende
-
-Prüfe, welche Ressourcentypen Du siehst (UKSH-Daten):
+## 🚀 1. Musterdatenspende klonen & UKSH entpacken
 
 ```bash
-curl -s "http://localhost:8080/fhir/metadata" | jq '.resource[] | select(.type != "CapabilityStatement" and .type != "StructureDefinition") | .type'
+cd ~
+git clone https://github.com/medizininformatik-initiative/musterdatenspende-diz.git
+cd musterdatenspende-diz
+
+# UKSH entpacken (ca. 270 JSON-Dateien)
+unzip UKSH/UKSH-2025-11-11.zip
 ```
 
-Ergebnis (UKSH-Beispiel): `Patient`, `Observation`, `Condition`, `Encounter`, `DiagnosticReport`, `Procedure`, `Location`, `ServiceRequest`, `Practitioner`, `Organization`, `Coverage`, `CareTeam`, `CarePlan`, `Immunization`, `Media`, `DocumentReference`, `DiagnosticReport`, `Observation`, `QuestionnaireResponse`, `Specimen`.
+___
 
-Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
-
-| Ressource | KDS-Modul-Bezug | Beispiel-Feld |
-|-----------|-----------------|---------------|
-| `Patient` | KDS-Basis | `name`, `birthDate`, `gender` |
-| `Observation` | Labor, Vitalwerte | `code`, `valueQuantity`, `subject` |
-| `Condition` | Diagnosen (ICD-10-GM) | `code`, `clinicalStatus`, `verificationStatus`, `subject` |
-| `Encounter` | Aufenthalte | `class`, `period`, `location`, `subject` |
-| `DiagnosticReport` | Befunde | `code`, `result`, `subject` |
-| `Procedure` | Eingriffe | `code`, `performedPeriod`, `subject` |
-
----
-
-### 1.2 Standard-Search-Parameter
-
-#### **Hintergrund:** FHIR-Search-Parameter
-
-| Parameter | Funktion | Beispiel |
-|-----------|----------|----------|
-| `_id` | Nach ID filtern | `/Patient?_id=abc123` |
-| `_count` | Seite begrenzen | `/Patient?_count=5` (erste 5 Einträge) |
-| `_summary` | Response reduzieren | `/Patient?_summary=true` (nur `id`, `resourceType`, `meta`) |
-| `_sort` | Sortieren | `/Patient?_sort=_lastUpdated-desc` |
-| `_contained` / `_include` / `_revinclude` | Verknüpfte Ressourcen | `/Observation?_include=Observation:subject` |
-| `code` | Coding-Filter | `/Observation?code=http://loinc.org\|4548-4` |
-| `subject` | Referenz-Filter | `/Observation?subject=Patient/xyz` |
-
----
-
-#### Praktische Übung: Basis-Abfragen
-
-##### **Abfrage 1: Alle Patienten (mit Pagination)**
+## 🛠️ 2. Transaction-Bundle bauen
 
 ```bash
-# Erste 5 Patienten
-curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq '{
-  total: .total,
-  link: .link[].url,
-  entry_count: (.entry | length),
-  Beispiel: .entry[0].resource.name[0]
-}'
+# Aus dem UKSH-Verzeichnis das Bundle erzeugen
+bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
 
-# Nächste 5 (Pagination über `_offset` oder `_getpages`)
-curl -s "http://localhost:8080/fhir/Patient?_count=5&_offset=5" | jq '.total, .entry | length'
+# Prüfe das Bundle
+jq '.type' transaction-bundle.json      # → "transaction"
+jq '.entry | length' transaction-bundle.json  # → ~8.400 Einträge
 ```
 
-> 💡 **Merke:** FHIR-Server antworten immer mit einem `Bundle` vom Typ `searchset`. `total` zeigt die Gesamtanzahl an, `entry` enthält die aktuellen Ressourcen für diese „Seite“.
+> ✅ **Ergebnis:** Du hast ein `transaction` bundle – genau das Format, das Blaze erwartet.
 
----
+___
 
-##### **Abfrage 2: Observation mit LOINC-Code (HbA1c)**
+## 🚫 3. Versuch 1: Direct Upload (scheitert!)
 
-Nutze den festen LOINC-Code **4548-4** (aus [Exercise 0](exercise-0.md#studienprofil-anlegen)) und filtere nach KDS-Profil (`_profile`) falls verfügbar:
+> ⚠️ **Ziel:** Den Fehler selbst erleben – das ist der beste Lernweg.
+
+### Schritt A: Upload versuchen
 
 ```bash
-# 1. Alle Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_count=3" | jq '{
-  total: .total,
-  Beispiele: (.entry | .[0:2]) | .[].resource | {
-    code: .code.coding[0].display,
-    value: .valueQuantity.value,
-    unit: .valueQuantity.unit,
-    patient: .subject.reference
-  }
-}'
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle.json
 ```
 
-> 💡 **KDS-Hinweis:** Im KDS-Labor-Modul ist dieses Profil definiert. Falls der Server die Profile importiert hat, kannst Du zusätzlich filtern:
-> ```bash
-> curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&code=http://loinc.org\|4548-4"
-> ```
+### Schritt B: Der Fehler
 
----
+Die Antwort sollte so aussehen (Auszug):
 
-##### **Abfrage 3: Verknüpfte Suche (Chaining)**
-
-Alle Laborwerte eines bestimmten Patienten (via `subject`-Referenz):
-
-```bash
-# Zuerst: Einen Patienten nach_name suchen (z. B. "Muster")
-PATIENT_ID=$(curl -s "http://localhost:8080/fhir/Patient?name=Muster&_count=1" | jq -r '.entry[0].resource.id')
-
-echo "Gefundene Patient-ID: $PATIENT_ID"
-
-# Alle Observationen für diesen Patienten
-curl -s "http://localhost:8080/fhir/Observation?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {code: .code.coding[0].display, value: .valueQuantity.value, unit: .valueQuantity.unit}'
-```
-
----
-
-##### **Abfrage 4: AND-Suche (Kombination)**
-
-Observationen mit **mehreren Kriterien** kombinieren (z. B. Laborwert > 48 mmol/mol für einen Patienten):
-
-```bash
-# Beispiel: Laborwert > 48 mmol/mol für einen Patienten (nach LOINC 4548-4)
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&value-quantity=gt48&subject=Patient/$PATIENT_ID&_count=3" | jq '.entry[].resource | {value: .valueQuantity.value, clinical: .clinicalCode?.coding[0].display}'
-```
-
-> 💡 **Merke:** Kombinierte Parameter werden als **AND** verknüpft. Ein `OR` erfordert komplexe `_filter`-Ausdrücke (nicht in dieser Übung).
-
----
-
-##### **Abfrage 5: Sortierung & Limit**
-
-Laborwerte nach Datum sortieren (`issued` oder `effectiveDateTime`):
-
-```bash
-# 10 neueste Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_sort=-issued&_count=10" | jq '.entry[].resource | {date: .effectiveDateTime, value: .valueQuantity.value}'
-```
-
----
-
-### 1.3 Suche auf KDS-Profilen (Ausblick)
-
-Möchtest Du gezielt KDS-Profil-Inhalte abfragen (z. B. alle Observationen aus dem KDS-Labor-Modul), nutze den `_profile`-Parameter mit dem **StructureDefinition-URL** des Profils:
-
-```bash
-# Beispiel (funktioniert nur, wenn der Server die KDS-Profile importiert hat):
-curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&_count=5" | jq '.entry[].resource.code.coding[0].display'
-```
-
-> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat. In einer echten DIZ-Umgebung wäre dies der Fall.
-
----
-
-## 💻 Fachliche Beispieldaten-Abfragen
-
-Im Folgenden findest Du typische **Fachabfragen**, die Du im DIZ-Alltag benötigst (Diagnosen, Laborwerte, Aufenthalte). Nutze die Beispiel-ID `PATIENT_ID` aus Abfrage 3 oben.
-
-### 2.1 Alle Diagnosen eines Patienten (ICD-10-GM)
-
-```bash
-# Condition mit ICD-10-GM-Diagnosen
-curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  code: .code.coding[0].code,
-  display: .code.coding[0].display,
-  clinicalStatus: .clinicalStatus.coding[0].code,
-  verification: .verificationStatus.coding[0].code
-}'
-```
-
-### 2.2 Alle Aufenthalte eines Patienten (Encounter)
-
-```bash
-# Encounter mit Klassifizierung (AMB, INA, etc.)
-curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  class: .class.display,
-  period_start: .period.start,
-  period_end: .period.end,
-  location: (.location[]?.location.display // "ohne Station") | .[0:40]
-}'
-```
-
-### 2.3 Gesamtbild: Ressourcen-Verteilung pro Patient
-
-```bash
-# Anzahl aller Ressourcen pro Typ für einen Patienten
-for resource in Patient Observation Condition Encounter DiagnosticReport Procedure; do
-  count=$(curl -s "http://localhost:8080/fhir/$resource?subject=Patient/$PATIENT_ID&_summary=count" | jq '.total')
-  echo "$resource: $count"
-done
-```
-
----
-
-## 💻 Skriptbasierter Ausblick (R/Python)
-
-Für wiederholte Abfragen, Komplexität oder statistische Auswertungen lohnt sich ein **Skriptansatz**. Hier zwei kurze Beispiele:
-
-### 3.1 Python: fhir-pyrate (Python Library)
-
-```bash
-# Installation (optional)
-pip install fhir-pyrate
-
-# Minimalbeispiel: Abfrage aller Laborwerte für einen Patienten
-python3 <<EOF
-from fhirclient import client
-from fhirclient.models import observation, patient
-
-settings = {
-    'app_id': 'my_app',
-    'api_base': 'http://localhost:8080/fhir'
+```json
+{
+  "resourceType": "OperationOutcome",
+  "issue": [{
+    "severity": "error",
+    "code": "conflict",
+    "diagnostics": "Referential integrity violated. Resource `Location/LMED1-LINAS1` cannot be found."
+  }]
 }
-smart = client.FHIRClient(settings=settings)
-
-# Patient suchen
-PATIENT_ID = '$PATIENT_ID'
-obs = observation.Observation.search({'subject': f'Patient/{PATIENT_ID}', 'code': 'http://loinc.org|4548-4'}).perform_resources(smart.server)
-
-print(f'Gefundene Laborwerte: {len(obs)}')
-for o in obs[:3]:
-    print(f'  {o.effectiveDateTime.isostring}: {o.valueQuantity.value} {o.valueQuantity.unit}')
-EOF
 ```
 
-### 3.2 R: fhircrackr (Library)
-
-```r
-# Installation
-# install.packages("devtools")
-# devtools::install_github("POLAR-fhiR/fhircrackr")
-
-library(fhircrackr)
-library(dplyr)
-
-# Verbindung
-fhir_con <- fhir_connection("http://localhost:8080/fhir")
-
-# Observationen für einen Patienten abfragen
-obs_df <- fhir_query(
-  fhir_con,
-  resource_type = "Observation",
-  query = list(
-    subject = paste0("Patient/", PATIENT_ID),
-    code = "http://loinc.org|4548-4",
-    _count = 10
-  )
-)
-
-print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.unit))
-```
-
-> 💡 **Warum Skripte?**  
-> - Automatisierung (tägliche exports, Cronjobs)  
-> - Komplexität (mehrere Filterschritte, Aggregationen)  
-> - Statistik (ggf. in R/Python direkt weiterarbeiten)  
-> - Wiederverwendbarkeit (Versionierung im Git)
+> ✅ **Lernziel erreicht:** Wir haben gesehen, dass der Server die Daten **nicht** annehmen kann, weil Referenzen nicht aufgelöst werden können.
 
 ---
 
-## 🏁 Zusammenfassung & Merkregeln
+## 🔍 4. Diagnose: Referenzielle Integrität prüfen
 
-### Warum FHIR-Search?
+```bash
+bash bin/unresolved-references.sh transaction-bundle.json
+```
 
-> ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
-> ✅ **Flexibel** — Kombiniere Filter, Pagination, Sortierung  
-> ✅ **Standort-unabhängig** — DIZ-intern und exportiert gleiches API  
+Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
 
-### Wichtigste Parameter im Alltag
+```json
+[
+  "Location/LMED1-LINAS1",
+  "Location/LMED1",
+  "Encounter/PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385",
+  "Patient/dummy"
+]
+```
 
-| Situation | Parameter | Beispiel |
-|-----------|-----------|----------|
-| **ID-Suche** | `_id` | `/Patient?_id=abc123` |
-| **Code-Suche** | `code` | `/Observation?code=http://loinc.org\|4548-4` |
-| **Referenz-Suche** | `subject` | `/Observation?subject=Patient/xyz` |
-| **Chaining** | `subject` | `/Observation?subject=Patient/xyz` |
-| **AND-Suche** | Kombination | `?code=...&value-quantity=gt48` |
-| **Pagination** | `_count`, `_offset` | `?_count=5&_offset=10` |
-| **Sortierung** | `_sort` | `?_sort=-issued` |
-| **Komprimierung** | `_summary` | `?_summary=true` |
+💡 **Erklärung:**  
 
-### Ausblick
+- Die `Encounter` Ressourcen verweisen auf `Location`, aber diese sind im Bundle nicht enthalten.
+- Ein `Encounter` verweist auf `Patient/dummy`, aber diesen Patienten gibt es nicht.
 
-- **Ex4:** Terminologien laden (bfarm, SNOMED), lokal verfügbar machen  
-- **Ex5:** MII FHIR Validator — Profile/Ressourcen checken  
-- **Ex6:** Validierungsreport interpretieren  
+___
 
----
+## 🧹 5. Lösung: Daten bereinigen (`clean_bundle.sh`)
 
-**Nächste Schritte:**  
-- Teste die Abfragen lokal (Blaze muss laufen!)  
-- Ersetze `PATIENT_ID` mit einer echten ID aus Deiner Datenbasis  
-- Erweitere die Abfragen um weitere Filter oder Ressourcen
+> **Ziel:** Entferne alle Ressourcen, die auf fehlende Referenzen zeigen – so bleibt nur ein *referenziell integeres* Bundle.
+
+### Schritt A: Das Bereinigungsskript nutzen
+
+```bash
+# Kopiere das im Musterdatenspende-Repo erzeugte JSON in unseren Übungsordner  
+cp ./transaction-bundle.json ~/tool-kds-sandbox/solution-exercise-3/
+
+# Bereinigen:
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./clean_bundle.sh transaction-bundle.json
+```
+
+### Ergebnis
+
+Es entsteht `transaction-bundle_cleaned.json` mit einer Zusammenfassung:
+
+```text
+===================================
+Bundle cleaning summary
+===================================
+Original resources: 8446
+Final resources: 8083
+Total removed: 363
+
+Removed by resource type:
+  Condition: 12
+  DiagnosticReport: 7
+  Encounter: 219
+  Location: 63
+  Observation: 55
+  ServiceRequest: 7
+===================================
+```
+
+### Schritt B: Verifikation
+
+Prüfe, ob die Bereinigung erfolgreich war:
+
+```bash
+bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/solution-exercise-3/transaction-bundle_cleaned.json
+```
+
+✅ **Erwartetes Ergebnis:** `[]` (leere Liste = keine fehlenden Referenzen)
+
+### Schritt C: Bundle anpassen – POST → PUT umwandeln
+
+> **Warum?** `merge-bundles.sh` setzt für jeden Eintrag die HTTP-Methode **POST**.  
+> **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID.  
+> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die festen IDs (z. B. `PID-013b...`) erhalten und die Referenzen der anderen Ressourcen bleiben auflösbar.
+
+```bash
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./convert_to_put.sh transaction-bundle_cleaned.json
+# → erzeugt: transaction-bundle_cleaned_put.json
+```
+
+Prüfen:
+
+```bash
+jq '[.entry[].request.method] | unique' transaction-bundle_cleaned_put.json
+# → ["PUT"]
+```
+___
+
+## 📤 6. Upload via manual `curl`
+
+> **Ziel:** Den Upload ausführen – das ist ein zentraler FHIR REST API Aufruf.
+
+```bash
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle_cleaned_put.json
+```
+
+Die Response des Servers umfasst den HTTP-Status jeder einzelnen Ressourcen des Bundles.
+
+✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `201 Created`).
+
+___
+
+## ✅ 7. Upload überprüfen
+
+### Schritt A: Anzahl der Ressourcen prüfen
+
+```bash
+# Patienten
+curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
+
+# Observationen
+curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
+```
+
+### Schritt B: Einzelne Ressource abfragen
+
+```bash
+# Eine Condition mit Angabe des zugehörigen Patienten finden
+curl -s "http://localhost:8080/fhir/Condition?_count=1" | jq '.entry[0].resource | {id, subject, code: .code.coding}'
+
+# Alternativ: Einen Patienten mit mindestens einer Condition finden
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:patient&_count=1" | jq '.entry[0].resource.id'
+
+# Mit dieser ID alle Conditions des Patienten abfragen
+curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PID>" | jq '.entry[].resource | {id, code: .code.coding}'
+```
+
+___
+
+## 🔄 8. Optional: Andere Bundles vorbereiten (UKW, UKHD)
+
+### Vergleichstabelle
+
+| Bundle | Type | Benötigt  | Warum? |
+| :--- | :--- | :--- | :--- |
+| **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + tool-kds-sandbox/`convert_to_put.sh` | Passt direkt zum Upload nach der Bereinigung |
+| **UKW** | `searchset` | ??? | Server akzeptiert kein `searchset` |
+| **UKHD** | `transaction` | ??? | Server akzeptiert kein `searchset` |
+
+### Schritt-für-Schritt für UKW/UKHD
+
+```bash
+
+# 1. Bereinigen (wie bei UKSH)
+cd ~/tool-kds-sandbox/solution-exercise-3
+bash clean_bundle.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json
+
+
+# 2. transaction-Bundle vorbereiten (nur bei searchset)
+bash prepare_upload.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned.json
+# → erzeugt UKW-2025-12-05_upload_ready.json
+
+# 3. Upload Methode zu PUT konvertieren
+bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned_prepared.json
+
+# 4. Upload
+cd ~/musterdatenspende-diz/UKW/
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @UKW-2025-12-05_cleaned_prepared_put.json
+```
+
+### Schritt-für-Schritt für UKHD (analog zu UKSH)
+
+cd ~/musterdatenspende-diz/UKHD/
+unzip ~/musterdatenspende-diz/UKHD/UKHD-2025-12-02.zip
+bash bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./clean_bundle.sh ~/musterdatenspende-diz//UKHD/transaction-bundle.json
+bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.json
+cd ~/musterdatenspende-diz/UKHD/
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle_cleaned_put.json
+___
+
+## 📊 Übersicht: Ergebnisse aller drei Standorte
+
+| Standort | Original | Nach Bereinigung | Removed | Upload Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) | ✅ Erfolg |
+| **UKW** | 235 | 234 | 1 (`MedicationAdministration`) | ✅ Erfolg |
+| **UKHD** | 1,287 | 739 | 548 (`Medication`, `MedicationRequest`) | ✅ Erfolg |
+
+___
+
+## 🎯 Was du gelernt hast
+
+| Konzept | Erklärung |
+| :--- | :--- |
+| **Referenzielle Integrität** | In FHIR müssen Referenzen immer auf existierende Ressourcen zeigen. |
+| **searchset vs. batch/transaction** | `searchset` = Read/Result (Response), `batch`/`transaction` = Write/Operation (Request). |
+| **Automatisierte Bereinigung** | Entferne defekte Ressourcen statt manuell zu reparieren – schneller und konsistent. |
+| **curl für FHIR** | `POST /fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
+
+___
+
+## 🚀 Ausblick: Nächste Schritte
+
+- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
+- **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
+- **Ex6:** MII FHIR Validator nutzen (Ressourcen/Profile checken)
+
+___
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

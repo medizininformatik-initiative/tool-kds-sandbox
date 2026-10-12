@@ -1,6 +1,6 @@
 ___
 ___
-**Prerequisites** • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+**Prerequisites** • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
@@ -14,21 +14,21 @@ Bevor du mit den Übungen startest, stelle sicher, dass deine lokale Entwicklung
 * **Hardware:** Mindestens **8 GB Arbeitsspeicher (RAM)**. Der FHIR-Publisher und der lokale Validierungsservice benötigen temporär viel Speicher.
 * **Rechte:** Du benötigst **Sudo-Rechte** auf dem System, um Pakete (wie Docker, Java, Node.js) zu installieren.
 
----
+___
 
 ## 🛠️ Benötigte Werkzeuge (Installations-Checkliste)
 
 Die Übungen bauen aufeinander auf. Du wirst im Laufe des Tutorials folgende Tools einrichten (die genaue Anleitung erfolgt in den jeweiligen Übungen):
 
-1. **Für die Modellierung (Exercise 0):** Node.js mit `npm`, der Compiler `sushi` sowie das `Firely Terminal`.
-2. **Für das HTML-Rendering (Exercise 0):** Eine aktuelle **Java-Umgebung** (mindestens Java 11, empfohlen Java 17 oder 21) sowie **Jekyll**, um die Weboberfläche deines Leitfadens lokal zu generieren.
-3. **Für die Infrastruktur (Exercise 1–5):** `Docker` und `Docker-Compose` zum Starten des lokalen FHIR-Servers (`blaze`), des Terminologieservers und des MII-Validators.
+1. **Für die Modellierung (Exercise 1):** Node.js mit `npm`, der Compiler `sushi` sowie das `Firely Terminal`.
+2. **Für das HTML-Rendering (Exercise 1):** Eine aktuelle **Java-Umgebung** (mindestens Java 11, empfohlen Java 17 oder 21) sowie **Jekyll**, um die Weboberfläche deines Leitfadens lokal zu generieren.
+3. **Für die Infrastruktur (Exercise 2–5):** `Docker` und `Docker-Compose` zum Starten des lokalen FHIR-Servers (`blaze`), des Terminologieservers und des MII-Validators.
 
 ## 💡 **Hinweis zu den Übungsmaterialien & Lösungen:**
 
 > Bearbeite die Übungen am Besten selbstständig in deinem lokalen Main-Branch.
 
-Alle Ordnerstrukturen, Konfigurationsdateien (wie `docker-compose.yml`) und fertigen FSH-Beispieldateien der einzelnen Übungen sind im Git-Repository über separate Branches organisiert. Die Beispieldateien bzw. Musterlösungen stehen dir jeweils im passenden Solution-Branch (z. B. `solution_exercise-0`, `solution_exercise-1` etc.) zur Verfügung.
+Alle Ordnerstrukturen, Konfigurationsdateien (wie `docker-compose.yml`) und fertigen FSH-Beispieldateien der einzelnen Übungen sind im Git-Repository über separate Branches organisiert. Die Beispieldateien bzw. Musterlösungen stehen dir jeweils im passenden Solution-Branch (z. B. `solution_exercise-1`, `solution_exercise-2` etc.) zur Verfügung.
 
 ___
 
@@ -51,6 +51,6 @@ ___
 
 ___
 ___
-**Prerequisites** • [Exercise 0](exercise-0.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md)
+**Prerequisites** • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
