@@ -93,6 +93,12 @@ Um die nachfolgenden Übungen lösen zu können, bedarf es einer Entwicklungsumg
 
 ## Ende
 
+## 📄 Lizenz
+
+Diese Dokumentation und die dazugehörigen Übungsunterlagen stehen unter der Lizenz **Creative Commons Attribution 4.0 International (CC BY 4.0)**.
+
+Den vollständigen Lizenztext findest du im [Repository](/LICENSE.txt) oder online: [https://creativecommons.org/licenses/by/4.0/deed.de](https://creativecommons.org/licenses/by/4.0/deed.de)
+
 ___
 
 ### Kontakt
