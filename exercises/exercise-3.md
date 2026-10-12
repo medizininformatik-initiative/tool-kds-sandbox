@@ -22,18 +22,16 @@ ___
 
 ## 📋 Schnellübersicht: Musterdatensätze im Vergleich
 
-| | **UKSH** | **UKW** | **UKHD** |
-| :--- | :--- | :--- | :--- |
-| **Datei** | `transaction-bundle.json` | `UKW/UKW-2025-12-05.json` | `UKHD/UKHD-2025-12-02/0002690836.json` |
-| **Bundle Type** | `transaction` | `searchset` | `searchset` |
-| **Gesamt Ressourcen** | ~8.400 | ~235 | ~1.300 |
+|            | **UKSH** | **UKHD** | **UKW** |
+| :--------- | :------ | :------- | :------- |
+| **Datei(en)** | `UKSH/UKSH-2025-11-11.zip` | `UKHD/UKHD-2025-12-02.zip` | `UKW/UKW-2025-12-05.json` |
+| **Bundle Type** | Einzelressourcen -> `transaction` | `searchset`-bundle | `searchset` |
+| **Gesamt Ressourcen** | ~8.400 | ~1.300  | ~235 |
 | **Referenzielle Integrität** | ❌ Nicht gegeben | ❌ Nicht gegeben | ❌ Nicht gegeben |
-| **Für diesen Workflow** | ✅ Hauptübung | 🔁 Nach UKSH | 🔁 Nach UKSH |
 
-> 💡 **Warum ist UKSH der Hauptweg?**  
-> UKSH erzeugt mit `merge-bundles.sh` ein `transaction` bundle – das ist **exakt das Format**, das Blaze erwartet.  
-> Das Problem ist also **nicht** die Bundle-Form, sondern die **referenzielle Integrität** (fehlende Referenzen).  
-> Das lernst du in dieser Übung – und danach weißt du auch, was du mit UKW/UKHD machen musst.
+> 💡 **Womit beginnen?**  
+> Für die UKSH-Daten wird ein `merge-bundles.sh`-Skript mitgeliefert, welches die Ressourcen in ein `transaction` bundle transformiert.  
+> Dieses Bundle kann an den FHIR-Server gesendet werden, um die Ressourcen in den FHIR-Server zu laden.  
 
 ___
 
@@ -61,25 +59,20 @@ jq '.type' transaction-bundle.json      # → "transaction"
 jq '.entry | length' transaction-bundle.json  # → ~8.400 Einträge
 ```
 
-> ✅ **Ergebnis:** Du hast ein `transaction` bundle – genau das Format, das Blaze erwartet.
+> ✅ **Ergebnis:** Du hast nun ein `transaction` bundle, welches Blaze verarbeiten kann, um mehrere Transaktionen auf eine Anfrage hin auszuführen.
 
 ___
 
-## 🚫 3. Versuch 1: Direct Upload (scheitert!)
+## 🚫 3. Direct Upload versuchen
 
-> ⚠️ **Ziel:** Den Fehler selbst erleben – das ist der beste Lernweg.
-
-### Schritt A: Upload versuchen
-
+Manuellen Upload via `curl` probieren:
 ```bash
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
   --data @transaction-bundle.json
 ```
 
-### Schritt B: Der Fehler
-
-Die Antwort sollte so aussehen (Auszug):
+Die Antwort sollte ungefähr so aussehen:
 
 ```json
 {
@@ -92,11 +85,11 @@ Die Antwort sollte so aussehen (Auszug):
 }
 ```
 
-> ✅ **Lernziel erreicht:** Wir haben gesehen, dass der Server die Daten **nicht** annehmen kann, weil Referenzen nicht aufgelöst werden können.
+> ✅ Wir haben nun gesehen, dass der Server die Daten **nicht** annehmen kann, weil Referenzen zwischen den Ressourcen nicht aufgelöst werden können.
 
 ---
 
-## 🔍 4. Diagnose: Referenzielle Integrität prüfen
+## 🔍 4. Fehler-Diagnose: Referenzielle Integrität prüfen
 
 ```bash
 bash bin/unresolved-references.sh transaction-bundle.json
@@ -122,7 +115,7 @@ ___
 
 ## 🧹 5. Lösung: Daten bereinigen (`clean_bundle.sh`)
 
-> **Ziel:** Entferne alle Ressourcen, die auf fehlende Referenzen zeigen – so bleibt nur ein *referenziell integeres* Bundle.
+> Für unsere Anwendungsfall, dass Ausprobieren und Lernen des Umgang mit FHIR-Daten, können wir nun entweder kaputte Referenzen reparieren, indem wir beispielsweise Dummy-Ressourcen ergänzen oder aber wir löschen die betreffenden Ressourcen, die fehlende Referenzen enthalten. **Ziel** ein *referenziell integeres* Bundle.
 
 ### Schritt A: Das Bereinigungsskript nutzen
 
@@ -137,7 +130,7 @@ bash ./clean_bundle.sh transaction-bundle.json
 
 ### Ergebnis
 
-Es entsteht `transaction-bundle_cleaned.json` mit einer Zusammenfassung:
+Es entsteht `transaction-bundle_cleaned.json` mit Ausgabe einer kurzen Zusammenfassung:
 
 ```text
 ===================================
@@ -170,8 +163,8 @@ bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/sol
 ### Schritt C: Bundle anpassen – POST → PUT umwandeln
 
 > **Warum?** `merge-bundles.sh` setzt für jeden Eintrag die HTTP-Methode **POST**.  
-> **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID.  
-> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die festen IDs (z. B. `PID-013b...`) erhalten und die Referenzen der anderen Ressourcen bleiben auflösbar.
+> **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID!  
+> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben bei Upload auflösbar.
 
 ```bash
 cd ~/tool-kds-sandbox/solution-exercise-3/
@@ -187,9 +180,9 @@ jq '[.entry[].request.method] | unique' transaction-bundle_cleaned_put.json
 ```
 ___
 
-## 📤 6. Upload via manual `curl`
+## 📤 6. Manueller Upload
 
-> **Ziel:** Den Upload ausführen – das ist ein zentraler FHIR REST API Aufruf.
+> **Ziel:** Manuellen Upload via `curl` erneut versuchen.
 
 ```bash
 curl -X POST http://localhost:8080/fhir \
@@ -203,9 +196,9 @@ Die Response des Servers umfasst den HTTP-Status jeder einzelnen Ressourcen des 
 
 ___
 
-## ✅ 7. Upload überprüfen
+## ✅ 7. Erfolgreichen Upload überprüfen
 
-### Schritt A: Anzahl der Ressourcen prüfen
+### Schritt A: Anzahl der Ressourcen abfragen
 
 ```bash
 # Patienten
@@ -230,24 +223,44 @@ curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PID>" | jq '.entr
 
 ___
 
-## 🔄 8. Optional: Andere Bundles vorbereiten (UKW, UKHD)
+## 🔄 8. Optional: Andere Bundles vorbereiten (UKHD, UKW)
 
 ### Vergleichstabelle
 
-| Bundle | Type | Benötigt  | Warum? |
-| :--- | :--- | :--- | :--- |
-| **UKSH** | `transaction` | musterdaten-diz/bin/`merge-bundles.sh` + tool-kds-sandbox/`clean_bundle.sh` + tool-kds-sandbox/`convert_to_put.sh` | Passt direkt zum Upload nach der Bereinigung |
-| **UKW** | `searchset` | ??? | Server akzeptiert kein `searchset` |
-| **UKHD** | `transaction` | ??? | Server akzeptiert kein `searchset` |
+| Bundle | Type | Skripte    | Warum? |
+| :----- | :--- | :---------- | :----- |
+| **UKSH** |  `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh` - - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
 
-### Schritt-für-Schritt für UKW/UKHD
+### Upload-Vorbereitung für UKHD-Musterdatensatz 
+(analog zu UKSH)
 
 ```bash
+# 1. Entpacken und Mergen
+cd ~/musterdatenspende-diz/UKHD/
+unzip UKHD-2025-12-02.zip
+bash bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
 
+# 2. Bereinigen und auf PUT umstellen
+cd ~/tool-kds-sandbox/solution-exercise-3/
+bash ./clean_bundle.sh ~/musterdatenspende-diz/UKHD/transaction-bundle.json
+bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.json
+
+# 3. Upload
+cd ~/musterdatenspende-diz/UKHD/
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle_cleaned_put.json
+```
+
+### Upload-Vorbereitung für UKW-Musterdatensatz 
+(Nur ein `searchset` gegeben, prepare_upload.sh übernimmt daher die Erstellung eines `transaction`-Bundles)
+
+```bash
 # 1. Bereinigen (wie bei UKSH)
 cd ~/tool-kds-sandbox/solution-exercise-3
 bash clean_bundle.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json
-
 
 # 2. transaction-Bundle vorbereiten (nur bei searchset)
 bash prepare_upload.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned.json
@@ -263,38 +276,25 @@ curl -X POST http://localhost:8080/fhir \
   --data @UKW-2025-12-05_cleaned_prepared_put.json
 ```
 
-### Schritt-für-Schritt für UKHD (analog zu UKSH)
-
-cd ~/musterdatenspende-diz/UKHD/
-unzip ~/musterdatenspende-diz/UKHD/UKHD-2025-12-02.zip
-bash bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
-cd ~/tool-kds-sandbox/solution-exercise-3/
-bash ./clean_bundle.sh ~/musterdatenspende-diz//UKHD/transaction-bundle.json
-bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.json
-cd ~/musterdatenspende-diz/UKHD/
-curl -X POST http://localhost:8080/fhir \
-  -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned_put.json
 ___
 
 ## 📊 Übersicht: Ergebnisse aller drei Standorte
 
-| Standort | Original | Nach Bereinigung | Removed | Upload Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) | ✅ Erfolg |
-| **UKW** | 235 | 234 | 1 (`MedicationAdministration`) | ✅ Erfolg |
-| **UKHD** | 1,287 | 739 | 548 (`Medication`, `MedicationRequest`) | ✅ Erfolg |
+| Standort | Original | Nach Bereinigung | Removed |
+| :--- | :--- | :--- | :--- |
+| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) | 
+| **UKW** | 235 | 234 | 1 (`MedicationAdministration`) |
+| **UKHD** | 1,287 | 739 | 548 (`Medication`, `MedicationRequest`) |
 
 ___
 
-## 🎯 Was du gelernt hast
+## 🎯 Kurzzusammenfassung
 
 | Konzept | Erklärung |
-| :--- | :--- |
+| :------ | :-------- |
 | **Referenzielle Integrität** | In FHIR müssen Referenzen immer auf existierende Ressourcen zeigen. |
 | **searchset vs. batch/transaction** | `searchset` = Read/Result (Response), `batch`/`transaction` = Write/Operation (Request). |
-| **Automatisierte Bereinigung** | Entferne defekte Ressourcen statt manuell zu reparieren – schneller und konsistent. |
-| **curl für FHIR** | `POST /fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
+| **FHIR Bundle-Endpunkt** | POST an `/fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
 
 ___
 

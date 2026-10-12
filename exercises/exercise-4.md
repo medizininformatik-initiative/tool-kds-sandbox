@@ -21,13 +21,13 @@ In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende der DIZe** (UKS
 In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durchzuführen. Du wirst FHIR-Search-Parameter (LOINC-Code, Chaining, AND, Sortierung, Pagination) auf echte KDS-Ressourcen anwenden und siehst, wie du die Daten für Analysen oder Auswertungen nutzen kannst.
 
 > 💡 **Warum FHIR-Search?**  
-> In der DIZ-Praxis greifen duale Auswertungen, Forschungsprojekte oder Export-Skripte fast immer über FHIR-Search auf die integrierten Daten zu. Der FHIR-Search-Standard erlaubt es, flexibel und standortübergreifend auf die Daten zuzugreifen — unabhängig vom zugrundeliegenden Datenbanksystem.
+> FHIR-Search dient als standardisierte API-Schnittstelle zu FHIR-Datenrepositorien. Dadurch wird ein standortübergreifend einheitlicher Zugriff auf die im DIZ integrierten Daten möglich.
 
 > 💡 **Ausblick: TORCH & DIMP/DUP**  
-> Für komplexe Datenanforderungen (z. B. cohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
+> Für komplexe Datenanforderungen (z. B. kohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
 >
-> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH nutzt **CRTDL** (Clinical Resource Transfer Definition Language) und kann entweder CQL oder FLARE für die Kohorten definition verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
-> - **DIMP/DUP-Pipeline (aether-orchestriert)**: Die Infrastruktur zur automatisierten Datenbereitstellung und -pseudonymisierung für Forschungsprojekte. DIMP (Datenintegrations- und Musterspeicherpipeline) und DUP (Datenauslesepipeline) werden über die aether-Orchestrierung gesteuert — typischerweise im Hintergrund für Exportanfragen aktiv.
+> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH Ausleitungen werden als **CRTDL** (Clinical Resource Transfer Definition Language) definiert und können entweder CQL oder FLARE für die Abfrage der Kohorte im FHIR-Server verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
+> - **DIMP/DUP-Pipeline (aether-orchestriert)**: DUP = Data Usage Project / Forschungsprojekte erfordern eine Vereinheitlichung bei Extraktion sowie De-identifikation, Maskierung und Pseudonymisierung (kurz DIMP) der bereitzustellenden Daten. Die Ausleitung wird bei Verwendung von TORCH mittels aether orchestriert.
 >
 > Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um Projekt-basierte, auditierbare Extraktionsketten.
 
@@ -182,7 +182,7 @@ Möchtest Du gezielt KDS-Profil-Inhalte abfragen (z. B. alle Observationen aus d
 curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&_count=5" | jq '.entry[].resource.code.coding[0].display'
 ```
 
-> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat. In einer echten DIZ-Umgebung wäre dies der Fall.
+> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat.
 
 ___
 
@@ -290,8 +290,6 @@ print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.un
 > - Komplexität (mehrere Filterschritte, Aggregationen)  
 > - Statistik (ggf. in R/Python direkt weiterarbeiten)  
 > - Wiederverwendbarkeit (Versionierung im Git)
-
-> ⚠️ **Hinweis:** Skript-Abfragen erfordern keine Authentifizierung, wenn Blaze ungeschützt läuft. In Live-DIZ muß OAuth/Certs eingerichtet werden (nicht in dieser Übung).
 
 ___
 

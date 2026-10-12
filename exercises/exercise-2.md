@@ -115,7 +115,6 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 - Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
 ```bash
-<<<<<<< HEAD
 bash bin/unresolved-references.sh transaction-bundle.json
 ```
 
@@ -180,7 +179,7 @@ Das Skript gibt außerdem eine Statistik aus:
 ═══════════════════════════════════════════════════════════
 ```
 
-### 🛠️ Arbeiten mit dem Lösungsskript (Hinweis)
+### 🛠️ Arbeiten mit dem Skript (Hinweis)
 
 Das Skript `repair-bundle.sh` ist keine "Zauberei" – es wendet lediglich die gleichen Techniken an, die du in den vorherigen Übungen bereits kennengelernt hast:
 
@@ -198,30 +197,12 @@ Jetzt laden wir das reparierte Bundle in den FHIR-Server:
 
 ```bash
 curl -X POST http://localhost:8080/fhir \
-=======
-curl -X POST http://localhost:8080/fhir/Patient \
->>>>>>> 8f54a4de419b13e7bb11581e6a9aff35551b3e06
   -H "Content-Type: application/fhir+json" \
   -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
 ```
 
 - Antwort des Servers:
 
-<<<<<<< HEAD
-### ✅ Zwischenkontrolle
-
-Prüfe, ob der Server die Daten angenommen hat:
-
-```bash
-# Wie viele Patienten sind jetzt auf dem Server?
-curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
-
-# Wie viele Observationen?
-curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
-
-# Wie viele Locations (inkl. unserer Dummy-Locations)?
-curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
-=======
 ```json
 {
   "resourceType": "Patient",
@@ -242,7 +223,6 @@ curl -s "http://localhost:8080/fhir/Location?_summary=count" | jq '.total'
     }
   ]
 }
->>>>>>> 8f54a4de419b13e7bb11581e6a9aff35551b3e06
 ```
 
 #### Upload Observation
