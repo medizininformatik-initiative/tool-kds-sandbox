@@ -42,18 +42,6 @@ ___
 ___
 
 # Platzhalter/TODO:
-## Terminologieserver im Überblick - work in progress
-
-| | tx.fhir.org | MII Ontoserver (mii-termserv) | FHIRsmith (lokal) | Blaze (lokal, im MII-Validator) |
-|---|---|---|---|---|
-| **Betreiber** | HL7 (öffentlich) | MII Service Unit Terminologie | Selbst | Selbst |
-| **Software** | FHIRsmith | Ontoserver (CSIRO) | FHIRsmith (Node.js) | Blaze |
-| **Zugang** | Öffentlich, ohne Login | Client-Zertifikat nötig | Lokal, ohne Login | Lokal, ohne Login |
-| **Inhalt** | Internationale Terminologien | MII-/KDS-Terminologien | Was du lädst | MII-Pakete + LOINC + SNOMED CT (selbst geladen) |
-| **Einsatz** | Standardserver für IG Publisher und Validator | Nur Entwicklung, nicht für produktive ETL-Validierung, keine Personendaten | Lernen, offline, eigene Tests | Lokale Validierung mit dem MII-Validator |
-| **Lizenzaufwand** | Keiner | Zertifikat beantragen | Eigene Beschaffung (z. B. SNOMED) | SNOMED-Release-Dateien selbst bereitstellen |
-
-**Gemeinsame Operationen:** `$lookup`, `$expand`, `$validate-code`, `$translate`
 
 ## Validierungswerkzeuge im Vergleich - work in progress
 
