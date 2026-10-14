@@ -4,11 +4,11 @@ ___
 ___
 ___
 
-# 🟣 Nutzen des MII FHIR Validators
+# 🟣 Nutzen eines FHIR Validators
 
 **Nächste Schritte:**  
 
-- Starte den Validator (Docker)  
+- Starte den Validator
 - Validiere die Ressourcen aus Ex1/Ex3  
 - Bereite dich auf Ex7 (Bericht-Interpretation) vor
 
@@ -38,6 +38,37 @@ ___
 - [Validation-Beispiele](#-validation-beispiele)
 - [Validation über CLI](#-validation-über-cli)
 - [Zusammenfassung & Ausblick](#-zusammenfassung--ausblick)
+
+___
+
+# Platzhalter/TODO:
+## Terminologieserver im Überblick - work in progress
+
+| | tx.fhir.org | MII Ontoserver (mii-termserv) | FHIRsmith (lokal) | Blaze (lokal, im MII-Validator) |
+|---|---|---|---|---|
+| **Betreiber** | HL7 (öffentlich) | MII Service Unit Terminologie | Selbst | Selbst |
+| **Software** | FHIRsmith | Ontoserver (CSIRO) | FHIRsmith (Node.js) | Blaze |
+| **Zugang** | Öffentlich, ohne Login | Client-Zertifikat nötig | Lokal, ohne Login | Lokal, ohne Login |
+| **Inhalt** | Internationale Terminologien | MII-/KDS-Terminologien | Was du lädst | MII-Pakete + LOINC + SNOMED CT (selbst geladen) |
+| **Einsatz** | Standardserver für IG Publisher und Validator | Nur Entwicklung, nicht für produktive ETL-Validierung, keine Personendaten | Lernen, offline, eigene Tests | Lokale Validierung mit dem MII-Validator |
+| **Lizenzaufwand** | Keiner | Zertifikat beantragen | Eigene Beschaffung (z. B. SNOMED) | SNOMED-Release-Dateien selbst bereitstellen |
+
+**Gemeinsame Operationen:** `$lookup`, `$expand`, `$validate-code`, `$translate`
+
+## Validierungswerkzeuge im Vergleich - work in progress
+
+| | `$validate` / `$validate-code` | IG Publisher | HL7/HAPI Validator (CLI) | MII FHIR Validator | gematik Referenzvalidator |
+|---|---|---|---|---|---|
+| **Prüft** | Einzelne Ressource bzw. einzelnen Code | Ganzes IG inkl. Beispiele | Beliebige Ressourcen gegen Profile | Ressourcen gegen MII-IGs | Ressourcen für TI-Anwendungen (z. B. E-Rezept, ISiK) |
+| **Aufruf** | REST-Anfrage an Server | Build-Prozess | `java -jar validator_cli.jar` | HTTP: `POST :8080/validateResource` | Java-Bibliothek / Anwendung |
+| **Profile/IGs** | Auf dem Server geladen | Aus dem IG und seinen Abhängigkeiten | Per Parameter wählbar | MII-IGs vorinstalliert, weitere per `IG_PARAMS` | Fest vorgegeben, Pakete mitgeliefert |
+| **Terminologie** | Der angefragte Server | tx.fhir.org (änderbar) | tx.fhir.org oder eigener Server | Konfigurierbar (`TX_SERVER`): Blaze lokal, MII Ontoserver oder anderer | Pakete enthalten |
+| **Setup** | Keins | IG-Projekt + Publisher | Java + JAR | Docker Compose | Maven/Java |
+| **Offline** | Nur mit lokalem Server | Nur mit lokalem tx-Server | Möglich | Möglich (Cache im Image, Blaze lokal) | Ja (Pakete eingebaut) |
+| **Typischer Einsatz** | Einstieg, Debugging | IG-Autoren | Entwickler, CI | MII-Standorte, ETL-Entwicklung | Hersteller im TI-Umfeld |
+| **Ausgabe** | OperationOutcome | QA-Report | Konsole / OperationOutcome | OperationOutcome | OperationOutcome |
+
+**Technische Basis:** MII-Validator, HAPI-CLI und gematik-Referenzvalidator beruhen auf demselben HL7/HAPI-Validator-Code. Sie unterscheiden sich in Konfiguration, Paketen und Einsatzzweck.
 
 ___
 
