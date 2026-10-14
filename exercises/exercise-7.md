@@ -9,7 +9,6 @@ ___
 **Nächste Schritte:**  
 
 - Validiere deine Ressourcen und interpretiere die Berichte
-- Bau ein Script für automatische Validierung  
 - Bereite dich auf Ex8 vor
 
 ___
@@ -36,6 +35,46 @@ ___
 - [Beispiel: Bericht analysieren](#-beispiel-bericht-analysieren)
 - [Behebungstipps](#-behebungstipps)
 - [Zusammenfassung](#-zusammenfassung)
+
+___
+
+# Platzhalter/Planung
+
+## Häufige Validator-Meldungen - work in progress
+
+### A) Belegt: bekannte Meldungen im MII-PRO-IG (kein Datenfehler)
+
+| Meldung / Code | Bedeutung | Einordnung | Was tun? |
+|---|---|---|---|
+| `UNABLE_TO_INFER_CODESYSTEM` – *System URI could not be determined for the code 'en' in ValueSet all-languages* | Sprachcode steht als `valueCode` ohne System | Validator-/Terminologieserver-Thema. Binding ist nur *preferred*. | Optional `valueCoding` mit `urn:ietf:bcp:47` verwenden |
+| `Terminology_TX_NoValid_16` – *No valid coding for 'en' from all-languages* | Folgefehler zu oben | Wie oben | Wie oben |
+| `Wrong Display Name 'Überhaupt nicht' for http://loinc.org#LA6568-5 - should be 'Not at all'` | Deutsches Display statt englischem LOINC-Original | Bewusste Designentscheidung im IG | Englisches Display primär, deutsch per Translation-Extension |
+| `MSG_DRAFT` | Ressource hat Status *draft* | Warnung | Im Entwicklungsstand akzeptabel |
+| `dom-6` | Ressource ohne Narrative | Warnung | Narrative ergänzen oder unterdrücken |
+
+### B) Typische Meldungen (Allgemeinwissen, Wortlaut ggf. abweichend)
+
+| Meldung (sinngemäß) | Bedeutung | Typische Ursache | Was tun? |
+|---|---|---|---|
+| *Profile reference … could not be resolved / has not been checked* | Profil unbekannt | IG-Paket nicht geladen, falsche Version oder falsche `meta.profile` | Paket mit `-ig` laden, Canonical und Version prüfen |
+| *Minimum cardinality … minimum required = 1, but only found 0* | Pflichtelement fehlt | Beispiel unvollständig | Element ergänzen |
+| *This element does not match any known slice* | Element passt auf keinen Slice | Falscher Discriminator-Wert, z. B. `system` oder `code` | Slice-Definition im Profil prüfen |
+| *Unknown code 'X' in the CodeSystem 'Y'* | Code existiert im CodeSystem nicht | Tippfehler, falsche Version, falsches System | Code per `$lookup` oder `$validate-code` prüfen |
+| *None of the codings provided are in the value set 'X'* | Code liegt nicht im gebundenen ValueSet | Falscher Code oder falsches System | ValueSet per `$expand` ansehen |
+| *CodeSystem 'X' could not be found, so the code cannot be validated* | Terminologieserver kennt das System nicht | System fehlt auf dem Server, z. B. nicht geladen oder lizenzpflichtig (SNOMED) | Anderen Server verwenden oder Inhalt laden |
+| *Unable to validate code … terminology service … error / unavailable* | Terminologieserver nicht erreichbar oder Fehler | Netzwerk, Zertifikat, Server down | Mit `-tx` konfigurierten Server prüfen |
+| *Reference … could not be resolved* | Referenzierte Ressource nicht gefunden | Fehlende Ressource im Bundle | Ressource ergänzen oder Referenz anpassen |
+| *URL … does not resolve* (bei Beispiel-URLs) | Beispiel-Domain nicht erreichbar | Test-Canonicals | `-allow-example-urls true` |
+| *Unknown element / Unrecognised property* | Element existiert nicht in der Ressource | Tippfehler, falscher FHIR-Version | Schreibweise und Version prüfen |
+| *A code should come from this value set …* (Warning) | Extensible Binding verletzt | Code außerhalb des ValueSets | Ggf. akzeptabel, im Profil prüfen |
+
+### Exit-Codes (validator_cli, laut MII-PRO-IG)
+
+| Code | Bedeutung |
+|---|---|
+| 0 | Keine Fehler oder Warnungen |
+| 1 | Nur Warnungen |
+| 2+ | Fehler |
 
 ___
 
