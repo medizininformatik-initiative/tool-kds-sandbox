@@ -27,6 +27,8 @@ Der **MII FHIR Validator** ist ein wichtiger Bestandteil für die MII-Infrastruk
 > - **Audit & Compliance:** Nachweisbarkeit der Datenqualität  
 > - **DIZ-Alltag:** Vor dem Export, Integration, oder bei der Datenbereinigung
 
+Ob eine FHIR-Ressource formal in Ordnung ist, lässt sich schnell und ohne Installation prüfen: Webtools wie fhirtoolbox.com laufen im Browser, finden Tippfehler, falsche Datentypen oder fehlende Pflichtfelder und liefern sofort Rückmeldung. Auch SUSHI, der Compiler für FHIR Shorthand (FSH), weist beim Build auf Fehler im FSH-Quelltext hin, etwa auf Syntaxfehler oder unbekannte Elementpfade. Das reicht aber nur für die Struktur. Ob ein Code wirklich existiert, zum vorgeschriebenen ValueSet gehört und ein passendes Display hat, oder ob die Ressource das richtige Profil erfüllt, kann ein solches Tool nicht beurteilen. Dafür braucht es einen Validator, der die Profile kennt, und einen Terminologieserver, der die Codes prüft. Erst diese Kombination zeigt, ob eine Ressource nicht nur "gut aussieht", sondern fachlich und technisch korrekt ist. In dieser Übung lernst du beides kennen und siehst, welche Fehler welches Werkzeug findet.
+
 > 💡 **Ausblick:** In [Exercise 7](exercise-7.md) lernst du, die Validierungsberichte **zu interpretieren** und typische Errors zu beheben.
 
 ___
@@ -41,7 +43,7 @@ ___
 
 ___
 
-# Platzhalter/TODO:
+# Platzhalter/TODO - Reihenfolge, Pacing, Praktischer Anteil:
 
 ## Validierungswerkzeuge im Vergleich - work in progress
 
@@ -57,6 +59,26 @@ ___
 | **Ausgabe** | OperationOutcome | QA-Report | Konsole / OperationOutcome | OperationOutcome | OperationOutcome |
 
 **Technische Basis:** MII-Validator, HAPI-CLI und gematik-Referenzvalidator beruhen auf demselben HL7/HAPI-Validator-Code. Sie unterscheiden sich in Konfiguration, Paketen und Einsatzzweck.
+
+## Validierungswerkzeuge im Vergleich
+
+Es gibt nicht *den einen* FHIR-Validator, sondern mehrere Werkzeuge für unterschiedliche Zwecke. Die meisten davon nutzen im Kern denselben HL7/HAPI-Validator-Code. Sie unterscheiden sich vor allem darin, **was** sie prüfen (einzelne Ressource, einzelner Code oder ein ganzes IG), **wie** man sie aufruft (REST, Kommandozeile, Build-Prozess) und **wie sie konfiguriert sind** (Profile, Terminologieserver, Offline-Betrieb). Die Tabelle hilft dir bei der Wahl: Für den schnellen Einstieg eignen sich `$validate` und `$validate-code`. Für IG-Autoren ist es der IG Publisher. Für die praktische Arbeit in der MII nutzt du den MII FHIR Validator, und im TI-Umfeld gilt der gematik Referenzvalidator.
+
+### Strukturelle Validierung vs. Conformance-Validierung
+
+| Prüfebene | Strukturell (z. B. fhirtoolbox.com) | Conformance (HL7/HAPI Validator, IG Publisher, MII-Validator) |
+|---|---|---|
+| **Frage** | Ist das gültiges FHIR-JSON? | Entspricht die Ressource dem Standard und den Profilen? |
+| **Syntax / Datentypen** | ✅ | ✅ |
+| **Pflichtelemente / Kardinalität** | Teilweise (nur ausgewählte Ressourcen) | ✅ Alle Elemente laut Profil |
+| **Invarianten (FHIRPath)** | ❌ | ✅ |
+| **Profile / IGs / Slicing** | ❌ | ✅ |
+| **Codes in fest eingebauten Listen** (z. B. `gender`) | ✅ | ✅ |
+| **Code existiert im CodeSystem?** | ❌ | ✅ via Terminologieserver (`$validate-code`) |
+| **Code gehört zum gebundenen ValueSet?** | ❌ | ✅ via Terminologieserver |
+| **Display passt zum Code?** | ❌ | ✅ via Terminologieserver |
+| **Terminologieserver nötig?** | Nein | Ja (tx.fhir.org, Blaze, Ontoserver, FHIRsmith …) |
+| **Typischer Einsatz** | Schneller Check beim Schreiben | Vor Release, in CI, bei Konformitätsaussagen |
 
 ___
 
