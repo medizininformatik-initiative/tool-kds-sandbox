@@ -3,14 +3,16 @@
 ## Enthaltene Dateien
 
 | Datei | Zweck |
-|---|---|
+| --- | --- |
 | `clean_bundle.sh` | **Hauptwerkzeug:** Entfernt Ressourcen mit fehlenden Referenzen (automatisierte Bereinigung) |
 | `convert_to_put.sh` | **Hauptwerkzeug:** Wandelt POST → PUT um (damit fixe IDs erhalten bleiben) |
-| `prepare_upload.sh` | **Optional:** Konvertiert `searchset` → `transaction`, fügt `request` Objekte hinzu und benennt doppelte IDs um |
+| `prepare_upload.sh` | **Nur für `searchset`-Bundles (UKW):** Konvertiert `searchset` → `transaction`, fügt `request` Objekte hinzu und benennt doppelte IDs um |
+
+Jedes Skript hängt ein Suffix an den Namen der Eingabedatei an: `_cleaned`, `_prepared`, `_put`.
 
 ## Verwendung (Empfohlener Workflow für Exercise 3)
 
-### Hauptworkflow (UKSH - referenzielle Integrität):
+### Hauptworkflow (UKSH, UKHD – `transaction` bundle aus `merge-bundles.sh`)
 
 ```bash
 # 1. Daten bereinigen
@@ -27,39 +29,39 @@ curl -X POST http://localhost:8080/fhir \
   --data @transaction-bundle_cleaned_put.json
 ```
 
-### Optional: Für UKW/UKHD (searchset bundles):
+### Optional: Für UKW (searchset bundle)
 
 ```bash
 # 1. Daten bereinigen (wie oben)
 bash clean_bundle.sh UKW/UKW-2025-12-05.json
 # → erzeugt: UKW-2025-12-05_cleaned.json
 
-# 2. Vorbereiten (searchset → transaction Konvertierung, optional)
+# 2. Vorbereiten (searchset → transaction Konvertierung)
 bash prepare_upload.sh UKW/UKW-2025-12-05_cleaned.json
-# → erzeugt: UKW-2025-12-05_prepared.json
+# → erzeugt: UKW-2025-12-05_cleaned_prepared.json
 
 # 3. POST → PUT umwandeln (erst jetzt ist das Bundle upload-bereit)
-bash convert_to_put.sh UKW/UKW-2025-12-05_prepared.json
-# → erzeugt: UKW-2025-12-05_prepared_put.json
+bash convert_to_put.sh UKW/UKW-2025-12-05_cleaned_prepared.json
+# → erzeugt: UKW-2025-12-05_cleaned_prepared_put.json
 
 # 4. Upload
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @UKW/UKW-2025-12-05_prepared_put.json
+  --data @UKW/UKW-2025-12-05_cleaned_prepared_put.json
 ```
 
 ## Warum "Remove-Broken" statt "Repair"?
 
 | Ansatz | Vorteile | Nachteile |
 | :--- | :--- | :--- |
-| **Repair** (repair-bundle.sh) | Datenmenge bleibt gleich | Komplexer, lange Laufzeit, viele Dummy-Ressourcen |
+| **Repair** (früheres `repair-bundle.sh`, entfernt) | Datenmenge bleibt gleich | Komplexer, lange Laufzeit, viele Dummy-Ressourcen |
 | **Remove** (clean_bundle.sh) | **Sehr schnell, einfach, reproduzierbar** | Einige Ressourcen werden entfernt |
 
 Da der Fokus dieser Übung auf **"Daten in den Server laden"** liegt und nicht auf "Data Engineering", ist **Remove-Broken** die bessere Wahl.
 
-## Warum `transaction` statt `batch` für UKW/UKHD?
+## Warum `transaction` statt `batch` für UKW?
 
-Die UKW/UKHD-Daten enthalten **zirkuläre Referenzen**: `Condition.encounter` verweist auf einen `Encounter`, und `Encounter.diagnosis[].condition` verweist zurück auf eine `Condition`. In einem **batch**-Bundle prüft der Server die referenzielle Integrität pro Eintrag sofort — eine Condition, deren Encounter noch nicht gespeichert ist, schlägt mit **HTTP 409 "Referential integrity violated"** fehl (und umgekehrt). In einem **transaction**-Bundle löst der Server die Referenzen innerhalb des Bundles auf und speichert alles atomar, wodurch zirkuläre Referenzen funktionieren.
+Die UKW-Daten enthalten **zirkuläre Referenzen**: `Condition.encounter` verweist auf einen `Encounter`, und `Encounter.diagnosis[].condition` verweist zurück auf eine `Condition`. In einem **batch**-Bundle prüft der Server die referenzielle Integrität pro Eintrag sofort — eine Condition, deren Encounter noch nicht gespeichert ist, schlägt mit **HTTP 409 "Referential integrity violated"** fehl (und umgekehrt). In einem **transaction**-Bundle löst der Server die Referenzen innerhalb des Bundles auf und speichert alles atomar, wodurch zirkuläre Referenzen funktionieren.
 
 Zusätzlich benennt `prepare_upload.sh` doppelte Ressourcen-IDs um (z. B. `Observation/LabResult-000000335` kommt in den UKW-Daten zweimal vor), damit beim späteren PUT-Upload keine URL-Kollisionen entstehen.
 
@@ -80,10 +82,10 @@ unzip UKSH/UKSH-2025-11-11.zip
 bash bin/merge-bundles.sh UKSH-2025-11-11/*.json > transaction-bundle.json
 
 # 4. Bereinigen
-bash /home/m3nthos/tool-kds-sandbox/solution-exercise-3/clean_bundle.sh transaction-bundle.json
+bash ~/tool-kds-sandbox/solution-exercise-3/clean_bundle.sh transaction-bundle.json
 
 # 5. POST → PUT umwandeln
-bash /home/m3nthos/tool-kds-sandbox/solution-exercise-3/convert_to_put.sh transaction-bundle_cleaned.json
+bash ~/tool-kds-sandbox/solution-exercise-3/convert_to_put.sh transaction-bundle_cleaned.json
 
 # 6. Upload
 curl -X POST http://localhost:8080/fhir \
@@ -93,23 +95,45 @@ curl -X POST http://localhost:8080/fhir \
 
 ---
 
-## Beispiel: UKW/UKHD Bundle (optional, searchset → transaction)
+## Beispiel: UKHD Bundle (optional, analog zu UKSH)
+
+```bash
+# 1. Entpacken (4 searchset-Dateien) und zusammenführen
+cd ~/musterdatenspende-diz/UKHD
+unzip UKHD-2025-12-02.zip
+bash ../bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
+
+# 2. Bereinigen
+bash ~/tool-kds-sandbox/solution-exercise-3/clean_bundle.sh transaction-bundle.json
+
+# 3. POST → PUT umwandeln
+bash ~/tool-kds-sandbox/solution-exercise-3/convert_to_put.sh transaction-bundle_cleaned.json
+
+# 4. Upload
+curl -X POST http://localhost:8080/fhir \
+  -H "Content-Type: application/fhir+json" \
+  --data @transaction-bundle_cleaned_put.json
+```
+
+---
+
+## Beispiel: UKW Bundle (optional, searchset → transaction)
 
 ```bash
 # 1. Bundle nach /tmp kopieren
-cp UKW/UKW-2025-12-05.json /tmp/
+cp ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json /tmp/
 
 # 2. Bereinigen
-bash /home/m3nthos/tool-kds-sandbox/solution-exercise-3/clean_bundle.sh /tmp/UKW-2025-12-05.json
+bash ~/tool-kds-sandbox/solution-exercise-3/clean_bundle.sh /tmp/UKW-2025-12-05.json
 
 # 3. Vorbereiten (searchset → transaction)
-bash /home/m3nthos/tool-kds-sandbox/solution-exercise-3/prepare_upload.sh /tmp/UKW-2025-12-05_cleaned.json
+bash ~/tool-kds-sandbox/solution-exercise-3/prepare_upload.sh /tmp/UKW-2025-12-05_cleaned.json
 
 # 4. POST → PUT umwandeln (erst jetzt ist das Bundle upload-bereit)
-bash /home/m3nthos/tool-kds-sandbox/solution-exercise-3/convert_to_put.sh /tmp/UKW-2025-12-05_prepared.json
+bash ~/tool-kds-sandbox/solution-exercise-3/convert_to_put.sh /tmp/UKW-2025-12-05_cleaned_prepared.json
 
 # 5. Upload
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @/tmp/UKW-2025-12-05_prepared_put.json
+  --data @/tmp/UKW-2025-12-05_cleaned_prepared_put.json
 ```

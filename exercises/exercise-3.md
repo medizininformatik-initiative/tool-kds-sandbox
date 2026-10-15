@@ -26,7 +26,7 @@ ___
 | :--------- | :------ | :------- | :------- |
 | **Datei(en)** | `UKSH/UKSH-2025-11-11.zip` | `UKHD/UKHD-2025-12-02.zip` | `UKW/UKW-2025-12-05.json` |
 | **Bundle Type** | Einzelressourcen -> `transaction` | `searchset`-bundle | `searchset` |
-| **Gesamt Ressourcen** | ~8.400 | ~1.300  | ~235 |
+| **Gesamt Ressourcen** | ~8.400 | ~1.400  | ~235 |
 | **Referenzielle Integrität** | ❌ Nicht gegeben | ❌ Nicht gegeben | ❌ Nicht gegeben |
 
 > 💡 **Womit beginnen?**  
@@ -136,8 +136,8 @@ Es entsteht `transaction-bundle_cleaned.json` mit Ausgabe einer kurzen Zusammenf
 ===================================
 Bundle cleaning summary
 ===================================
-Original resources: 8446
-Final resources: 8083
+Original resources: 8451
+Final resources: 8088
 Total removed: 363
 
 Removed by resource type:
@@ -231,7 +231,7 @@ ___
 | :----- | :--- | :---------- | :----- |
 | **UKSH** |  `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
 | **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
-| **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh` - - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
 
 ### Upload-Vorbereitung für UKHD-Musterdatensatz 
 (analog zu UKSH)
@@ -240,7 +240,7 @@ ___
 # 1. Entpacken und Mergen
 cd ~/musterdatenspende-diz/UKHD/
 unzip UKHD-2025-12-02.zip
-bash bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
+bash ../bin/merge-bundles.sh UKHD-2025-12-02/*.json > transaction-bundle.json
 
 # 2. Bereinigen und auf PUT umstellen
 cd ~/tool-kds-sandbox/solution-exercise-3/
@@ -264,7 +264,7 @@ bash clean_bundle.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05.json
 
 # 2. transaction-Bundle vorbereiten (nur bei searchset)
 bash prepare_upload.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned.json
-# → erzeugt UKW-2025-12-05_upload_ready.json
+# → erzeugt UKW-2025-12-05_cleaned_prepared.json
 
 # 3. Upload Methode zu PUT konvertieren
 bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned_prepared.json
@@ -282,9 +282,9 @@ ___
 
 | Standort | Original | Nach Bereinigung | Removed |
 | :--- | :--- | :--- | :--- |
-| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) | 
+| **UKSH** | 8,451 | 8,088 | 363 (Encounter, Location, etc.) |
 | **UKW** | 235 | 234 | 1 (`MedicationAdministration`) |
-| **UKHD** | 1,287 | 739 | 548 (`Medication`, `MedicationRequest`) |
+| **UKHD** | 1,384 | 836 | 548 (`Medication`, `MedicationRequest`) |
 
 ___
 

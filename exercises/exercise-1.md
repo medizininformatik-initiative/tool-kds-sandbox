@@ -458,7 +458,7 @@ Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshsc
 ### Ausblick
 
 - **Ex2:** Einfaches Beispiel FHIR-Search (lokal, Ressourcen uploaden, Search)  
-- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, repair-bundle)  
+- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle)  
 - **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
 
 ___

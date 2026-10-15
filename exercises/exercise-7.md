@@ -204,7 +204,7 @@ ___
 **Lösung:**
 
 - Patient existieren lassen (`GET /Patient/xxx` testen)  
-- ODER: Dummy-Ressourcen ergänzen (wie in [Ex3 `repair-bundle.sh`](exercise-2.md#bundle-reparieren))  
+- ODER: Ressourcen mit defekten Referenzen entfernen (wie in [Ex3 `clean_bundle.sh`](exercise-3.md)) bzw. Dummy-Ressourcen ergänzen  
 - ACHTUNG: Nicht alle Validatoren erzwingen referenzielle Integrität
 
 ___

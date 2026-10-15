@@ -319,7 +319,7 @@ Wenn du versucht, diese ID danach erneut direkt via GET aufzurufen, antwortet de
 
 ### Ausblick
 
-- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, repair-bundle, referenzielle Integrität)  
+- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle, referenzielle Integrität)  
 - **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)  
 - **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
 
