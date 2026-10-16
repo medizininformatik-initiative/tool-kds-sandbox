@@ -4,7 +4,7 @@
 > Konventionen, damit ein Agent in einer neuen Session ohne Vorkenntnisse
 > produktiv weiterarbeiten kann. Allgemeine Repo-Hinweise stehen in `CLAUDE.md`.
 >
-> **Stand:** 2026-10-15
+> **Stand:** 2026-10-16
 
 ---
 
@@ -43,7 +43,7 @@ git checkout develop && git pull
 | ✅ Exercise 2 | **Fertig** | `exercises/exercise-2.md` | Blaze starten, Ressourcen uploaden, FHIR Search |
 | 🟡 Exercise 3 | **Funktional fertig** | `exercises/exercise-3.md` | Upload aller drei Standorte (UKSH, UKW, UKHD) funktioniert. Offen: Umstrukturierung & Präsentation |
 | 📝 Exercise 4 | **Entwurf** | `exercises/exercise-4.md` | Query von KDS-Daten – Entwurf aus Commit `0febdc2`, ungetestet – **nächster Schritt** |
-| 📝 Exercise 5 | **Entwurf** | `exercises/exercise-5.md` | Terminologieserver (Blaze TermServ), ungetestet |
+| 🟡 Exercise 5 | **Überarbeitet, Test läuft** | `exercises/exercise-5.md` | Auf FHIRsmith umgestellt (2026-10-16), Test auf GWDG-Server ausstehend |
 | 📝 Exercise 6 | **Entwurf** | `exercises/exercise-6.md` | MII FHIR Validator, ungetestet |
 | 📝 Exercise 7 | **Entwurf** | `exercises/exercise-7.md` | Ergebnisse interpretieren, ungetestet |
 | 📝 Exercise 8 | **Entwurf** | `exercises/exercise-8.md` | Ausblick, Lizenzen, Alternativen |
@@ -55,7 +55,7 @@ git checkout develop && git pull
 | `solution-exercise-1/` | ✅ | `ExampleIG/` – komplettes SUSHI-Projekt (FSH-Dateien, sushi-config.yaml) |
 | `solution-exercise-2/` | ✅ | Gleiches `ExampleIG/` (für Upload-Übung) – Änderungen in beiden Ordnern nachziehen |
 | `solution-exercise-3/` | ✅ | `clean_bundle.sh`, `prepare_upload.sh`, `convert_to_put.sh` + `README.md` |
-| `solution-exercise-4/` bis `-8/` | ❌ | Nur `.gitkeep` |
+| `solution-exercise-4/` bis `-8/` | ❌ | Nur `.gitkeep` (Exercise 5 braucht keine Lösungsdateien, alle Konfigurationen stehen im Übungstext) |
 
 ### Exercise 3 – Ergebnisse (verifiziert)
 
@@ -212,7 +212,7 @@ Die Breadcrumb muss **sowohl in Zeile 3 als auch in der drittletzten Zeile** ide
    - Schwerpunkte: FHIR Search Parameter, Chaining, `_include`, `_revinclude`, `_filter`
    - Ausblick auf TORCH
    - Lösungen nach `solution-exercise-4/`
-3. **Exercise 5** – Terminologieserver: Blaze TermServ und FHIRsmith TermServ ausprobieren; Validierung mit IG Publisher und TermServ-Optionen anleiten
+3. **Exercise 5** – Terminologieserver mit FHIRsmith (Port 8081, ICD-10-GM/OPS/Alpha-ID-SE aus MII-TermServ-GitLab): Ende-zu-Ende-Test, erwartete Ausgaben eintragen; HTTPS/nginx + fhir-settings.json für IG Publisher in Exercise 6 anleiten
 4. **Exercise 6** – Mit dem MII FHIR Validator praktisch durchspielen
 5. **Exercise 7** – Ergebnisse interpretieren
 6. **Exercise 8** – Ausblick (Lizenzen, Alternativen)

@@ -17,7 +17,7 @@ ___
 | 🟢 | [2 – Einfaches Beispiel FHIR-Search](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 7 Befehlsblöcke | ✅ |
 | 🟡 | [3 – KDS-Beispieldaten in FHIR-Server laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
 | 🟠 | [4 – Query von KDS-Daten](exercises/exercise-4.md) | FHIR-Search auf echten KDS-Daten, optional per Python/R | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Mittel · ca. 11 Befehlsblöcke | 🚧 |
-| 🔴 | [5 – Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md) | Codesysteme herunterladen, in einen Terminologieserver importieren, Codes prüfen | Blaze TermServ, Docker Compose | Mittel · ca. 6 Befehlsblöcke, Import kann lange dauern | 🚧 |
+| 🔴 | [5 – Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md) | Terminologieserver starten, deutsche Klassifikationen laden, Codes nachschlagen und prüfen | FHIRsmith, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
 | 🟣 | [6 – Nutzen eines FHIR Validators](exercises/exercise-6.md) | Ressourcen, Profile und Musterdaten validieren | MII FHIR Validator, validator_cli | Mittel · ca. 6 Befehlsblöcke | 🚧 |
 | 🟤 | [7 – Interpretieren von Ergebnissen](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und typische Fehler beheben | `jq` | Mittel · ca. 5 Befehlsblöcke, viel Lesestoff | 🚧 |
 | ⚫ | [8 – Ausblick: Sonstiges](exercises/exercise-8.md) | Alternativen, Versionierung von Codesystemen, Lizenzen | – | Klein · reine Theorie | 🚧 |
@@ -111,12 +111,12 @@ ___
 
 ## 🔴 Exercise 5 – [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md)
 
-> Voraussetzung: Docker Compose aus Exercise 2.
+> Voraussetzung: Docker Compose aus Exercise 2, Musterdaten aus Exercise 3 (für den letzten Schritt).
 
-- Überblick über Terminologien im DIZ (ICD-10-GM, OPS, LOINC, SNOMED CT, ATC, UCUM)
-- Codesysteme aus zentralen Quellen beziehen ([BfArM](https://terminologien.bfarm.de), [NLM](https://www.nlm.nih.gov/healthit/snomedct/))
-- Blaze als Terminologieserver einrichten und Codesysteme importieren
-- Codes über die REST-API prüfen
+- Überblick über Terminologien im DIZ (ICD-10-GM, OPS, LOINC, SNOMED CT, ATC, UCUM) und über Terminologieserver
+- FHIRsmith per Docker Compose starten und ICD-10-GM, OPS und Alpha-ID-SE als FHIR-Pakete laden
+- Codes mit `$lookup`, `$validate-code` und `$expand` nachschlagen, prüfen und suchen
+- Diagnosecodes aus den Musterdaten in Blaze gegen den Terminologieserver prüfen
 
 ## 🟣 Exercise 6 – [Nutzen eines FHIR Validators](exercises/exercise-6.md)
 
