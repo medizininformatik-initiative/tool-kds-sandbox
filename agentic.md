@@ -42,7 +42,7 @@ git checkout develop && git pull
 | ✅ Exercise 1 | **Fertig** | `exercises/exercise-1.md` | FSH-Profile + SUSHI + IG-Publishing |
 | ✅ Exercise 2 | **Fertig** | `exercises/exercise-2.md` | Blaze starten, Ressourcen uploaden, FHIR Search |
 | 🟡 Exercise 3 | **Funktional fertig** | `exercises/exercise-3.md` | Upload aller drei Standorte (UKSH, UKW, UKHD) funktioniert. Offen: Umstrukturierung & Präsentation |
-| 📝 Exercise 4 | **Entwurf** | `exercises/exercise-4.md` | Query von KDS-Daten – Entwurf aus Commit `0febdc2`, ungetestet – **nächster Schritt** |
+| 🟡 Exercise 4 | **Überarbeitet, Test ausstehend** | `exercises/exercise-4.md` | Auf UKSH-Daten umgestellt (2026-10-16), erwartete Ergebnisse per Python-Nachbau ermittelt – Test gegen Blaze ausstehend |
 | 🟡 Exercise 5 | **Überarbeitet, Test läuft** | `exercises/exercise-5.md` | Auf FHIRsmith umgestellt (2026-10-16), Test auf GWDG-Server ausstehend |
 | 📝 Exercise 6 | **Entwurf** | `exercises/exercise-6.md` | MII FHIR Validator, ungetestet |
 | 📝 Exercise 7 | **Entwurf** | `exercises/exercise-7.md` | Ergebnisse interpretieren, ungetestet |
@@ -207,11 +207,12 @@ Die Breadcrumb muss **sowohl in Zeile 3 als auch in der drittletzten Zeile** ide
 
 1. **Exercise 3 abschließen**
    - Umstrukturierung & Präsentation (laut Commit `8f54a4d` offen)
-2. **Exercise 4 – Query von KDS-Daten** (Entwurf vorhanden, praktisch durchspielen)
-   - Strukturierte Abfragen auf die in Ex 3 geladenen Musterdaten
-   - Schwerpunkte: FHIR Search Parameter, Chaining, `_include`, `_revinclude`, `_filter`
-   - Ausblick auf TORCH
-   - Lösungen nach `solution-exercise-4/`
+2. **Exercise 4 – Query von KDS-Daten** (am 2026-10-16 auf UKSH-Daten umgestellt)
+   - Alle Abfragen und erwarteten Ergebnisse gegen Blaze mit den bereinigten UKSH-Daten durchspielen
+   - Erwartete Zahlen stammen aus einem Python-Nachbau von `clean_bundle.sh` + Suchlogik, nicht aus Blaze
+   - Besonders prüfen (Blaze-Verhalten unsicher): `value-quantity` mit UCUM-Einheit, Chaining `subject:Patient.gender` / `encounter:Encounter.class`, `_has` mit System, `_revinclude` mit 4 Typen (vollständig?), `Condition?_count=500` auf einer Seite, `Patient?deceased=true`, Aussage „Blaze sortiert nur nach `_id`/`_lastUpdated`“
+   - Python (fhir-pyrate) und R (fhircrackr) einmal real ausführen
+   - Feste IDs in der Übung: Befund `REP-88ceb08a…` (Blutgasanalyse, 9 Werte), Patient `PID-5c07503c…` (C20, 97 Conditions)
 3. **Exercise 5** – Terminologieserver mit FHIRsmith (Port 8081, ICD-10-GM/OPS/Alpha-ID-SE aus MII-TermServ-GitLab): Ende-zu-Ende-Test, erwartete Ausgaben eintragen; HTTPS/nginx + fhir-settings.json für IG Publisher in Exercise 6 anleiten
 4. **Exercise 6** – Mit dem MII FHIR Validator praktisch durchspielen
 5. **Exercise 7** – Ergebnisse interpretieren

@@ -8,17 +8,18 @@ ___
 
 **Nächste Schritte:**  
 
-- Teste die Abfragen lokal (Blaze muss laufen!)
-- Ersetze nachfolgend `PATIENT_ID` mit einer ID aus Deiner Datenbasis  
-- Erweitere die Abfragen um weitere Filter oder Ressourcen
+- Prüfe, ob die UKSH-Musterdaten aus Exercise 3 im FHIR-Server liegen
+- Erkunde Patienten, Diagnosen und Laborwerte mit FHIR-Search
+- Verknüpfe Ressourcen über Chaining, `_has`, `_include` und `_revinclude`
+- Entdecke Auffälligkeiten in den Daten
 
 ___
 
 ## Einführung & Kontext
 
-In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende der DIZe** (UKSH-Standort) in einen lokalen FHIR-Server (Blaze) geladen — ca. 8.400 Ressourcen mit den „DIZ-Flavours“ der Universitätskliniken (UKHD, UKSH, UKW).
+In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 272 pseudonymisierten Patienten.
 
-In dieser Übung lernst du, strukturierte Abfragen auf diese **KDS-Daten** durchzuführen. Du wirst FHIR-Search-Parameter (LOINC-Code, Chaining, AND, Sortierung, Pagination) auf echte KDS-Ressourcen anwenden und siehst, wie du die Daten für Analysen oder Auswertungen nutzen kannst.
+In dieser Übung stellst du **strukturierte Abfragen** auf diese KDS-Daten: Du suchst nach Diagnosen (ICD-10-GM), Laborwerten (LOINC), Prozeduren (OPS), verknüpfst Ressourcen miteinander und stößt dabei auf typische Eigenheiten echter DIZ-Daten.
 
 > 💡 **Warum FHIR-Search?**  
 > FHIR-Search dient als standardisierte API-Schnittstelle zu FHIR-Datenrepositorien. Dadurch wird ein standortübergreifend einheitlicher Zugriff auf die im DIZ integrierten Daten möglich.
@@ -35,260 +36,399 @@ ___
 
 📋 **Übersicht:**
 
-- [Grundlagen: FHIR-Search auf KDS-Profilen](#-fhir-search-auf-kds-profilen)
-- [Fachliche Beispieldaten-Abfragen](#-fachliche-beispieldaten-abfragen)
-- [Skriptbasierter Ausblick (R/Python)](#-skriptbasierter-ausblick-rpython)
+- [Vorbereitung: Datenbestand prüfen](#️-0-vorbereitung-datenbestand-prüfen)
+- [Hintergrund: Aufbau einer Suchanfrage](#-1-hintergrund-aufbau-einer-suchanfrage)
+- [Patienten erkunden](#-2-patienten-erkunden)
+- [Diagnosen (ICD-10-GM)](#-3-diagnosen-icd-10-gm)
+- [Laborwerte (LOINC)](#-4-laborwerte-loinc)
+- [Ressourcen verknüpfen](#-5-ressourcen-verknüpfen)
+- [Auffälligkeiten in den Daten](#-6-auffälligkeiten-in-den-daten)
+- [Skriptbasierter Ausblick (Python/R)](#-7-skriptbasierter-ausblick-pythonr)
 - [Zusammenfassung & Merkregeln](#-zusammenfassung--merkregeln)
 
 ___
 
-## 💻 FHIR-Search auf KDS-Profilen
+## 🛠️ 0. Vorbereitung: Datenbestand prüfen
 
-FHIR-Search basiert auf Standard-Parametern ( `_search`, `_id`, `_filter`, `_profile` etc.) und Ressourcen-spezifischen Parametern ( `_count`, `_sort`, `_summary`, `_contained`, `_include`, `_revinclude`). Wir nutzen hier nur die gängigsten.
+> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` (aus [Exercise 2](exercise-2.md#container-definieren-und-starten)) und die bereinigten UKSH-Daten sind per `PUT` hochgeladen ([Exercise 3](exercise-3.md)).
 
-> ⚠️ **Voraussetzung:** Blaze läuft noch auf `http://localhost:8080` (aus [Exercise 2/2](exercise-2.md#daten-in-blase-hochladen)). Sollte er nicht mehr laufen: `docker compose up -d` im Blaze-Verzeichnis.
-
-### 1.1 Ressourcentypen in der Musterdatenspende
-
-Prüfe, welche Ressourcentypen Du siehst (UKSH-Daten):
+Zähle die Ressourcen pro Typ – `_summary=count` liefert nur die Anzahl, keine Ressourcen:
 
 ```bash
-curl -s "http://localhost:8080/fhir/metadata" | jq '.resource[] | select(.type != "CapabilityStatement" and .type != "StructureDefinition") | .type'
-```
-
-Ergebnis (UKSH-Beispiel): `Patient`, `Observation`, `Condition`, `Encounter`, `DiagnosticReport`, `Procedure`, `Location`, `ServiceRequest`, `Practitioner`, `Organization`, `Coverage`, `CareTeam`, `CarePlan`, `Immunization`, `Media`, `DocumentReference`, `DiagnosticReport`, `Observation`, `QuestionnaireResponse`, `Specimen`.
-
-Für die nächsten Abfragen nutzen wir die **KDS-relevanten** Ressourcen:
-
-| Ressource | KDS-Modul-Bezug | Beispiel-Feld |
-| --------- | --------------- | ------------- |
-| `Patient` | KDS-Basis | `name`, `birthDate`, `gender` |
-| `Observation` | Labor, Vitalwerte | `code`, `valueQuantity`, `subject` |
-| `Condition` | Diagnosen (ICD-10-GM) | `code`, `clinicalStatus`, `verificationStatus`, `subject` |
-| `Encounter` | Aufenthalte | `class`, `period`, `location`, `subject` |
-| `DiagnosticReport` | Befunde | `code`, `result`, `subject` |
-| `Procedure` | Eingriffe | `code`, `performedPeriod`, `subject` |
-
-___
-
-### 1.2 Standard-Search-Parameter
-
-#### **Hintergrund:** FHIR-Search-Parameter
-
-| Parameter | Funktion | Beispiel |
-| --------- | -------- | -------- |
-| `_id` | Nach ID filtern | `/Patient?_id=abc123` |
-| `_count` | Seite begrenzen | `/Patient?_count=5` (erste 5 Einträge) |
-| `_summary` | Response reduzieren | `/Patient?_summary=true` (nur `id`, `resourceType`, `meta`) |
-| `_sort` | Sortieren | `/Patient?_sort=_lastUpdated-desc` |
-| `_contained` / `_include` / `_revinclude` | Verknüpfte Ressourcen | `/Observation?_include=Observation:subject` |
-| `code` | Coding-Filter | `/Observation?code=http://loinc.org\|4548-4` |
-| `subject` | Referenz-Filter | `/Observation?subject=Patient/xyz` |
-
-___
-
-#### Praktische Übung: Basis-Abfragen
-
-##### **Abfrage 1: Alle Patienten (mit Pagination)**
-
-```bash
-# Erste 5 Patienten
-curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq '{
-  total: .total,
-  link: .link[].url,
-  entry_count: (.entry | length),
-  Beispiel: .entry[0].resource.name[0]
-}'
-
-# Nächste 5 (Pagination über `_offset` oder `_getpages`)
-curl -s "http://localhost:8080/fhir/Patient?_count=5&_offset=5" | jq '.total, .entry | length'
-```
-
-> 💡 **Merke:** FHIR-Server antworten immer mit einem `Bundle` vom Typ `searchset`. `total` zeigt die Gesamtanzahl an, `entry` enthält die aktuellen Ressourcen für diese „Seite“.
-
-___
-
-##### **Abfrage 2: Observation mit LOINC-Code (HbA1c)**
-
-Nutze den festen LOINC-Code **4548-4** (aus [Exercise 1](exercise-0.md#studienprofil-anlegen)) und filtere nach KDS-Profil (`_profile`) falls verfügbar:
-
-```bash
-# 1. Alle Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_count=3" | jq '{
-  total: .total,
-  Beispiele: (.entry | .[0:2]) | .[].resource | {
-    code: .code.coding[0].display,
-    value: .valueQuantity.value,
-    unit: .valueQuantity.unit,
-    patient: .subject.reference
-  }
-}'
-```
-
-> 💡 **KDS-Hinweis:** Im KDS-Labor-Modul ist dieses Profil definiert. Falls der Server die Profile importiert hat, kannst Du zusätzlich filtern:
->
-> ```bash
-> curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&code=http://loinc.org\|4548-4"
-> ```
-
-___
-
-##### **Abfrage 3: Verknüpfte Suche (Chaining)**
-
-Alle Laborwerte eines bestimmten Patienten (via `subject`-Referenz):
-
-```bash
-# Zuerst: Einen Patienten nach_name suchen (z. B. "Muster")
-PATIENT_ID=$(curl -s "http://localhost:8080/fhir/Patient?name=Muster&_count=1" | jq -r '.entry[0].resource.id')
-
-echo "Gefundene Patient-ID: $PATIENT_ID"
-
-# Alle Observationen für diesen Patienten
-curl -s "http://localhost:8080/fhir/Observation?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {code: .code.coding[0].display, value: .valueQuantity.value, unit: .valueQuantity.unit}'
-```
-
-___
-
-##### **Abfrage 4: AND-Suche (Kombination)**
-
-Observationen mit **mehreren Kriterien** kombinieren (z. B. Laborwert > 48 mmol/mol für einen Patienten):
-
-```bash
-# Beispiel: Laborwert > 48 mmol/mol für einen Patienten (nach LOINC 4548-4)
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&value-quantity=gt48&subject=Patient/$PATIENT_ID&_count=3" | jq '.entry[].resource | {value: .valueQuantity.value, clinical: .clinicalCode?.coding[0].display}'
-```
-
-> 💡 **Merke:** Kombinierte Parameter werden als **AND** verknüpft. Ein `OR` erfordert komplexe `_filter`-Ausdrücke (nicht in dieser Übung).
-
-___
-
-##### **Abfrage 5: Sortierung & Limit**
-
-Laborwerte nach Datum sortieren (`issued` oder `effectiveDateTime`):
-
-```bash
-# 10 neueste Laborwerte mit LOINC 4548-4
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org\|4548-4&_sort=-issued&_count=10" | jq '.entry[].resource | {date: .effectiveDateTime, value: .valueQuantity.value}'
-```
-
-___
-
-### 1.3 Suche auf KDS-Profilen (Ausblick)
-
-Möchtest Du gezielt KDS-Profil-Inhalte abfragen (z. B. alle Observationen aus dem KDS-Labor-Modul), nutze den `_profile`-Parameter mit dem **StructureDefinition-URL** des Profils:
-
-```bash
-# Beispiel (funktioniert nur, wenn der Server die KDS-Profile importiert hat):
-curl -s "http://localhost:8080/fhir/Observation?_profile=http://fhir.de/StructureDefinition/labor-befund&_count=5" | jq '.entry[].resource.code.coding[0].display'
-```
-
-> ⚠️ **Hinweis:** Ob `_profile` funktioniert, hängt davon ab, ob der Server (Blaze) die KDS-Profile geladen hat.
-
-___
-
-## 💻 Fachliche Beispieldaten-Abfragen
-
-Im Folgenden findest Du typische **Fachabfragen**, die Du im DIZ-Alltag benötigst (Diagnosen, Laborwerte, Aufenthalte). Nutze die Beispiel-ID `PATIENT_ID` aus Abfrage 3 oben.
-
-### 2.1 Alle Diagnosen eines Patienten (ICD-10-GM)
-
-```bash
-# Condition mit ICD-10-GM-Diagnosen
-curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  code: .code.coding[0].code,
-  display: .code.coding[0].display,
-  clinicalStatus: .clinicalStatus.coding[0].code,
-  verification: .verificationStatus.coding[0].code
-}'
-```
-
-### 2.2 Alle Aufenthalte eines Patienten (Encounter)
-
-```bash
-# Encounter mit Klassifizierung (AMB, INA, etc.)
-curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID&_count=5" | jq '.entry[].resource | {
-  class: .class.display,
-  period_start: .period.start,
-  period_end: .period.end,
-  location: (.location[]?.location.display // "ohne Station") | .[0:40]
-}'
-```
-
-### 2.3 Gesamtbild: Ressourcen-Verteilung pro Patient
-
-```bash
-# Anzahl aller Ressourcen pro Typ für einen Patienten
-for resource in Patient Observation Condition Encounter DiagnosticReport Procedure; do
-  count=$(curl -s "http://localhost:8080/fhir/$resource?subject=Patient/$PATIENT_ID&_summary=count" | jq '.total')
-  echo "$resource: $count"
+for type in Patient Encounter Condition Observation Procedure DiagnosticReport ServiceRequest Consent; do
+  echo "$type: $(curl -s "http://localhost:8080/fhir/$type?_summary=count" | jq '.total')"
 done
 ```
 
-___
+✅ **Erwartetes Ergebnis** (nur UKSH geladen):
 
-## 💻 Skriptbasierter Ausblick (R/Python)
-
-Für wiederholte Abfragen, Komplexität oder statistische Auswertungen lohnt sich ein **Skriptansatz**. Hier zwei kurze Beispiele:
-
-### 3.1 Python: fhir-pyrate (Python Library)
-
-```bash
-# Installation (optional)
-pip install fhir-pyrate
-
-# Minimalbeispiel: Abfrage aller Laborwerte für einen Patienten
-python3 <<EOF
-from fhirclient import client
-from fhirclient.models import observation, patient
-
-settings = {
-    'app_id': 'my_app',
-    'api_base': 'http://localhost:8080/fhir'
-}
-smart = client.FHIRClient(settings=settings)
-
-# Patient suchen
-PATIENT_ID = '$PATIENT_ID'
-obs = observation.Observation.search({'subject': f'Patient/{PATIENT_ID}', 'code': 'http://loinc.org|4548-4'}).perform_resources(smart.server)
-
-print(f'Gefundene Laborwerte: {len(obs)}')
-for o in obs[:3]:
-    print(f'  {o.effectiveDateTime.isostring}: {o.valueQuantity.value} {o.valueQuantity.unit}')
-EOF
+```text
+Patient: 272
+Encounter: 1172
+Condition: 425
+Observation: 3482
+Procedure: 180
+DiagnosticReport: 1276
+ServiceRequest: 1276
+Consent: 5
 ```
 
-### 3.2 R: fhircrackr (Library)
+> 💡 **Hinweis:** Hast du zusätzlich UKHD oder UKW hochgeladen, sind die Zahlen in dieser Übung entsprechend höher. Die Abfragen funktionieren trotzdem.
 
-```r
-# Installation
-# install.packages("devtools")
-# devtools::install_github("POLAR-fhiR/fhircrackr")
+___
 
-library(fhircrackr)
-library(dplyr)
+## 📖 1. Hintergrund: Aufbau einer Suchanfrage
 
-# Verbindung
-fhir_con <- fhir_connection("http://localhost:8080/fhir")
+Eine FHIR-Suche hat immer die Form `GET [Basis-URL]/[Ressourcentyp]?[Parameter]=[Wert]&...`. Der Server antwortet mit einem `Bundle` vom Typ `searchset`.
 
-# Observationen für einen Patienten abfragen
-obs_df <- fhir_query(
-  fhir_con,
-  resource_type = "Observation",
-  query = list(
-    subject = paste0("Patient/", PATIENT_ID),
-    code = "http://loinc.org|4548-4",
-    _count = 10
-  )
+| Parameter | Funktion | Beispiel |
+| --------- | -------- | -------- |
+| `_id` | Nach ID filtern | `Patient?_id=PID-...` |
+| `_count` | Einträge pro Seite | `Patient?_count=5` |
+| `_summary=count` | Nur Anzahl zurückgeben | `Condition?_summary=count` |
+| `_elements` | Nur bestimmte Elemente zurückgeben | `Patient?_elements=gender,birthDate` |
+| Token (`code`, `gender`, `class`, …) | Codes suchen, optional mit System: `system\|code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|C20` |
+| Datum (`birthdate`, `date`, …) | Mit Präfixen `lt`, `le`, `gt`, `ge`, `eq` | `Patient?birthdate=lt1950` |
+| Menge (`value-quantity`) | Zahlenwert mit Präfix, optional Einheit | `Observation?value-quantity=gt5` |
+| Referenz (`subject`, `encounter`) | Auf andere Ressourcen verweisen | `Condition?subject=Patient/PID-...` |
+| Chaining (`subject:Patient.gender`) | Über eine Referenz hinweg filtern | `Condition?subject:Patient.gender=female` |
+| Reverse Chaining (`_has`) | Nach Ressourcen filtern, die auf mich verweisen | `Patient?_has:Condition:subject:code=C20` |
+| `_include` / `_revinclude` | Verknüpfte Ressourcen mitliefern | `DiagnosticReport?_include=DiagnosticReport:result` |
+
+> 💡 **Merke:** Mehrere Parameter werden mit **UND** verknüpft. Mehrere Werte im selben Parameter, durch Komma getrennt, bedeuten **ODER**: `code=C20,C18`.
+>
+> ⚠️ **Server-Unterschiede:** Nicht jeder FHIR-Server unterstützt jeden Parameter. Blaze kann z. B. mit `_sort` nur nach `_id` und `_lastUpdated` sortieren. Was ein Server kann, steht in seinem `CapabilityStatement` (`/fhir/metadata`).
+
+___
+
+## 💻 2. Patienten erkunden
+
+### Abfrage 2.1: Einen Patienten ansehen
+
+```bash
+curl -s "http://localhost:8080/fhir/Patient?_count=1" | jq '.entry[0].resource'
+```
+
+🔍 **Genau hinschauen:** Die Patienten haben **keinen Namen** und keine vollständige Adresse. Sie sind **pseudonymisiert**: Statt eines Namens gibt es nur einen `identifier` mit dem System `https://www.medizininformatik-initiative.de/fhir/sid/pseudonym`, das Geburtsdatum ist auf Jahr und Monat gekürzt (z. B. `1970-09`). So sehen Daten aus, die ein DIZ für die Forschung bereitstellt.
+
+### Abfrage 2.2: Patienten nach Geschlecht und Alter
+
+```bash
+# Weibliche Patienten
+curl -s "http://localhost:8080/fhir/Patient?gender=female&_summary=count" | jq '.total'
+# → 75
+
+# Vor 1950 geboren
+curl -s "http://localhost:8080/fhir/Patient?birthdate=lt1950&_summary=count" | jq '.total'
+# → 23
+```
+
+### Abfrage 2.3: Blättern durch Ergebnisse (Pagination)
+
+Große Ergebnismengen liefert der Server seitenweise. Die nächste Seite steht als Link mit `relation: "next"` im Bundle:
+
+```bash
+# Erste Seite mit 5 Patienten
+curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq '{total, ids: [.entry[].resource.id[0:20]], next: (.link[] | select(.relation == "next") | .url)}'
+
+# Nächste Seite abrufen: den "next"-Link in Anführungszeichen einsetzen
+curl -s "<next-URL>" | jq '[.entry[].resource.id[0:20]]'
+```
+
+> 💡 **Merke:** `total` ist die Gesamtanzahl der Treffer, `entry` enthält nur die Ressourcen der aktuellen Seite.
+
+___
+
+## 💻 3. Diagnosen (ICD-10-GM)
+
+Alle Diagnosen der UKSH-Daten sind mit **ICD-10-GM** kodiert (`http://fhir.de/CodeSystem/bfarm/icd-10-gm`).
+
+### Abfrage 3.1: Häufigste Diagnosen
+
+Zum Auswerten holen wir alle 425 Diagnosen auf einer Seite und zählen die Codes mit `jq`:
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?_count=500" \
+  | jq '[.entry[].resource.code.coding[0].code] | group_by(.) | map({code: .[0], anzahl: length}) | sort_by(-.anzahl) | .[0:8]'
+```
+
+✅ **Erwartetes Ergebnis (Auszug):**
+
+| ICD-10-GM | Anzahl | Bedeutung |
+| --------- | ------ | --------- |
+| `Z11` | 27 | Spezielle Verfahren zur Untersuchung auf infektiöse und parasitäre Krankheiten |
+| `C20` | 23 | Bösartige Neubildung des Rektums |
+| `R51` | 21 | Kopfschmerz |
+| `I45.2` | 19 | Bifaszikulärer Block |
+| `R11` | 15 | Übelkeit und Erbrechen |
+| `U99.0` | 13 | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
+
+🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – genau dafür richten wir in [Exercise 5](exercise-5.md) einen Terminologieserver ein.
+
+### Abfrage 3.2: Alle Rektumkarzinom-Diagnosen (C20)
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20&_count=50" \
+  | jq '{diagnosen: .total, patienten: ([.entry[].resource.subject.reference] | unique | length)}'
+```
+
+✅ **Erwartetes Ergebnis:** `23` Diagnosen bei nur `5` Patienten.
+
+💡 **Warum mehr Diagnosen als Patienten?** Eine Diagnose wird pro Fall (`Encounter`) dokumentiert. Wer mehrfach stationär behandelt wird, hat die gleiche Diagnose mehrfach.
+
+___
+
+## 💻 4. Laborwerte (LOINC)
+
+Die UKSH-Daten enthalten 1.888 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Exercise 1](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
+
+### Abfrage 4.1: Hämoglobin – LOINC vs. lokaler Code
+
+Jeder Laborwert trägt einen **lokalen Laborcode** des UKSH und – wenn vorhanden – zusätzlich einen **LOINC-Code**:
+
+```bash
+# Hämoglobin über LOINC
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&_summary=count" | jq '.total'
+# → 32
+
+# Hämoglobin über den lokalen UKSH-Code
+curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/fhir/CodeSystem/Laborparameter|LAB_hbe&_summary=count" | jq '.total'
+# → 31
+```
+
+```bash
+# Wie viele Laborwerte haben überhaupt einen LOINC-Code?
+curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_summary=count" | jq '.total'
+# → 1888
+curl -s "http://localhost:8080/fhir/Observation?category=laboratory&code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count" | jq '.total'
+# → 819
+```
+
+🔍 **Genau hinschauen:** 819 von 1.888 Laborwerten (über 40 %) haben **keinen LOINC-Code**, sondern nur einen lokalen Code. Eine standortübergreifende Abfrage per LOINC findet diese Werte nicht. Das Mapping lokaler Codes auf LOINC ist eine zentrale Aufgabe im DIZ.
+
+### Abfrage 4.2: Auffällige Werte finden – Hyperkaliämie
+
+Kalium (`6298-4`) über 5 mmol/L:
+
+```bash
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|6298-4&value-quantity=gt5|http://unitsofmeasure.org|mmol/L" \
+  | jq '[.entry[].resource | {datum: .effectiveDateTime[0:10], wert: .valueQuantity.value, einheit: .valueQuantity.unit, bewertung: .interpretation[0].coding[0].code}] | sort_by(.datum)'
+```
+
+✅ **Erwartetes Ergebnis:** 5 Werte zwischen 5,7 und 8,8 mmol/L, alle vom selben Patienten im Januar/Februar 2022.
+
+> 💡 **Merke:** Bei `value-quantity` steht die Einheit als UCUM-Code hinter dem Wert: `[präfix][wert]|[system]|[code]`. Ohne Einheit (`gt5`) wird nur der Zahlenwert verglichen.
+>
+> 💡 **Sortieren:** Da Blaze nicht nach Datum sortieren kann, übernimmt das hier `jq` mit `sort_by(.datum)`.
+
+### 🛠️ Aufgabe: Auffällige Laborwerte
+
+- Finde alle Hämoglobin-Werte unter 10 g/dL. Wie viele Patienten sind betroffen?
+- Finde Natrium-Werte (`2951-2`) unter 135 mmol/L (Hyponatriämie).
+
+<details>
+<summary>Lösung</summary>
+
+```bash
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&value-quantity=lt10" \
+  | jq '{werte: .total, patienten: ([.entry[].resource.subject.reference] | unique | length)}'
+# → 6 Werte, 1 Patientin
+
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|2951-2&value-quantity=lt135&_summary=count" | jq '.total'
+# → 7
+```
+
+</details>
+
+___
+
+## 💻 5. Ressourcen verknüpfen
+
+### Abfrage 5.1: Chaining – über eine Referenz hinweg filtern
+
+„Alle C20-Diagnosen bei **Frauen**“ – das Geschlecht steht nicht in der Condition, sondern im verknüpften Patient:
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20&subject:Patient.gender=female&_summary=count" | jq '.total'
+# → 3
+```
+
+„Wie viele Diagnosen stammen aus **ambulanten** bzw. **stationären** Fällen?“ – die Fallart steht im verknüpften Encounter:
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=AMB&_summary=count" | jq '.total'
+# → 137
+curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_summary=count" | jq '.total'
+# → 288
+```
+
+### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
+
+„Welche **Patienten** haben eine C20-Diagnose?“ – hier wird umgekehrt gesucht: Patienten, auf die eine passende Condition verweist:
+
+```bash
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
+  | jq '[.entry[].resource | {id: .id[0:20], gender, birthDate}]'
+```
+
+✅ **Erwartetes Ergebnis:** 5 Patienten (3 männlich, 2 weiblich).
+
+`_has` lässt sich mit anderen Parametern kombinieren – z. B. Patienten mit **Pflegegrad 3** (OPS `9-984.8`):
+
+```bash
+curl -s "http://localhost:8080/fhir/Patient?_has:Procedure:subject:code=http://fhir.de/CodeSystem/bfarm/ops|9-984.8&_summary=count" | jq '.total'
+# → 2
+```
+
+### Abfrage 5.3: `_include` – Befund mit allen Einzelwerten
+
+Ein Laborbefund (`DiagnosticReport`) verweist über `result` auf seine Einzelwerte. Mit `_include` kommen diese in derselben Antwort mit:
+
+```bash
+curl -s "http://localhost:8080/fhir/DiagnosticReport?_id=REP-88ceb08a4e874daa01d5fab140f124a710a6218adfa22ae8de4a2620&_include=DiagnosticReport:result" \
+  | jq '.entry[] | {modus: .search.mode, typ: .resource.resourceType, loinc: ([.resource.code.coding[] | select(.system == "http://loinc.org") | .code][0]), wert: .resource.valueQuantity.value, einheit: .resource.valueQuantity.unit}'
+```
+
+✅ **Erwartetes Ergebnis:** 1 Befund (`match`) und 9 Laborwerte (`include`) – eine **Blutgasanalyse** mit u. a. Kalium, Glukose, Laktat und Sauerstoffpartialdruck. Ein Wert hat keinen LOINC-Code (`loinc: null`) – siehe [Abfrage 4.1](#abfrage-41-hämoglobin--loinc-vs-lokaler-code).
+
+### Abfrage 5.4: `_revinclude` – die Patientenakte
+
+Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage:
+
+```bash
+PATIENT_ID=PID-5c07503c9075b5905cc9a256500bd9588e766e49176cce1f58a4f401
+
+curl -s "http://localhost:8080/fhir/Patient?_id=$PATIENT_ID&_revinclude=Encounter:subject&_revinclude=Condition:subject&_revinclude=Procedure:subject&_revinclude=Observation:subject" \
+  | jq '[.entry[].resource.resourceType] | group_by(.) | map({(.[0]): length}) | add'
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```json
+{
+  "Condition": 97,
+  "Encounter": 4,
+  "Observation": 8,
+  "Patient": 1,
+  "Procedure": 39
+}
+```
+
+### 🛠️ Aufgabe: Patientenakte auswerten
+
+- Welche **verschiedenen** Diagnosen hat dieser Patient? Tipp: `select(.resource.resourceType == "Condition")`, dann `unique`.
+- Wie lange dauerten seine vier stationären Aufenthalte? Tipp: `Encounter?subject=Patient/$PATIENT_ID` und `.period`.
+
+<details>
+<summary>Lösung</summary>
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=200" \
+  | jq '[.entry[].resource.code.coding[0].code] | unique'
+# → 25 verschiedene Codes, u. a. C20, E11.90 (Diabetes Typ 2), I10.90 (Hypertonie)
+
+curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID" \
+  | jq '[.entry[].resource | {klasse: .class.code, von: .period.start[0:10], bis: .period.end[0:10]}] | sort_by(.von)'
+# → 4 stationäre Aufenthalte (IMP) zwischen Februar 2023 und Mai 2024
+```
+
+</details>
+
+___
+
+## 🔍 6. Auffälligkeiten in den Daten
+
+Echte DIZ-Daten sind nie perfekt. Mit FHIR-Search lassen sich Widersprüche aufspüren.
+
+### Abfrage 6.1: Verstorben – oder doch nicht?
+
+Der Vitalstatus wird im KDS doppelt abgebildet: als `deceased` im Patient und als eigene Observation (`67162-8`, Profil *Vitalstatus*) mit den Werten `L` (lebend) und `T` (tot):
+
+```bash
+# Patienten mit deceased = true
+curl -s "http://localhost:8080/fhir/Patient?deceased=true&_summary=count" | jq '.total'
+# → 260
+
+# Vitalstatus-Observations mit "T" (tot)
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&value-concept=https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus|T&_summary=count" | jq '.total'
+# → 1
+```
+
+❗ **Widerspruch:** 260 von 272 Patienten sind laut `Patient.deceased` verstorben, aber nur ein einziger Vitalstatus lautet „tot“ – alle 260 haben zugleich einen Vitalstatus „lebend“. Welche Angabe stimmt? Bei der Auswertung echter Daten muss so etwas mit dem Standort geklärt werden.
+
+### Abfrage 6.2: Ein seltsamer Diagnosecode
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition?code=570762" | jq '.entry[].resource | {code: .code.coding[0], patient: .subject.reference}'
+```
+
+❗ `570762` ist **kein gültiger ICD-10-GM-Code**. Solche Fehler fallen bei einer Suche nur auf, wenn man gezielt danach sucht. Systematisch finden sie erst der Terminologieserver ([Exercise 5](exercise-5.md)) und der Validator ([Exercise 6](exercise-6.md)).
+
+___
+
+## 💻 7. Skriptbasierter Ausblick (Python/R)
+
+Für wiederkehrende Abfragen und statistische Auswertungen lohnt sich ein Skript. Bibliotheken übernehmen dabei das Blättern durch die Seiten und wandeln die Ressourcen in Tabellen um. Beide Beispiele holen alle Hämoglobin-Werte.
+
+### 7.1 Python: fhir-pyrate
+
+```bash
+pip install fhir-pyrate
+```
+
+```python
+from fhir_pyrate import Pirate
+
+search = Pirate(auth=None, base_url="http://localhost:8080/fhir", print_request_url=True)
+
+df = search.steal_bundles_to_dataframe(
+    resource_type="Observation",
+    request_params={"code": "http://loinc.org|718-7", "_count": 100},
+    fhir_paths=[
+        ("patient", "subject.reference"),
+        ("datum", "effectiveDateTime"),
+        ("wert", "valueQuantity.value"),
+        ("einheit", "valueQuantity.unit"),
+    ],
 )
 
-print(obs_df %>% select(effectiveDateTime, valueQuantity.value, valueQuantity.unit))
+print(df.sort_values("datum").head())
+print(df["wert"].describe())
+```
+
+### 7.2 R: fhircrackr
+
+```r
+# install.packages("fhircrackr")
+library(fhircrackr)
+
+request <- fhir_url(
+  url = "http://localhost:8080/fhir",
+  resource = "Observation",
+  parameters = c(code = "http://loinc.org|718-7", "_count" = "100")
+)
+bundles <- fhir_search(request = request)
+
+design <- fhir_table_description(
+  resource = "Observation",
+  cols = c(
+    patient = "subject/reference",
+    datum   = "effectiveDateTime",
+    wert    = "valueQuantity/value",
+    einheit = "valueQuantity/unit"
+  )
+)
+df <- fhir_crack(bundles = bundles, design = design)
+
+df$wert <- as.numeric(df$wert)
+summary(df$wert)
 ```
 
 > 💡 **Warum Skripte?**  
 >
-> - Automatisierung (tägliche exports, Cronjobs)  
+> - Automatisierung (regelmäßige Exporte, Cronjobs)  
 > - Komplexität (mehrere Filterschritte, Aggregationen)  
-> - Statistik (ggf. in R/Python direkt weiterarbeiten)  
+> - Statistik (direkt in R/Python weiterarbeiten)  
 > - Wiederverwendbarkeit (Versionierung im Git)
 
 ___
@@ -298,27 +438,35 @@ ___
 ### Warum FHIR-Search?
 
 > ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
-> ✅ **Standort-unabhängig** — Alle DIZ exportieren über die gleiche API  
-> ✅ **Flexibel** — Kombiniere Filter, Pagination, Sortierung  
+> ✅ **Standortübergreifend** — Dieselbe Abfrage funktioniert an jedem DIZ, sofern die Daten einheitlich kodiert sind  
+> ✅ **Flexibel** — Filter, Verknüpfungen und Seiten lassen sich kombinieren  
 
 ### Wichtigste Parameter im Alltag
 
 | Situation | Parameter | Beispiel |
 | --------- | --------- | -------- |
-| **ID-Suche** | `_id` | `/Patient?_id=abc123` |
-| **Code-Suche** | `code` | `/Observation?code=http://loinc.org\|4548-4` |
-| **Referenz-Suche** | `subject` | `/Observation?subject=Patient/xyz` |
-| **Chaining** | `subject` | `/Observation?subject=Patient/xyz` |
-| **AND-Suche** | Kombination | `?code=...&value-quantity=gt48` |
-| **Pagination** | `_count`, `_offset` | `?_count=5&_offset=10` |
-| **Sortierung** | `_sort` | `?_sort=-issued` |
-| **Komprimierung** | `_summary` | `?_summary=true` |
+| **Anzahl** | `_summary=count` | `Patient?_summary=count` |
+| **Code-Suche** | `code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|C20` |
+| **Werte filtern** | `value-quantity` | `Observation?code=http://loinc.org\|6298-4&value-quantity=gt5` |
+| **Datum filtern** | `birthdate`, `date` | `Patient?birthdate=lt1950` |
+| **Referenz-Suche** | `subject` | `Condition?subject=Patient/PID-...` |
+| **Chaining** | `subject:Patient.gender` | `Condition?subject:Patient.gender=female` |
+| **Reverse Chaining** | `_has` | `Patient?_has:Condition:subject:code=C20` |
+| **Mitliefern** | `_include`, `_revinclude` | `Patient?_id=...&_revinclude=Condition:subject` |
+| **Blättern** | `_count` + `next`-Link | `Patient?_count=5` |
+
+### Was du über die Daten gelernt hast
+
+- Die Patienten sind pseudonymisiert: keine Namen, gekürzte Geburtsdaten.
+- Diagnosen und Laborwerte tragen oft nur Codes ohne Klartext.
+- Über 40 % der Laborwerte haben nur einen lokalen Code und keinen LOINC-Code.
+- Die Daten enthalten Widersprüche und ungültige Codes.
 
 ### Ausblick
 
-- **Ex5:** Terminologien laden (bfarm, SNOMED), lokal verfügbar machen  
-- **Ex6:** MII FHIR Validator — Profile/Ressourcen checken  
-- **Ex7:** Validierungsreport interpretieren  
+- **Ex5:** Terminologieserver aufsetzen – Codes nachschlagen und prüfen  
+- **Ex6:** FHIR Validator – Ressourcen gegen Profile und Terminologien prüfen  
+- **Ex7:** Validierungsberichte interpretieren  
 
 ___
 ___

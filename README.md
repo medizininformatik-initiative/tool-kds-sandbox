@@ -16,7 +16,7 @@ ___
 | 🔵 | [1 – FHIR-Profile definieren und Ressourcen generieren](exercises/exercise-1.md) | Profil und Beispielressource in FSH schreiben und kompilieren, Implementation Guide bauen | `sushi`, Firely Terminal, Java + IG Publisher | Groß · ca. 20 Befehlsblöcke, IG-Build ca. 10 min | ✅ |
 | 🟢 | [2 – Einfaches Beispiel FHIR-Search](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 7 Befehlsblöcke | ✅ |
 | 🟡 | [3 – KDS-Beispieldaten in FHIR-Server laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
-| 🟠 | [4 – Query von KDS-Daten](exercises/exercise-4.md) | FHIR-Search auf echten KDS-Daten, optional per Python/R | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Mittel · ca. 11 Befehlsblöcke | 🚧 |
+| 🟠 | [4 – Query von KDS-Daten](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den UKSH-Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | 🚧 |
 | 🔴 | [5 – Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md) | Terminologieserver starten, deutsche Klassifikationen laden, Codes nachschlagen und prüfen | FHIRsmith, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
 | 🟣 | [6 – Nutzen eines FHIR Validators](exercises/exercise-6.md) | Ressourcen, Profile und Musterdaten validieren | MII FHIR Validator, validator_cli | Mittel · ca. 6 Befehlsblöcke | 🚧 |
 | 🟤 | [7 – Interpretieren von Ergebnissen](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und typische Fehler beheben | `jq` | Mittel · ca. 5 Befehlsblöcke, viel Lesestoff | 🚧 |
@@ -105,8 +105,10 @@ ___
 
 > Voraussetzung: Musterdaten aus Exercise 3 sind im Server geladen.
 
-- FHIR-Search-Parameter auf echte KDS-Ressourcen anwenden: Codes, Chaining, AND-Verknüpfung, Sortierung, Pagination
-- Fachliche Abfragen: Diagnosen (ICD-10-GM) und Aufenthalte eines Patienten, Ressourcenverteilung pro Patient
+- Pseudonymisierte Patienten erkunden, nach Geschlecht und Alter filtern, durch Ergebnisseiten blättern
+- Diagnosen (ICD-10-GM) und Laborwerte (LOINC und lokale Codes) suchen, auffällige Werte wie eine Hyperkaliämie finden
+- Ressourcen verknüpfen: Chaining, `_has`, `_include` (Befund mit Einzelwerten) und `_revinclude` (Patientenakte)
+- Widersprüche und ungültige Codes in den Daten entdecken
 - Ausblick auf skriptbasierte Auswertung mit Python (fhir-pyrate) und R (fhircrackr) sowie auf TORCH
 
 ## 🔴 Exercise 5 – [Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md)
