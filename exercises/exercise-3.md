@@ -69,7 +69,7 @@ Manuellen Upload via `curl` probieren:
 ```bash
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle.json
+  --data @transaction-bundle.json | jq
 ```
 
 Die Antwort sollte ungefähr so aussehen:
@@ -103,13 +103,13 @@ Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
   "Location/LMED1",
   "Encounter/PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385",
   "Patient/dummy"
+  [...]
 ]
 ```
 
 💡 **Erklärung:**  
 
 - Die `Encounter` Ressourcen verweisen auf `Location`, aber diese sind im Bundle nicht enthalten.
-- Ein `Encounter` verweist auf `Patient/dummy`, aber diesen Patienten gibt es nicht.
 
 ___
 
@@ -137,7 +137,7 @@ Es entsteht `transaction-bundle_cleaned.json` mit Ausgabe einer kurzen Zusammenf
 Bundle cleaning summary
 ===================================
 Original resources: 8451
-Final resources: 8088
+Final resources: 8083
 Total removed: 363
 
 Removed by resource type:
@@ -167,7 +167,6 @@ bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/sol
 > **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben bei Upload auflösbar.
 
 ```bash
-cd ~/tool-kds-sandbox/solution-exercise-3/
 bash ./convert_to_put.sh transaction-bundle_cleaned.json
 # → erzeugt: transaction-bundle_cleaned_put.json
 ```
@@ -187,12 +186,12 @@ ___
 ```bash
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned_put.json
+  --data @transaction-bundle_cleaned_put.json | jq
 ```
 
 Die Response des Servers umfasst den HTTP-Status jeder einzelnen Ressourcen des Bundles.
 
-✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `201 Created`).
+✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `200 OK` oder `201 Created`).
 
 ___
 
@@ -214,8 +213,9 @@ curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
 # Eine Condition mit Angabe des zugehörigen Patienten finden
 curl -s "http://localhost:8080/fhir/Condition?_count=1" | jq '.entry[0].resource | {id, subject, code: .code.coding}'
 
-# Alternativ: Einen Patienten mit mindestens einer Condition finden
-curl -s "http://localhost:8080/fhir/Patient?_has:Condition:patient&_count=1" | jq '.entry[0].resource.id'
+# Einen Patienten mit mindestens einer Condition finden
+curl -s "http://localhost:8080/fhir/Condition?_count=1&_include=Condition:subject" \
+  | jq -r '.entry[] | select(.resource.resourceType=="Patient") | .resource.id'
 
 # Mit dieser ID alle Conditions des Patienten abfragen
 curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PID>" | jq '.entry[].resource | {id, code: .code.coding}'
@@ -233,7 +233,7 @@ ___
 | **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
 | **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
 
-### Upload-Vorbereitung für UKHD-Musterdatensatz 
+### Upload-Vorbereitung für UKHD-Musterdatensatz (+3 Patienten)
 (analog zu UKSH)
 
 ```bash
@@ -251,10 +251,10 @@ bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.j
 cd ~/musterdatenspende-diz/UKHD/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned_put.json
+  --data @transaction-bundle_cleaned_put.json | jq
 ```
 
-### Upload-Vorbereitung für UKW-Musterdatensatz 
+### Upload-Vorbereitung für UKW-Musterdatensatz (+1 Patient)
 (Nur ein `searchset` gegeben, prepare_upload.sh übernimmt daher die Erstellung eines `transaction`-Bundles)
 
 ```bash
@@ -273,7 +273,7 @@ bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned_prepar
 cd ~/musterdatenspende-diz/UKW/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @UKW-2025-12-05_cleaned_prepared_put.json
+  --data @UKW-2025-12-05_cleaned_prepared_put.json | jq
 ```
 
 ___
