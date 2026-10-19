@@ -114,23 +114,23 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 
 - Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
-> Voraussetzung: Ressource wurde mittels `sushi .` im Sushi-Projektordner aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
+> Voraussetzung: Ressource wurde mittels `sushi .` im Sushi-Projektordner (Bsp.: `tool-kds-sandbox/solution-exercise-2/ExampleIG`)  aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
 
 ```bash
-curl -X POST http://localhost:8080/fhir/Patient \
+curl -X POST http://localhost:8080/fhir/Patient  \
   -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
+  -d @fsh-generated/resources/Patient-example-patient.json
 ```
 
-- Antwort des Servers:
+- Antwort des Servers (mit `| jq`):
 
 ```json
 {
   "resourceType": "Patient",
-  "id": "DHYSYTWMKTNZRTNP",
+  "id": "DIKTKJOAOLNYT3Y7",
   "meta": {
-    "versionId": "3",
-    "lastUpdated": "2026-06-29T09:45:23.426Z",
+    "versionId": "4",
+    "lastUpdated": "2026-10-19T08:41:08.887Z",
     "profile": [
       "http://example.org/StructureDefinition/MyPatient"
     ]
@@ -163,7 +163,14 @@ curl -X POST http://localhost:8080/fhir/Patient \
 ```Bash
 curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
   -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Patient-PatientExample.json
+  -d @fsh-generated/resources/Patient-example-patient.json
+```
+
+In der Antwort des Server steht nun die beim Upload festgelegte ID:
+```text
+{
+  "resourceType": "Patient",
+  "id": "example-patient",
 ```
 
 ##### Observation hochladen (PUT):
@@ -173,7 +180,7 @@ curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
 ```Bash
 curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
   -H "Content-Type: application/fhir+json" \
-  -d @ExampleIG/fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
+  -d @fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
 ```
 
 <h3>💡 Merkregel für FHIR-Server:</h3>
