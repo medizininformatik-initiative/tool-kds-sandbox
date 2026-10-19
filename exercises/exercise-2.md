@@ -114,6 +114,8 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 
 - Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
+> Voraussetzung: Ressource wurde mittels `sushi .` im Sushi-Projektordner aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
+
 ```bash
 curl -X POST http://localhost:8080/fhir/Patient \
   -H "Content-Type: application/fhir+json" \
