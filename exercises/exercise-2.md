@@ -12,7 +12,7 @@ ___
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_ZuckWatch_Labor_Hemo") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ()"Example-ZuckWatch-Labor-Hemo-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ()"Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
 Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
@@ -156,7 +156,7 @@ curl -X POST http://localhost:8080/fhir/Patient  \
 
 - Um dieses Problem zu lösen, nutzen wir anstelle von `POST` die HTTP-Methode `PUT`. Damit bestimmen wir die ID der Ressource direkt beim Upload selbst.
 
-##### Patient mit selbst festgelegter ID hochladen (`HTTP PUT`):
+##### Patient mit selbst festgelegter ID hochladen (`HTTP PUT`)
 
 - Hierbei übergeben wir die ID "example-patient" direkt am Ende der Endpunkt-URL.
 
@@ -173,9 +173,9 @@ In der Antwort des Server steht nun die beim Upload festgelegte ID:
   "id": "example-patient",
 ```
 
-##### Observation hochladen (PUT):
+##### Observation hochladen (PUT)
 
-- Da unsere in Exercise 1 definierte Observation (`EXA_ZuckWatch_Labor_Hemo.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten. 
+- Da unsere in Exercise 1 definierte Observation (`EXA_Studie_HbA1c.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten.
 
 - Da unser Example zusätzlich auf eine Organisation als "Assigner" für den identifier "analyseBefundCode" verweist, müssen wir diese ebenfalls anlegen und in den FHIR-Server hochladen.
 
@@ -195,6 +195,7 @@ Usage: #example
 ```
 
 Upload:
+
 ```bash
 curl -X PUT http://localhost:8080/fhir/Organization/beispiel-labor \
   -H "Content-Type: application/fhir+json" \
@@ -204,9 +205,9 @@ curl -X PUT http://localhost:8080/fhir/Organization/beispiel-labor \
 Wir laden nun auch die Observation (mit einer festen ID) via PUT hoch:
 
 ```Bash
-curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
+curl -X PUT http://localhost:8080/fhir/Observation/Example-Studie-HbA1c-01 \
   -H "Content-Type: application/fhir+json" \
-  -d @fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json | jq
+  -d @fsh-generated/resources/Observation-Example-Studie-HbA1c-01.json | jq
 ```
 
 <h3>💡 Merkregel für FHIR-Server:</h3>
@@ -216,9 +217,11 @@ curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-
     > PUT: Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. /fhir/Patient/<EIGENE_ID>).
 
 #### Ressourcen abfragen
+
 - Zur Abfrage von Ressourcen wird ein "FHIR-Search-String" als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
 
 ##### Beispielabfrage via HTTP-REST
+
 - Um zu überprüfen, welche Patienten aktuell auf dem Server existieren, nutzen wir einen standardmäßigen GET-Request auf den Ressourcen-Endpunkt:
 
 ```Bash
@@ -234,6 +237,7 @@ curl -X GET "http://localhost:8080/fhir/Patient" | jq
     > Die eigentlichen Patientendaten liegen verschachtelt im Array "entry".
 
 ##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
+
 - FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Due kann die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
 
 1. Suche nach einem spezifischen LOINC-Code  

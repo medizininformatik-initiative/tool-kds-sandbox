@@ -177,9 +177,9 @@ Wir werden nun ein eigenes Profil definieren, das von einem bestehenden MII-Basi
 
 ### 📖 Anwendungsfallbeispiel Studie "ZuckerWatch-2026" (Typ-2-Diabetes-Monitoring )
 
-Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) extrem homogen zu modellieren.
+Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) homogen zu modellieren.
 
-Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehalten, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver einschränken, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
+Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehaltet, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver gestalten, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
 
 1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
 
@@ -208,18 +208,18 @@ dependencies:
 
 ##### Studienprofil anlegen
 
-`input/fsh/profiles/PR_ZuckWatch_Labor_Hemo.fsh`
+`input/fsh/profiles/PR_Studie_HbA1c.fsh`
 
 ❗ Im Kontext MII KDS sollten die [Namenskonventionen für FHIR-Ressourcen in der MII](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Namenskonventionen-für-FHIR‐Ressourcen-in-der-MII) berücksichtigt werden.
 
-Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_ZuckWatch_Labor_Hemo.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must support) um.
+Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_Studie_HbA1c.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must support) um.
 
 Neues Profil mit entsprechenden Einschränkungen in `.fsh`-Datei definieren:
 
 ```bash
-Profile: PR_ZuckWatch_Labor_Hemo
+Profile: PR_Studie_HbA1c
 Parent: MII_PR_Labor_Laboruntersuchung
-Id: pr-zuckwatch-labor-hemo
+Id: pr-studie-hba1c
 Title: "ZuckerWatch 2026 - HbA1c Laboruntersuchung"
 Description: "Spezifisches Profil für die ZuckerWatch-2026 Studie zur Erfassung des HbA1c-Wertes. Erbt vom MII-Kerndatensatz Modul Labor."
 
@@ -246,22 +246,22 @@ Unser Ordner sieht damit wie folgt aus:
 ├── examples
 ├── patient.fsh
 └── profiles
-    └── PR_ZuckWatch_Labor_Hemo.fsh
+    └── PR_Studie_HbA1c.fsh
 
 3 directories, 2 files
 ```
 
 ##### 🛠️ Valide Beispielressource (Instanz) schreiben
 
-`input/fsh/examples/EXA_ZuckWatch_Labor_Hemo.fsh`
+`input/fsh/examples/EXA_Studie_HbA1c.fsh`
 
-Schreibe in einer separaten `.fsh`-Datei eine Instance eines fiktiven Patienten-Messwerts. Nutze als `InstanceOf` das neu erstellte Studienprofil `PR_ZuckWatch_Labor_Hemo` und befülle es mit einem realistischen Testwert (z. B. 48 mmol/mol).
+Schreibe in einer separaten `.fsh`-Datei eine Instance eines fiktiven Patienten-Messwerts. Nutze als `InstanceOf` das neu erstellte Studienprofil `PR_Studie_HbA1c` und befülle es mit einem realistischen Testwert (z. B. 48 mmol/mol).
 
-Definition der Instance unseres "PR_ZuckWatch_Labor_Hemo"-Profils:
+Definition der Instance unseres "PR_Studie_HbA1c"-Profils:
 
 ```bash
-Instance: Example-ZuckWatch-Labor-Hemo-01
-InstanceOf: PR_ZuckWatch_Labor_Hemo
+Instance: Example-Studie-HbA1c-01
+InstanceOf: PR_Studie_HbA1c
 Title: "Beispiel-Instanz für HbA1c Laboruntersuchung"
 Description: "Ein konkretes Datenbeispiel (Instance) für die ZuckerWatch-2026 Studie, das die Kriterien des Profils erfüllt."
 Usage: #example
@@ -311,10 +311,10 @@ Unser Ordner sieht damit wie folgt aus:
 ```bash
 ./input/fsh/
 ├── examples
-│   └── EXA_ZuckWatch_Labor_Hemo.fsh
+│   └── EXA_Studie_HbA1c.fsh
 ├── patient.fsh
 └── profiles
-    └── PR_ZuckWatch_Labor_Hemo.fsh
+    └── PR_Studie_HbA1c.fsh
 
 3 directories, 3 files
 ```
@@ -413,7 +413,7 @@ java -jar org.hl7.fhir.publisher.jar -ig ig.ini -clean
 
 **Ergebnis:** Der Publisher lädt die nötigen Abhängigkeiten herunter und generiert einen Ordner namens output/. Darin findest du die fertigen HTML-Dateien (inklusive index.html), die du einfach im Browser betrachten und navigieren kannst.
 
-🔍 Der erzeugte Implementation Guide (IG) kann bspw. über `ExampleIG/output/en/StructureDefinition-pr-zuckwatch-labor-hemo.html` im Browser geöffnet und die definierten Ressourcen in übersichtlicher Darstellung, wie aus Quellen von HL7 oder Simplifier gewohnt, betrachtet und die verschiedenen Ressourcen über Verlinkungen navigiert werden.
+🔍 Der erzeugte Implementation Guide (IG) kann bspw. über `ExampleIG/output/en/StructureDefinition-pr-studie-hba1c.html` im Browser geöffnet und die definierten Ressourcen in übersichtlicher Darstellung, wie aus Quellen von HL7 oder Simplifier gewohnt, betrachtet und die verschiedenen Ressourcen über Verlinkungen navigiert werden.
 
 Je nach Umfang an zu verarbeitetenden Dateien oder verwendeten Codierungen dauert das IG builden ungefähr 10 Minuten (bei komplexeren Projekten evtl. mehrere Stunden).
 

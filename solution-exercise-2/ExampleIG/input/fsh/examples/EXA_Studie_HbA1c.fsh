@@ -1,5 +1,5 @@
-Instance: Example-ZuckWatch-Labor-Hemo-01
-InstanceOf: PR_ZuckWatch_Labor_Hemo
+Instance: Example-Studie-HbA1c-01
+InstanceOf: PR_Studie_HbA1c
 Title: "Beispiel-Instanz für HbA1c Laboruntersuchung"
 Description: "Ein konkretes Datenbeispiel (Instance) für die ZuckerWatch-2026 Studie, das die Kriterien des Profils erfüllt."
 Usage: #example

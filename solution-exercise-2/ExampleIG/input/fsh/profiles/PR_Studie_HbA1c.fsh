@@ -1,6 +1,6 @@
-Profile: PR_ZuckWatch_Labor_Hemo
+Profile: PR_Studie_HbA1c
 Parent: MII_PR_Labor_Laboruntersuchung
-Id: pr-zuckwatch-labor-hemo
+Id: pr-studie-hba1c
 Title: "ZuckerWatch 2026 - HbA1c Laboruntersuchung"
 Description: "Spezifisches Profil für die ZuckerWatch-2026 Studie zur Erfassung des HbA1c-Wertes. Erbt vom MII-Kerndatensatz Modul Labor."
 
