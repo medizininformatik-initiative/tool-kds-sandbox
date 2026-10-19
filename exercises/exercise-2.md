@@ -57,7 +57,7 @@ Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer
 ```bash
 services:
   blaze:
-    image: "samply/blaze:1.9.0@sha256:cba859fb460df3938792226f16ba9bde32bf8dd9edeeadffbd818bccdcce56dc"
+    image: "samply/blaze:main"
     environment:
       JAVA_TOOL_OPTIONS: "-Xmx2g"
     ports:
