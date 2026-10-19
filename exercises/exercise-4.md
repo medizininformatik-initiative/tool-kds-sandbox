@@ -60,17 +60,17 @@ for type in Patient Encounter Condition Observation Procedure DiagnosticReport S
 done
 ```
 
-✅ **Erwartetes Ergebnis** (nur UKSH geladen):
+✅ **Erwartetes Ergebnis** nur UKSH geladen (alle Musterdaten geladen):
 
 ```text
-Patient: 272
-Encounter: 1172
-Condition: 425
-Observation: 3482
-Procedure: 180
-DiagnosticReport: 1276
-ServiceRequest: 1276
-Consent: 5
+Patient: 272 (279)
+Encounter: 1172 (1329)
+Condition: 425 (482)
+Observation: 3482 (3637)
+Procedure: 180 (205)
+DiagnosticReport: 1276 (1277)
+ServiceRequest: 1276 (1276)
+Consent: 5 (84)
 ```
 
 > 💡 **Hinweis:** Hast du zusätzlich UKHD oder UKW hochgeladen, sind die Zahlen in dieser Übung entsprechend höher. Die Abfragen funktionieren trotzdem.
@@ -116,11 +116,11 @@ curl -s "http://localhost:8080/fhir/Patient?_count=1" | jq '.entry[0].resource'
 ```bash
 # Weibliche Patienten
 curl -s "http://localhost:8080/fhir/Patient?gender=female&_summary=count" | jq '.total'
-# → 75
+# → 75 (78)
 
 # Vor 1950 geboren
 curl -s "http://localhost:8080/fhir/Patient?birthdate=lt1950&_summary=count" | jq '.total'
-# → 23
+# → 23 (23)
 ```
 
 ### Abfrage 2.3: Blättern durch Ergebnisse (Pagination)
@@ -158,12 +158,12 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 | --------- | ------ | --------- |
 | `Z11` | 27 | Spezielle Verfahren zur Untersuchung auf infektiöse und parasitäre Krankheiten |
 | `C20` | 23 | Bösartige Neubildung des Rektums |
-| `R51` | 21 | Kopfschmerz |
+| `R51` | 21 (22) | Kopfschmerz |
 | `I45.2` | 19 | Bifaszikulärer Block |
 | `R11` | 15 | Übelkeit und Erbrechen |
-| `U99.0` | 13 | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
+| `U99.0` | 13 (15) | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
 
-🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – genau dafür richten wir in [Exercise 5](exercise-5.md) einen Terminologieserver ein.
+🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel in einem Terminologieserver, denn wir in [Exercise 5](exercise-5.md) einrichten.
 
 ### Abfrage 3.2: Alle Rektumkarzinom-Diagnosen (C20)
 
@@ -199,7 +199,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/fhir/C
 ```bash
 # Wie viele Laborwerte haben überhaupt einen LOINC-Code?
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_summary=count" | jq '.total'
-# → 1888
+# → 1888 (2041)
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count" | jq '.total'
 # → 819
 ```
@@ -238,6 +238,13 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|2951-2&val
 # → 7
 ```
 
+Welcher Patient ist das?
+```bash
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&value-quantity=lt10" \
+  | jq '{patienten: ([.entry[].resource.subject.reference] | unique)}'
+# → Patient/<PID>
+```
+
 </details>
 
 ___
@@ -257,9 +264,9 @@ curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfa
 
 ```bash
 curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=AMB&_summary=count" | jq '.total'
-# → 137
+# → 137 (144)
 curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_summary=count" | jq '.total'
-# → 288
+# → 288 (315)
 ```
 
 ### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
@@ -268,7 +275,7 @@ curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_sum
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
-  | jq '[.entry[].resource | {id: .id[0:20], gender, birthDate}]'
+  | jq '[.entry[].resource | {id, gender, birthDate}]'
 ```
 
 ✅ **Erwartetes Ergebnis:** 5 Patienten (3 männlich, 2 weiblich).
@@ -293,25 +300,14 @@ curl -s "http://localhost:8080/fhir/DiagnosticReport?_id=REP-88ceb08a4e874daa01d
 
 ### Abfrage 5.4: `_revinclude` – die Patientenakte
 
-Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage:
+Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage - nehmen wir hier einen der Patienten mit C20-Diagnose:
 
 ```bash
-PATIENT_ID=PID-5c07503c9075b5905cc9a256500bd9588e766e49176cce1f58a4f401
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
+  | jq '[.entry[].resource | {id, gender, birthDate}]'
 
 curl -s "http://localhost:8080/fhir/Patient?_id=$PATIENT_ID&_revinclude=Encounter:subject&_revinclude=Condition:subject&_revinclude=Procedure:subject&_revinclude=Observation:subject" \
   | jq '[.entry[].resource.resourceType] | group_by(.) | map({(.[0]): length}) | add'
-```
-
-✅ **Erwartetes Ergebnis:**
-
-```json
-{
-  "Condition": 97,
-  "Encounter": 4,
-  "Observation": 8,
-  "Patient": 1,
-  "Procedure": 39
-}
 ```
 
 ### 🛠️ Aufgabe: Patientenakte auswerten
@@ -325,11 +321,9 @@ curl -s "http://localhost:8080/fhir/Patient?_id=$PATIENT_ID&_revinclude=Encounte
 ```bash
 curl -s "http://localhost:8080/fhir/Condition?subject=Patient/$PATIENT_ID&_count=200" \
   | jq '[.entry[].resource.code.coding[0].code] | unique'
-# → 25 verschiedene Codes, u. a. C20, E11.90 (Diabetes Typ 2), I10.90 (Hypertonie)
 
 curl -s "http://localhost:8080/fhir/Encounter?subject=Patient/$PATIENT_ID" \
   | jq '[.entry[].resource | {klasse: .class.code, von: .period.start[0:10], bis: .period.end[0:10]}] | sort_by(.von)'
-# → 4 stationäre Aufenthalte (IMP) zwischen Februar 2023 und Mai 2024
 ```
 
 </details>
@@ -338,23 +332,60 @@ ___
 
 ## 🔍 6. Auffälligkeiten in den Daten
 
-Echte DIZ-Daten sind nie perfekt. Mit FHIR-Search lassen sich Widersprüche aufspüren.
+Echte Routinedaten sind nie perfekt. Mit FHIR-Search lassen sich Widersprüche aufspüren.
 
 ### Abfrage 6.1: Verstorben – oder doch nicht?
 
-Der Vitalstatus wird im KDS doppelt abgebildet: als `deceased` im Patient und als eigene Observation (`67162-8`, Profil *Vitalstatus*) mit den Werten `L` (lebend) und `T` (tot):
+Der Vitalstatus wird im KDS doppelt abgebildet: als `deceased[x]` im Patient und als eigene Observation (`67162-8`, Profil *Vitalstatus*) mit den Werten `L` (lebend) und `T` (tot). Wir zählen beide Angaben getrennt:
 
 ```bash
 # Patienten mit deceased = true
 curl -s "http://localhost:8080/fhir/Patient?deceased=true&_summary=count" | jq '.total'
-# → 260
+# → 259
 
 # Vitalstatus-Observations mit "T" (tot)
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&value-concept=https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus|T&_summary=count" | jq '.total'
 # → 1
+
+# Vitalstatus-Observations mit "L" (lebend)
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&value-concept=https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus|L&_summary=count" | jq '.total'
+# → 1582
 ```
 
-❗ **Widerspruch:** 260 von 272 Patienten sind laut `Patient.deceased` verstorben, aber nur ein einziger Vitalstatus lautet „tot“ – alle 260 haben zugleich einen Vitalstatus „lebend“. Welche Angabe stimmt? Bei der Auswertung echter Daten muss so etwas mit dem Standort geklärt werden.
+❗ **Auffälligkeit:** Laut `Patient.deceased` sind 259 von 272 Patienten verstorben, aber nur eine einzige Observation meldet den Vitalstatus „tot“. Ist das ein Widerspruch?
+
+💡 **Nicht zwingend, denn beide Angaben haben einen anderen Zeitbezug:**
+
+- `Patient.deceased[x]` beschreibt den **aktuellen** Stand, bei `deceasedDateTime` samt Todeszeitpunkt.
+- Die Vitalstatus-Observation ist eine **Momentaufnahme**: „Zum Zeitpunkt `effective[x]` war der Patient lebend (bzw. tot).“
+
+Ein Patient, der 2023 bei einem Aufenthalt mit „L“ dokumentiert wurde und 2025 verstorben ist, hat beide Angaben zu Recht. Ein **echter** Widerspruch liegt erst vor, wenn eine „L“-Observation **nach** dem Todesdatum des Patienten datiert ist.
+
+Das prüfen wir, indem wir die Observations samt zugehörigem Patient laden und die Datumsangaben vergleichen:
+
+```bash
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&_include=Observation:subject&_count=1000" | jq '
+  [.entry[].resource] as $r
+  | ($r | map(select(.resourceType=="Patient"))
+        | map({key: ("Patient/" + .id), value: .deceasedDateTime})
+        | from_entries) as $tod
+  | [$r[] | select(.resourceType=="Observation")
+      | {patient: .subject.reference,
+         status: .valueCodeableConcept.coding[0].code,
+         datum: .effectiveDateTime,
+         verstorben: $tod[.subject.reference]}]
+  | map(select(.status=="L" and .verstorben != null and .datum > .verstorben))
+  | {echte_widersprueche: length, beispiele: .[0:3]}'
+# → 0
+```
+
+⚠️ **Einschränkungen der Prüfung:**
+
+- Der Vergleich `.datum > .verstorben` ist ein reiner Textvergleich. Er ist zuverlässig, solange beide Werte dasselbe Format haben, kann bei gemischten Formaten (`2025-03-01` vs. `2025-03-01T10:00:00+01:00`) aber ungenau sein.
+- Patienten mit `deceasedBoolean = true` ohne Datum lassen sich so nicht prüfen. Sie fallen aus dem Filter heraus.
+- `_count=1000` liefert höchstens eine Seite. Weitere Seiten erkennst du an einem `next`-Link unter `jq '.link'`.
+
+**Was du mitnehmen sollst:** Jede Angabe im KDS hat einen Zeitbezug. Zwei Angaben, die auf den ersten Blick nicht zusammenpassen, sind erst dann ein Widerspruch, wenn sich dieselbe Aussage zum selben Zeitpunkt unterscheidet.
 
 ### Abfrage 6.2: Ein seltsamer Diagnosecode
 
