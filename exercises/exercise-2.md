@@ -119,7 +119,7 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 ```bash
 curl -X POST http://localhost:8080/fhir/Patient  \
   -H "Content-Type: application/fhir+json" \
-  -d @fsh-generated/resources/Patient-example-patient.json
+  -d @fsh-generated/resources/Patient-example-patient.json | jq
 ```
 
 - Antwort des Servers (mit `| jq`):
@@ -163,7 +163,7 @@ curl -X POST http://localhost:8080/fhir/Patient  \
 ```Bash
 curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
   -H "Content-Type: application/fhir+json" \
-  -d @fsh-generated/resources/Patient-example-patient.json
+  -d @fsh-generated/resources/Patient-example-patient.json | jq
 ```
 
 In der Antwort des Server steht nun die beim Upload festgelegte ID:
@@ -175,12 +175,38 @@ In der Antwort des Server steht nun die beim Upload festgelegte ID:
 
 ##### Observation hochladen (PUT):
 
-- Da unsere in Exercise 1 definierte Observation (`EXA_ZuckWatch_Labor_Hemo.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten. Wir laden nun auch die Observation (mit einer festen ID) via PUT hoch:
+- Da unsere in Exercise 1 definierte Observation (`EXA_ZuckWatch_Labor_Hemo.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten. 
+
+- Da unser Example zusätzlich auf eine Organisation als "Assigner" für den identifier "analyseBefundCode" verweist, müssen wir diese ebenfalls anlegen und in den FHIR-Server hochladen.
+
+Dafür legen wir eine minimal befüllte Organization-Ressource als `Organization-beispiel-labor.fsh`-File im `examples`-Ordner an, bauen diese mittels `sushi .` und laden sie hoch:
+
+Ressource:
+```bash
+Instance: beispiel-labor
+InstanceOf: Organization
+Title: "Beispiel-Labor"
+Description: "Fiktives Labor, das als Assigner des Laborbefund-Identifiers der ZuckerWatch-2026 Beispiel-Observation dient."
+Usage: #example
+
+* active = true
+* name = "Zentrallabor Universitätsmedizin"
+* type = http://terminology.hl7.org/CodeSystem/organization-type#prov "Healthcare Provider"
+```
+
+Upload:
+```bash
+curl -X PUT http://localhost:8080/fhir/Organization/beispiel-labor \
+  -H "Content-Type: application/fhir+json" \
+  -d @fsh-generated/resources/Organization-beispiel-labor.json | jq
+```
+
+Wir laden nun auch die Observation (mit einer festen ID) via PUT hoch:
 
 ```Bash
 curl -X PUT http://localhost:8080/fhir/Observation/Example-ZuckWatch-Labor-Hemo-01 \
   -H "Content-Type: application/fhir+json" \
-  -d @fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json
+  -d @fsh-generated/resources/Observation-Example-ZuckWatch-Labor-Hemo-01.json | jq
 ```
 
 <h3>💡 Merkregel für FHIR-Server:</h3>
@@ -235,15 +261,14 @@ FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombi
 
 ##### Ressourcen löschen (FHIR-Delete)
 
-- Sollten sich Fehler in deine Testdaten eingeschlichen haben oder Du möchtest  den Server von einer Ressource bereinigen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
+- Solltest Du  den Server von einer Ressource bereinigen wollen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
 
 ```Bash
-curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>"
+curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>" | jq
 ```
 
-- Hintergrundwissen (Soft Delete):  
-Ein FHIR-Server löscht Daten in der Regel nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert.
-Wenn du versucht, diese ID danach erneut direkt via GET aufzurufen, antwortet der Server folgerichtig mit dem HTTP-Status 410 Gone. Bei einer allgemeinen Suchabfrage taucht sie standardmäßig nicht mehr auf.
+- 💡 Hintergrundwissen (Soft Delete):  
+Ein FHIR-Server löscht Daten **in der Regel** nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert und taucht in Suchen nicht mehr auf. Über `/history` kann auf alte Versionen zugegriffen werden. Beim Löschen muss die referenzielle Integrität berücksichtigt werden. Physisches Löschen ist je nach verwendetem FHIR-Server und Settings via `$purge`-Operation möglich.
 
 ### Ausblick
 
