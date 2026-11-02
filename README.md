@@ -18,8 +18,8 @@ ___
 | 🟡 | [3 – KDS-Beispieldaten in FHIR-Server laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
 | 🟠 | [4 – Query von KDS-Daten](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den UKSH-Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🔴 | [5 – Aufsetzen eines lokalen Terminologieservers](exercises/exercise-5.md) | Terminologieserver starten, deutsche Klassifikationen laden, Codes nachschlagen und prüfen | FHIRsmith, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
-| 🟣 | [6 – Nutzen eines FHIR Validators](exercises/exercise-6.md) | Ressourcen, Profile und Musterdaten validieren | MII FHIR Validator, validator_cli | Mittel · ca. 6 Befehlsblöcke | 🚧 |
-| 🟤 | [7 – Interpretieren von Ergebnissen](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und typische Fehler beheben | `jq` | Mittel · ca. 5 Befehlsblöcke, viel Lesestoff | 🚧 |
+| 🟣 | [6 – Nutzen eines FHIR Validators](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | MII FHIR Validator, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
+| 🟤 | [7 – Interpretieren von Ergebnissen](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 6 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
 | ⚫ | [8 – Ausblick: Sonstiges](exercises/exercise-8.md) | Alternativen, Versionierung von Codesystemen, Lizenzen | – | Klein · reine Theorie | 🚧 |
 
 **Stand:** ✅ erprobt · 🚧 in Arbeit (Inhalte können sich noch ändern)
@@ -52,7 +52,7 @@ ___
 
 | Bereich | Inhalt |
 | :--- | :--- |
-| `exercises/` | Die Übungsanleitungen. Jede Übung hat oben und unten eine Navigationsleiste zu allen anderen Übungen. |
+| `exercises/` | Die Übungsanleitungen. Jede Übung hat oben und unten eine Navigationsleiste zu allen anderen Übungen, zu den Prerequisites und zur Seite [Dienste](exercises/services.md). |
 | Musterlösungen | Fertige Lösungen (FSH-Projekt, Skripte) zu den Übungen – wo du sie findest, steht in den [Prerequisites](exercises/prerequisites.md#-hinweis-zu-den-übungsmaterialien--lösungen). |
 | Musterdatenspende | Wird in Exercise 3 aus dem Repository [musterdatenspende-diz](https://github.com/medizininformatik-initiative/musterdatenspende-diz) geklont – nicht Teil dieses Repos. |
 
@@ -63,13 +63,14 @@ ___
 Für die Übungen brauchst du:
 
 - **Betriebssystem:** Linux oder Windows mit **WSL2**
-- **Hardware:** mindestens **8 GB Arbeitsspeicher**
+- **Hardware:** mindestens **8 GB**, empfohlen **16 GB Arbeitsspeicher**
 - **Rechte:** Sudo-Rechte zum Installieren von Paketen
 - **Werkzeuge**, die im Laufe der Übungen eingerichtet werden:
   - Node.js mit `npm`, FSH-Compiler `sushi`, Firely Terminal (Exercise 1)
   - Java (ab 11, empfohlen 17 oder 21) und Jekyll für den IG Publisher (Exercise 1)
   - Docker und Docker Compose für FHIR-Server, Terminologieserver und Validator (ab Exercise 2)
-  - `git`, `curl` und `jq` für Daten und Abfragen
+  - `git`, `curl`, `jq` und `unzip` für Daten und Abfragen
+- **Dienste:** Blaze (`8080`), FHIRsmith (`8081`) und MII FHIR Validator (`8082`) als Docker-Container – gesammelt auf der Seite [Dienste](exercises/services.md)
 
 👉 [Zur Checkliste](exercises/prerequisites.md)
 
@@ -122,20 +123,21 @@ ___
 
 ## 🟣 Exercise 6 – [Nutzen eines FHIR Validators](exercises/exercise-6.md)
 
-> Voraussetzung: Terminologieserver aus Exercise 5.
+> Voraussetzung: Blaze mit Musterdaten (Exercise 3) und Terminologieserver (Exercise 5) laufen.
 
-- Strukturelle Validierung und Profil-Validierung unterscheiden, Werkzeuge vergleichen
-- MII FHIR Validator per Docker starten
-- Einzelne Ressourcen, Ressourcen gegen ein Profil und die Musterdaten aus Exercise 3 validieren
-- Validierung über die Kommandozeile (validator_cli)
+- Strukturelle Validierung und Profil-Validierung unterscheiden, Validatoren im MII-Kontext einordnen
+- MII FHIR Validator per Docker Compose starten und mit dem eigenen Terminologieserver verbinden
+- Eigene HbA1c-Observation gegen das MII-Laborprofil und einzelne Musterdaten aus Blaze validieren
+- Ausblick: Validierung über die Kommandozeile (`validator_cli.jar`)
 
 ## 🟤 Exercise 7 – [Interpretieren von Ergebnissen](exercises/exercise-7.md)
 
 > Voraussetzung: Validierungsbericht aus Exercise 6.
 
 - Aufbau eines Validierungsberichts (`OperationOutcome`), Severity-Stufen und Issue-Typen
-- Häufige Warnings und Errors mit Beispielen und Behebungstipps
-- Berichte mit `jq` filtern und auswerten
+- Häufige Validator-Meldungen und was zu tun ist
+- Berichte mit `jq` filtern, zählen und Meldungen einordnen (Datenfehler, Versionsthema, Grenze des Setups)
+- Was ein Validator nicht findet, am Beispiel des HbA1c-Profils aus Exercise 1
 
 ## ⚫ Exercise 8 – [Ausblick: Sonstiges](exercises/exercise-8.md)
 

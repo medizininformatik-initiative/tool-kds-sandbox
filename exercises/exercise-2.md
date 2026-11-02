@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
@@ -12,7 +12,7 @@ ___
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ()"Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
 Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
@@ -53,6 +53,9 @@ sudo docker run hello-world
 ### Container definieren und starten
 
 Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zum Samply/Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [Github-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker-Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten lege eine docker-compose.yml an:
+
+> 💡 Alle Dienste der Übungen mit Ports und `docker-compose.yml` findest du gesammelt auf der Seite [Dienste](services.md).
+
 
 ```bash
 services:
@@ -166,7 +169,7 @@ curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
   -d @fsh-generated/resources/Patient-example-patient.json | jq
 ```
 
-In der Antwort des Server steht nun die beim Upload festgelegte ID:
+In der Antwort des Servers steht nun die beim Upload festgelegte ID:
 ```text
 {
   "resourceType": "Patient",
@@ -238,7 +241,7 @@ curl -X GET "http://localhost:8080/fhir/Patient" | jq
 
 ##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
 
-- FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Due kann die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
+- FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Du kannst die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
 
 1. Suche nach einem spezifischen LOINC-Code  
 Möchtest du alle Laborwerte abfragen, die den in unserer Studie fixierten HbA1c-Code aufweisen, filterst du über den Parameter code. Das Trennzeichen | separiert dabei das Codesystem (LOINC) vom eigentlichen Code:
@@ -282,6 +285,6 @@ Ein FHIR-Server löscht Daten **in der Regel** nicht physisch aus der Datenbank,
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

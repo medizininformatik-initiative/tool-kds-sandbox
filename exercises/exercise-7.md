@@ -1,48 +1,104 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
 ___
 ___
 
 # 🟤 Interpretieren von Ergebnissen
 
-**Nächste Schritte:**  
+**Nächste Schritte:**
 
-- Validiere deine Ressourcen und interpretiere die Berichte
-- Bereite dich auf Ex8 vor
+- Verstehe den Aufbau eines Validierungsberichts (`OperationOutcome`)
+- Filtere und zähle die Meldungen deiner Berichte aus [Exercise 6](exercise-6.md) mit `jq`
+- Ordne Meldungen ein: Datenfehler, Versionsthema oder Grenze des Setups?
+- Lerne, was ein Validator **nicht** findet
 
-___
+In [Exercise 6](exercise-6.md) hast du Ressourcen mit dem MII FHIR Validator geprüft. Die Antwort war jedes Mal ein **`OperationOutcome`**, die „Sprache“, in der FHIR Ergebnisse und Fehler meldet.
 
-## Einführung & Kontext
+In dieser Übung lernst du, diese Berichte zu **lesen** und **einzuordnen**: Was bedeutet ein `error` im Vergleich zu einer `warning`? Welche Meldung zeigt einen echten Fehler in den Daten, welche nur eine Lücke in deinem Setup?
 
-In [Exercise 6](exercise-6.md) hast du gelernt, wie du **FHIR-Ressourcen und -Profile validieren** kannst. Der Validator gibt dabei einen **OperationOutcome** zurück — die „Sprache“ des FHIR-Validierers.
-
-In dieser Übung lernst du, diesen Validierungsbericht zu **interpretieren** — was bedeutet ein `error` vs. ein `warning`? Welche Issues sind kritisch? Wie behebe ich typische Probleme?
-
-> 💡 **Warum Bericht-Interpretation?**  
+> 💡 **Warum Berichte interpretieren?**
 >
-> - **Datenqualität-Management:** Fokus auf kritische Errors vs. akzeptable Warnings  
-> - **Fehlersuche:** Schnelle Lokalisierung von Ursachen  
-> - **DIZ-Alltag:** Bei der Validierung von Import-Daten oder Export-Pre-Check  
-> - **Audit:** Nachweisbarkeit von Datenqualitätsproblemen und deren Behebung
+> - **Datenqualität:** Kritische Fehler von akzeptablen Warnungen unterscheiden
+> - **Fehlersuche:** Ursachen schnell lokalisieren
+> - **DIZ-Alltag:** Validierung beim Import neuer Daten oder vor einer Datenausleitung
+> - **Nachweis:** Datenqualitätsprobleme und ihre Behebung dokumentieren
 
 ___
 
 📋 **Übersicht:**
 
-- [Hintergrund: OperationOutcome](#-hintergrund-operationoutcome)
-- [Häufige Warnings & Errors](#häufige-warnings--errors)
-- [Beispiel: Bericht analysieren](#-beispiel-bericht-analysieren)
-- [Behebungstipps](#-behebungstipps)
-- [Zusammenfassung](#-zusammenfassung)
+- [Hintergrund: Aufbau eines OperationOutcome](#hintergrund)
+- [Häufige Validator-Meldungen](#meldungen)
+- [Schritt 1: Berichte speichern und auswerten](#schritt-1)
+- [Schritt 2: Meldungen einordnen](#schritt-2)
+- [Was der Validator nicht findet](#nicht-gefunden)
+- [Schritt 3: Validierung automatisieren](#schritt-3)
+- [Zusammenfassung und Ausblick](#zusammenfassung)
 
 ___
 
-# Platzhalter/Planung
+## <a id="hintergrund"></a>📖 Hintergrund: Aufbau eines OperationOutcome
 
-## Häufige Validator-Meldungen - work in progress
+Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Eintrag sieht vereinfacht so aus:
 
-### A) Belegt: bekannte Meldungen im MII-PRO-IG (kein Datenfehler)
+```json
+{
+  "resourceType": "OperationOutcome",
+  "issue": [
+    {
+      "severity": "error",
+      "code": "code-invalid",
+      "details": {
+        "text": "Beschreibung der Meldung in Klartext"
+      },
+      "expression": [
+        "Condition.code.coding[0]"
+      ]
+    }
+  ]
+}
+```
+
+| Feld | Inhalt |
+| --- | --- |
+| `severity` | Wie schwer wiegt die Meldung? (siehe unten) |
+| `code` | Art des Problems als Code aus dem FHIR-ValueSet [IssueType](https://hl7.org/fhir/R4/valueset-issue-type.html) |
+| `details.text` | Die eigentliche Meldung in Klartext |
+| `expression` | FHIRPath-Ausdruck: **wo** in der Ressource das Problem liegt |
+| `location` | Ältere Ortsangabe; der HL7-Validator ergänzt hier oft Zeile und Spalte |
+
+### Severity: Wie schwer wiegt die Meldung?
+
+| Severity | Bedeutung | Handlung |
+| --- | --- | --- |
+| **fatal** | Prüfung konnte nicht durchgeführt werden | **Sofort beheben** – z. B. kein gültiges JSON |
+| **error** | Ressource verletzt Standard oder Profil | **Beheben** – Validierung gilt als fehlgeschlagen |
+| **warning** | Auffälligkeit, Ressource ist trotzdem konform | **Prüfen** – ggf. Behebung sinnvoll |
+| **information** | Hinweis, z. B. „All OK“ | Optional lesen |
+
+### Code: Welche Art von Problem?
+
+Eine Auswahl der `code`-Werte, die dir beim Validieren häufig begegnen:
+
+| Code | Bedeutung | Beispiel |
+| --- | --- | --- |
+| `structure` | Aufbau passt nicht zum Standard | Unbekanntes Element, falscher Datentyp |
+| `required` | Pflichtelement fehlt | Kardinalität `1..1` im Profil, Element fehlt |
+| `value` | Wert ungültig | Datum im falschen Format |
+| `invariant` | Regel (FHIRPath-Constraint) verletzt | z. B. `dom-6`, Constraints aus dem Profil |
+| `code-invalid` | Code unbekannt oder nicht im ValueSet | Ungültiger ICD-10-GM-Code |
+| `not-found` | Etwas Referenziertes wurde nicht gefunden | Profil oder CodeSystem unbekannt |
+| `processing` | Problem bei der Verarbeitung | Terminologieserver nicht erreichbar |
+| `informational` | Reine Information | „All OK“ |
+
+> 💡 Ein Problem beim **Binding** (Code nicht im ValueSet) hat keinen eigenen Code `binding`. Es erscheint meist als `code-invalid` und wird erst im `details.text` genauer beschrieben.
+
+___
+
+## <a id="meldungen"></a>📋 Häufige Validator-Meldungen
+
+### A) Bekannte Meldungen im MII-PRO-IG (kein Datenfehler)
 
 | Meldung / Code | Bedeutung | Einordnung | Was tun? |
 |---|---|---|---|
@@ -52,331 +108,154 @@ ___
 | `MSG_DRAFT` | Ressource hat Status *draft* | Warnung | Im Entwicklungsstand akzeptabel |
 | `dom-6` | Ressource ohne Narrative | Warnung | Narrative ergänzen oder unterdrücken |
 
-### B) Typische Meldungen (Allgemeinwissen, Wortlaut ggf. abweichend)
+### B) Typische Meldungen (sinngemäß, Wortlaut kann abweichen)
 
 | Meldung (sinngemäß) | Bedeutung | Typische Ursache | Was tun? |
 |---|---|---|---|
-| *Profile reference … could not be resolved / has not been checked* | Profil unbekannt | IG-Paket nicht geladen, falsche Version oder falsche `meta.profile` | Paket mit `-ig` laden, Canonical und Version prüfen |
-| *Minimum cardinality … minimum required = 1, but only found 0* | Pflichtelement fehlt | Beispiel unvollständig | Element ergänzen |
+| *Profile reference … could not be resolved / has not been checked* | Profil unbekannt | IG-Paket nicht geladen, falsche Version oder falsche `meta.profile` | Paket über `IG_PARAMS` laden, Canonical und Version prüfen |
+| *Minimum cardinality … minimum required = 1, but only found 0* | Pflichtelement fehlt | Ressource unvollständig | Element ergänzen |
 | *This element does not match any known slice* | Element passt auf keinen Slice | Falscher Discriminator-Wert, z. B. `system` oder `code` | Slice-Definition im Profil prüfen |
-| *Unknown code 'X' in the CodeSystem 'Y'* | Code existiert im CodeSystem nicht | Tippfehler, falsche Version, falsches System | Code per `$lookup` oder `$validate-code` prüfen |
-| *None of the codings provided are in the value set 'X'* | Code liegt nicht im gebundenen ValueSet | Falscher Code oder falsches System | ValueSet per `$expand` ansehen |
-| *CodeSystem 'X' could not be found, so the code cannot be validated* | Terminologieserver kennt das System nicht | System fehlt auf dem Server, z. B. nicht geladen oder lizenzpflichtig (SNOMED) | Anderen Server verwenden oder Inhalt laden |
-| *Unable to validate code … terminology service … error / unavailable* | Terminologieserver nicht erreichbar oder Fehler | Netzwerk, Zertifikat, Server down | Mit `-tx` konfigurierten Server prüfen |
+| *Unknown code 'X' in the CodeSystem 'Y'* | Code existiert im CodeSystem nicht | Tippfehler, falsche Version, falsches System | Code per `$lookup` oder `$validate-code` prüfen ([Exercise 5](exercise-5.md)) |
+| *None of the codings provided are in the value set 'X'* | Code liegt nicht im gebundenen ValueSet | Falscher Code oder falsches System | ValueSet per `$expand` ansehen ([Exercise 5](exercise-5.md)) |
+| *CodeSystem 'X' could not be found, so the code cannot be validated* | Terminologieserver kennt das System nicht | System nicht geladen oder lizenzpflichtig (LOINC, SNOMED CT) | Inhalt laden oder anderen Terminologieserver verwenden |
+| *Unable to validate code … terminology service … error / unavailable* | Terminologieserver nicht erreichbar oder Fehler | Netzwerk, Zertifikat, Server gestoppt | `TX_SERVER` und Erreichbarkeit prüfen |
 | *Reference … could not be resolved* | Referenzierte Ressource nicht gefunden | Fehlende Ressource im Bundle | Ressource ergänzen oder Referenz anpassen |
-| *URL … does not resolve* (bei Beispiel-URLs) | Beispiel-Domain nicht erreichbar | Test-Canonicals | `-allow-example-urls true` |
-| *Unknown element / Unrecognised property* | Element existiert nicht in der Ressource | Tippfehler, falscher FHIR-Version | Schreibweise und Version prüfen |
+| *URL … does not resolve* (bei Beispiel-URLs) | Beispiel-Domain nicht erreichbar | Test-Canonicals wie `http://example.org` | Beim CLI: `-allow-example-urls true` |
+| *Unknown element / Unrecognised property* | Element existiert nicht in der Ressource | Tippfehler, falsche FHIR-Version | Schreibweise und Version prüfen |
 | *A code should come from this value set …* (Warning) | Extensible Binding verletzt | Code außerhalb des ValueSets | Ggf. akzeptabel, im Profil prüfen |
 
-### Exit-Codes (validator_cli, laut MII-PRO-IG)
-
-| Code | Bedeutung |
-|---|---|
-| 0 | Keine Fehler oder Warnungen |
-| 1 | Nur Warnungen |
-| 2+ | Fehler |
-
 ___
 
-## 💻 Hintergrund: OperationOutcome
+## <a id="schritt-1"></a>💻 Schritt 1: Berichte speichern und auswerten
 
-### 1.1 Struktur eines Validierungsberichts
+> ⚠️ **Voraussetzung:** Der Validator aus [Exercise 6](exercise-6.md) läuft auf Port 8082, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json`, `condition-c20.json` und `hb.json`.
 
-```json
-{
-  "resourceType": "OperationOutcome",
-  "issue": [
-    {
-      "severity": "error" | "warning" | "information" | "fatal",
-      "code": "invalid" | "structure" | "required" | "binding" | "code-invalid" | "value",
-      "details": {
-        "coding": [
-          {
-            "system": "http://terminology.hl7.org/CodeSystem/validation-issue-type",
-            "code": "INVALID",
-            "display": "Invalid"
-          }
-        ],
-        "text": "Detailed error message"
-      },
-      "location": [
-        "Patient.name[0].family"
-      ],
-      "expression": [
-        "Patient.name"
-      ]
-    }
-  ]
-}
-```
-
-### 1.2 Severity-Ebenen
-
-| Severity | Bedeutung | Handlung |
-| -------- | --------- | -------- |
-| **fatal** | Ressource ist komplett unbrauchbar | **Sofort beheben** — kein Export |
-| **error** | Kritische Verletzung des Standards | **Beheben** — Validierung fehlschlägt |
-| **warning** | Auffälligkeit, aber konform | **Prüfen** — ggf. Behebung sinnvoll |
-| **information** | Hinweis (z. B. „Best Practice“) | **Prüfen** — optional |
-
-___
-
-### 1.3 Code-Typen (validation issue type)
-
-| Code | Beschreibung | Beispiel |
-| ---- | ------------ | -------- |
-| `invalid` | Ressource entspricht nicht dem Schema | Fehlendes Pflichtfeld |
-| `structure` | Struktur-Problem | Ungültiges JSON/XML |
-| `required` | Pflichtfeld fehlt | `Patient.name` fehlt |
-| `binding` | Code nicht im ValueSet | ICD-Code nicht in ICD-10-GM |
-| `code-invalid` | Code ungültig | Unbekannter LOINC-Code |
-| `value` | Wert außerhalb erlaubter Range | `valueQuantity.value = -10` bei positivem Wert verlangt |
-
-___
-
-## <a id="häufige-warnings--errors"></a>⚠️ Häufige Warnings & Errors
-
-### 2.1 Pflichtfelder fehlen (required)
-
-**Issue:**
-
-```json
-{
-  "severity": "error",
-  "code": "required",
-  "details": {"text": "Field ' Patient.name' is required but was not found"}
-}
-```
-
-**Ursache:** Das Pflichtfeld `name` fehlt in der Patienten-Ressource.
-
-**Lösung:**
-
-```json
-{
-  "name": [
-    {
-      "family": "Muster",
-      "given": ["Max"]
-    }
-  ]
-}
-```
-
-___
-
-### 2.2 Code nicht im Codesystem (code-invalid / binding)
-
-**Issue:**
-
-```json
-{
-  "severity": "error",
-  "code": "code-invalid",
-  "details": {"text": "Code 'ABC123' not found in system 'http://loinc.org'"}
-}
-```
-
-**Ursache:** Der verwendete Code existiert nicht im LOINC-System (Tippfehler? falsche Version?)
-
-**Lösung:**
-
-- Prüfe den Code auf [loinc.org](https://loinc.org)  
-- Prüfe die **Version** (`version` im CodeSystem-Object)  
-- Korrigiere den Code oder passe die `version` an
-
-___
-
-### 2.3 Referenz nicht auflösbar (reference)
-
-**Issue:**
-
-```json
-{
-  "severity": "error",
-  "code": "structure",
-  "details": {"text": "Reference 'Patient/xxx' does not resolve to a known resource"}
-}
-```
-
-**Ursache:** Eine Ressource (z. B. Observation) referenziert einen Patienten, der nicht im Server existiert.
-
-**Lösung:**
-
-- Patient existieren lassen (`GET /Patient/xxx` testen)  
-- ODER: Ressourcen mit defekten Referenzen entfernen (wie in [Ex3 `clean_bundle.sh`](exercise-3.md)) bzw. Dummy-Ressourcen ergänzen  
-- ACHTUNG: Nicht alle Validatoren erzwingen referenzielle Integrität
-
-___
-
-### 2.4 ValueQuantity mit ungültiger Einheit (value)
-
-**Issue:**
-
-```json
-{
-  "severity": "warning",
-  "code": "value",
-  "details": {"text": "Unit 'mg' should be 'MMOL/L' for this LOINC code"}
-}
-```
-
-**Ursache:** Die Einheit entspricht nicht dem LOINC-Code-Anforderung (z. B. `HbA1c` erfordert `mmol/mol`, nicht `%`).
-
-**Lösung:**
-
-- Prüfe LOINC-Einheit (`UCUM`-Code im LOINC-Entry)  
-- passe `valueQuantity.unit` an (`mmol/mol` für `4548-4`)
-
-___
-
-### 2.5 Profil-Constraint verletzt (structure)
-
-**Issue:**
-
-```json
-{
-  "severity": "error",
-  "code": "structure",
-  "details": {"text": "Cardinality violation: expected 1..1, found 0"}
-}
-```
-
-**Ursache:** Ein profildefiniertes Element hat falsche Kardinalität (z. B. `mustSupport = true` aber nicht gesetzt).
-
-**Lösung:**
-
-- Prüfe das Profil (StructureDefinition)  
-- Ergänze das fehlende Element oder passe das Profil an  
-- Bei MII-Profilen: siehe [KDS-Module auf GitHub](https://github.com/medizininformatik-initiative)
-
-___
-
-## 📊 Beispiel: Bericht analysieren
-
-### 3.1 Validierungsbericht generieren
+Speichere zuerst die Berichte als Dateien. So musst du nicht bei jeder Auswertung neu validieren:
 
 ```bash
-# Invalides Beispiel: Patient ohne name
-cat > bad-patient.json <<EOF
-{
-  "resourceType": "Patient",
-  "id": "test-patient",
-  "gender": "male",
-  "birthDate": "1970-01-01"
-}
-EOF
-
-# Validieren
-curl -X POST http://localhost:8082/fhir/\$validate \
-  -H "Content-Type: application/fhir+json" \
-  -d @bad-patient.json | jq '.issue[] | {severity, code, details, location}'
+cd ~/validator
+for f in hba1c condition-570762 condition-c20 hb; do
+  curl -s -X POST http://localhost:8082/validateResource \
+    -H "Content-Type: application/fhir+json" \
+    --data @$f.json > bericht-$f.json
+done
+ls bericht-*.json
 ```
 
-**Ergebnis:**
+### 1.1 Meldungen je Schwere zählen
 
-```json
-[
-  {
-    "severity": "error",
-    "code": "required",
-    "details": {"text": "Field 'Patient.name' is required but was not found"},
-    "location": ["Patient"]
-  }
-]
+```bash
+for f in bericht-*.json; do
+  echo "$f: $(jq -c '[.issue[].severity] | group_by(.) | map({(.[0]): length}) | add' $f)"
+done
+```
+
+<!-- TODO beim Test: erwartete Ausgabe eintragen -->
+
+### 1.2 Nur die Fehler anzeigen
+
+```bash
+jq '[.issue[] | select(.severity == "error" or .severity == "fatal") | {code, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]' bericht-condition-570762.json
+```
+
+### 1.3 Gleiche Meldungen zusammenfassen
+
+Bei vielen Ressourcen wiederholen sich Meldungen. Gruppiert nach Text siehst du, welche Probleme am häufigsten vorkommen:
+
+```bash
+cat bericht-*.json \
+  | jq -s '[.[].issue[] | (.details.text // .diagnostics)] | group_by(.) | map({anzahl: length, meldung: .[0]}) | sort_by(-.anzahl)'
 ```
 
 ___
 
-### 3.2 Bericht filtern (Fokus auf Errors)
+## <a id="schritt-2"></a>🛠️ Schritt 2: Meldungen einordnen
 
-```bash
-# Nur Errors anzeigen
-curl -s ... | jq '.issue[] | select(.severity == "error") | {code, details}'
-```
+Nicht jede Meldung bedeutet, dass die Daten falsch sind. Ordne jede Meldung aus deinen vier Berichten einer dieser Gruppen zu:
 
-___
+| Gruppe | Frage | Wer muss handeln? |
+| --- | --- | --- |
+| **Datenfehler** | Ist der Inhalt der Ressource falsch? | Datenquelle bzw. ETL-Strecke |
+| **Versionsthema** | Passen Profil- oder Codesystem-Version der Daten zur Version im Validator? | Abstimmung: gegen welche Version wird geprüft? |
+| **Grenze des Setups** | Fehlt dem Validator oder dem Terminologieserver etwas (Paket, Codesystem)? | Du selbst: Setup erweitern |
+| **Bekannte Meldung** | Steht sie in Tabelle A oben? | Meist niemand |
 
-### 3.3 Bericht aggregieren (Issues zählen)
+### 🛠️ Aufgabe: Berichte einordnen
 
-```bash
-# Wie viele Errors vs. Warnings?
-curl -s ... | jq '{
-  errors: [.issue[] | select(.severity == "error")] | length,
-  warnings: [.issue[] | select(.severity == "warning")] | length,
-  infos: [.issue[] | select(.severity == "information")] | length
-}'
-```
+- Welche Meldung in `bericht-condition-570762.json` ist ein echter **Datenfehler**?
+- Welche Meldungen tauchen in **allen** Berichten der Musterdaten auf? Zu welcher Gruppe gehören sie?
+- Was meldet der Validator zum Laborwert in `bericht-hb.json`, und warum?
 
-___
+<details>
+<summary>Lösung</summary>
 
-## 🔧 Behebungstipps
+- `570762` ist kein ICD-10-GM-Code. Der Terminologieserver kennt ihn nicht, der Validator meldet einen ungültigen Code. Das ist ein **Datenfehler** in der Quelle.
+- Meldungen zu `meta.profile` betreffen alle Musterdaten: Die Ressourcen nennen Profilversionen von 2024/2025, der Validator ist mit den Paketen von 2026 konfiguriert. Das ist ein **Versionsthema**, kein Fehler in den einzelnen Ressourcen.
+- Der Laborwert ist mit LOINC kodiert. LOINC ist auf deinem FHIRsmith aus [Exercise 5](exercise-5.md) nicht geladen, deshalb kann der Code nicht geprüft werden. Das ist eine **Grenze des Setups**.
 
-### 4.1 Fehler-First-Aufbau (CI/CD)
+<!-- TODO beim Test: Lösung mit den tatsächlichen Meldungstexten abgleichen -->
 
-```text
-1. Errors beheben → 2. Warnings prüfen → 3. Infos optional
-└─> Export erst, wenn Errors = 0!
-```
-
-### 4.2 Automatisierung (Beispiel: Script)
-
-**script/validate.sh**
-
-```bash
-#!/bin/bash
-FILE=$1
-
-RESULT=$(curl -s -X POST http://localhost:8082/fhir/\$validate \
-  -H "Content-Type: application/fhir+json" \
-  -d @$FILE)
-
-ERRORS=$(echo $RESULT | jq '[.issue[] | select(.severity == "error")] | length')
-WARNINGS=$(echo $RESULT | jq '[.issue[] | select(.severity == "warning")] | length')
-
-if [ $ERRORS -gt 0 ]; then
-  echo "❌ VALIDATION ERROR: $FILES errors found in $FILE"
-  echo $RESULT | jq '.issue[] | select(.severity == "error") | {"code", "details"}'
-  exit 1
-else
-  echo "✓ VALIDATION SUCCESS: $WARNINGS warnings (0 errors)"
-  exit 0
-fi
-```
-
-**Aufruf:**
-
-```bash
-bash script/validate.sh Patient-Muster.json
-```
+</details>
 
 ___
 
-## 🏁 Zusammenfassung
+## <a id="nicht-gefunden"></a>🔍 Was der Validator nicht findet
 
-| Issue-Typ | Severity | Handlung |
-| --------- | -------- | -------- |
-| **Pflichtfeld fehlt** | `error/required` | Feld ergänzen |
-| **Code nicht im System** | `error/code-invalid` | Code prüfen/ersetzen |
-| **Referenz nicht aufgelöst** | `error/reference` | Zielressource laden oder Dummies ergänzen |
-| **Einheit falsch** | `warning/value` | UCUM-Einheit anpassen |
-| **Profil-Constraint** | `error/structure` | Element hinzufügen oder Profil prüfen |
+Ein Bericht ohne `error` heißt nicht, dass die Daten fachlich stimmen. Dein eigenes Beispiel aus [Exercise 1](exercise-1.md) zeigt das:
+
+Dein Studienprofil legt den LOINC-Code **`4548-4`** fest, und die Beispielinstanz gibt den Wert in **`mmol/mol`** an. Fachlich passt das nicht zusammen:
+
+| LOINC | Bezeichnung | Messgröße | Einheit |
+| --- | --- | --- | --- |
+| `4548-4` | Hemoglobin A1c/Hemoglobin.total in Blood | Massenanteil | `%` |
+| `59261-8` | Hemoglobin A1c/Hemoglobin.total standardized per IFCC-RMP for CDT in Blood | Stoffmengenanteil | `mmol/mol` |
+
+Ein HbA1c-Wert in `mmol/mol` (IFCC) hätte den Code `59261-8` gebraucht. Prüfe das selbst auf [loinc.org](https://loinc.org/4548-4) unter „Property“ und „Example UCUM Units“. Der Fehler steckt bewusst noch in [Exercise 1](exercise-1.md), denn kein Werkzeug der Übungen meldet ihn:
+
+- **SUSHI** und der **IG Publisher** prüfen, ob die Instanz zum Profil passt – und das tut sie, denn das Profil selbst enthält die falsche Kombination.
+- Der **Validator** prüft, ob `4548-4` ein gültiger LOINC-Code ist und ob `mmol/mol` eine gültige UCUM-Einheit ist. Beides stimmt. Ob Code und Einheit **fachlich zusammenpassen**, prüft er nicht.
+
+> 💡 **Merke:** Validierung prüft die Form, nicht den Sinn. Ob Code, Einheit und Wert zusammenpassen, gehört in fachliche Plausibilitätsprüfungen und in das Review eines Profils.
+
+___
+
+## <a id="schritt-3"></a>💻 Schritt 3: Validierung automatisieren
+
+Im DIZ-Alltag validiert man nicht von Hand, sondern per Skript, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
+
+```bash
+bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-c20.json
+bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-570762.json
+echo "Exit-Code: $?"
+```
+
+> 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://mein-server:8082 bash validate.sh datei.json`.
+
+___
+
+## <a id="zusammenfassung"></a>🏁 Zusammenfassung und Ausblick
+
+| Aufgabe | Befehl |
+| --- | --- |
+| Meldungen je Schwere zählen | `jq '[.issue[].severity] \| group_by(.) \| map({(.[0]): length}) \| add' bericht.json` |
+| Nur Fehler anzeigen | `jq '[.issue[] \| select(.severity == "error")]' bericht.json` |
+| Meldungen gruppieren | `jq -s '[.[].issue[] \| .details.text] \| group_by(.) \| map({anzahl: length, meldung: .[0]})'` |
+| Datei per Skript prüfen | `bash solution-exercise-7/validate.sh datei.json` |
 
 ### Quick-Checkliste
 
-- [ ] Errors = 0? ❌ Wenn nein: Beheben  
-- [ ] Warnings akzeptabel? ❌ Wenn nein: Prüfen  
-- [ ] Validierungsbericht archiviert? ✅ Für Audit!  
+- [ ] `error` = 0? Wenn nein: Ursache einordnen und beheben
+- [ ] Warnungen gelesen? Akzeptabel oder Handlungsbedarf?
+- [ ] Profil- und Codesystem-Versionen der Daten passen zur Konfiguration des Validators?
+- [ ] Fachliche Plausibilität separat geprüft?
+- [ ] Bericht abgelegt (Nachvollziehbarkeit)?
+
+**Ausblick:**
+
+- [Exercise 8](exercise-8.md): Alternative Werkzeuge, Versionierung und Lizenzen von Codesystemen
 
 ___
-
-### Ausblick
-
-- **Ex8:** Ausblick auf Alternativen, Versionierung, Lizenzen  
-- **DIZ-Alltag:** Validation in CI/CD-Pipeline (GitLab CI, GitHub Actions)  
-
 ___
-___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • **Exercise 7** • [Exercise 8](exercise-8.md)
 ___
 ___

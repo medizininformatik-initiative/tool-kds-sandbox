@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
@@ -17,7 +17,7 @@ ___
 
 ## Einführung & Kontext
 
-In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 272 pseudonymisierten Patienten.
+In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 271 pseudonymisierten Patienten.
 
 In dieser Übung stellst du **strukturierte Abfragen** auf diese KDS-Daten: Du suchst nach Diagnosen (ICD-10-GM), Laborwerten (LOINC), Prozeduren (OPS), verknüpfst Ressourcen miteinander und stößt dabei auf typische Eigenheiten echter DIZ-Daten.
 
@@ -60,20 +60,22 @@ for type in Patient Encounter Condition Observation Procedure DiagnosticReport S
 done
 ```
 
-✅ **Erwartetes Ergebnis** nur UKSH geladen (alle Musterdaten geladen):
+✅ **Erwartetes Ergebnis** nur UKSH geladen (in Klammern: UKSH, UKHD und UKW geladen):
 
 ```text
-Patient: 272 (279)
-Encounter: 1172 (1329)
+Patient: 271 (275)
+Encounter: 1170 (1329)
 Condition: 425 (482)
-Observation: 3482 (3637)
+Observation: 3480 (3636)
 Procedure: 180 (205)
 DiagnosticReport: 1276 (1277)
 ServiceRequest: 1276 (1276)
 Consent: 5 (84)
 ```
 
-> 💡 **Hinweis:** Hast du zusätzlich UKHD oder UKW hochgeladen, sind die Zahlen in dieser Übung entsprechend höher. Die Abfragen funktionieren trotzdem.
+> 💡 **Hinweis:** Die Zahlen in Klammern gelten, wenn du in [Exercise 3](exercise-3.md) zusätzlich UKHD (+3 Patienten) und UKW (+1 Patient) hochgeladen hast. Die Abfragen funktionieren in beiden Fällen.
+>
+> 💡 Deine Testressourcen aus [Exercise 2](exercise-2.md) liegen ebenfalls noch im Server und erhöhen einzelne Zahlen leicht: je hochgeladenem Beispiel-Patienten +1 bei `Patient`, die HbA1c-Observation +1 bei `Observation` und bei den Laborwerten.
 
 ___
 
@@ -163,7 +165,7 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 | `R11` | 15 | Übelkeit und Erbrechen |
 | `U99.0` | 13 (15) | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
 
-🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel in einem Terminologieserver, denn wir in [Exercise 5](exercise-5.md) einrichten.
+🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel in einem Terminologieserver, den wir in [Exercise 5](exercise-5.md) einrichten.
 
 ### Abfrage 3.2: Alle Rektumkarzinom-Diagnosen (C20)
 
@@ -199,7 +201,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/fhir/C
 ```bash
 # Wie viele Laborwerte haben überhaupt einen LOINC-Code?
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_summary=count" | jq '.total'
-# → 1888 (2041)
+# → 1888 (2040)
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count" | jq '.total'
 # → 819
 ```
@@ -300,11 +302,14 @@ curl -s "http://localhost:8080/fhir/DiagnosticReport?_id=REP-88ceb08a4e874daa01d
 
 ### Abfrage 5.4: `_revinclude` – die Patientenakte
 
-Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage - nehmen wir hier einen der Patienten mit C20-Diagnose:
+Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage. Wähle dafür einen der Patienten mit C20-Diagnose aus [Abfrage 5.2](#abfrage-52-reverse-chaining-_has--patienten-über-ihre-daten-finden) und speichere seine ID in einer Variablen:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
-  | jq '[.entry[].resource | {id, gender, birthDate}]'
+  | jq -r '.entry[].resource.id'
+
+# Eine der ausgegebenen IDs einsetzen:
+PATIENT_ID=<ID>
 
 curl -s "http://localhost:8080/fhir/Patient?_id=$PATIENT_ID&_revinclude=Encounter:subject&_revinclude=Condition:subject&_revinclude=Procedure:subject&_revinclude=Observation:subject" \
   | jq '[.entry[].resource.resourceType] | group_by(.) | map({(.[0]): length}) | add'
@@ -313,7 +318,7 @@ curl -s "http://localhost:8080/fhir/Patient?_id=$PATIENT_ID&_revinclude=Encounte
 ### 🛠️ Aufgabe: Patientenakte auswerten
 
 - Welche **verschiedenen** Diagnosen hat dieser Patient? Tipp: `select(.resource.resourceType == "Condition")`, dann `unique`.
-- Wie lange dauerten seine vier stationären Aufenthalte? Tipp: `Encounter?subject=Patient/$PATIENT_ID` und `.period`.
+- Wie viele stationäre Aufenthalte (`class` = `IMP`) hatte er, und wie lange dauerten sie? Tipp: `Encounter?subject=Patient/$PATIENT_ID` und `.period`.
 
 <details>
 <summary>Lösung</summary>
@@ -349,10 +354,10 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&va
 
 # Vitalstatus-Observations mit "L" (lebend)
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&value-concept=https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus|L&_summary=count" | jq '.total'
-# → 1582
+# → 1578 (1582)
 ```
 
-❗ **Auffälligkeit:** Laut `Patient.deceased` sind 259 von 272 Patienten verstorben, aber nur eine einzige Observation meldet den Vitalstatus „tot“. Ist das ein Widerspruch?
+❗ **Auffälligkeit:** Laut `Patient.deceased` sind 259 von 271 Patienten verstorben, aber nur eine einzige Observation meldet den Vitalstatus „tot“. Ist das ein Widerspruch?
 
 💡 **Nicht zwingend, denn beide Angaben haben einen anderen Zeitbezug:**
 
@@ -364,7 +369,7 @@ Ein Patient, der 2023 bei einem Aufenthalt mit „L“ dokumentiert wurde und 20
 Das prüfen wir, indem wir die Observations samt zugehörigem Patient laden und die Datumsangaben vergleichen:
 
 ```bash
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&_include=Observation:subject&_count=1000" | jq '
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&_include=Observation:subject&_count=2000" | jq '
   [.entry[].resource] as $r
   | ($r | map(select(.resourceType=="Patient"))
         | map({key: ("Patient/" + .id), value: .deceasedDateTime})
@@ -383,7 +388,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&_i
 
 - Der Vergleich `.datum > .verstorben` ist ein reiner Textvergleich. Er ist zuverlässig, solange beide Werte dasselbe Format haben, kann bei gemischten Formaten (`2025-03-01` vs. `2025-03-01T10:00:00+01:00`) aber ungenau sein.
 - Patienten mit `deceasedBoolean = true` ohne Datum lassen sich so nicht prüfen. Sie fallen aus dem Filter heraus.
-- `_count=1000` liefert höchstens eine Seite. Weitere Seiten erkennst du an einem `next`-Link unter `jq '.link'`.
+- `_count=2000` holt alle rund 1.600 Vitalstatus-Observations auf einer Seite (Blaze erlaubt bis zu 10.000). Bei größeren Datenmengen gibt es weitere Seiten, erkennbar an einem `next`-Link unter `jq '.link'`.
 
 **Was du mitnehmen sollst:** Jede Angabe im KDS hat einen Zeitbezug. Zwei Angaben, die auf den ersten Blick nicht zusammenpassen, sind erst dann ein Widerspruch, wenn sich dieselbe Aussage zum selben Zeitpunkt unterscheidet.
 
@@ -406,6 +411,12 @@ Für wiederkehrende Abfragen und statistische Auswertungen lohnt sich ein Skript
 ```bash
 pip install fhir-pyrate
 ```
+
+> 💡 Neuere Ubuntu-/Debian-Versionen (auch unter WSL2) verweigern `pip install` außerhalb einer virtuellen Umgebung mit dem Fehler `externally-managed-environment`. Lege dann vorher eine an:
+>
+> ```bash
+> python3 -m venv ~/venv-fhir && source ~/venv-fhir/bin/activate
+> ```
 
 ```python
 from fhir_pyrate import Pirate
@@ -501,6 +512,6 @@ ___
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

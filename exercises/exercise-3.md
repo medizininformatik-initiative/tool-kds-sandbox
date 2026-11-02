@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
@@ -102,8 +102,7 @@ Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
   "Location/LMED1-LINAS1",
   "Location/LMED1",
   "Encounter/PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385",
-  "Patient/dummy"
-  [...]
+  ...
 ]
 ```
 
@@ -136,7 +135,7 @@ Es entsteht `transaction-bundle_cleaned.json` mit Ausgabe einer kurzen Zusammenf
 ===================================
 Bundle cleaning summary
 ===================================
-Original resources: 8451
+Original resources: 8446
 Final resources: 8083
 Total removed: 363
 
@@ -186,12 +185,23 @@ ___
 ```bash
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned_put.json | jq
+  --data @transaction-bundle_cleaned_put.json \
+  | jq '[.entry[].response.status] | group_by(.) | map({(.[0]): length}) | add'
 ```
 
-Die Response des Servers umfasst den HTTP-Status jeder einzelnen Ressourcen des Bundles.
+Die Response des Servers ist ein Bundle vom Typ `transaction-response` mit einem Eintrag pro Ressource. Statt alle rund 8.000 Einträge auszugeben, zählt `jq` hier, wie oft welcher HTTP-Status vorkommt.
 
-✅ **Erfolg!** Der Server hat die Ressourcen angelegt (Status `200 OK` oder `201 Created`).
+✅ **Erfolg!** Der Server hat alle Ressourcen angelegt:
+
+```text
+{
+  "201": 8083
+}
+```
+
+> 💡 `201` bedeutet „neu angelegt“. Lädst du dasselbe Bundle ein zweites Mal hoch, antwortet der Server mit `200` („aktualisiert“), weil die Ressourcen unter diesen IDs schon existieren.
+>
+> ⚠️ Erscheint stattdessen `jq: error ... Cannot iterate over null`, hat der Server das Bundle abgelehnt und ein `OperationOutcome` statt eines Bundles zurückgegeben. Wiederhole den Befehl dann ohne den `jq`-Filter (nur `| jq`), um die Fehlermeldung zu lesen.
 
 ___
 
@@ -251,8 +261,10 @@ bash convert_to_put.sh ~/musterdatenspende-diz/UKHD/transaction-bundle_cleaned.j
 cd ~/musterdatenspende-diz/UKHD/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @transaction-bundle_cleaned_put.json | jq
+  --data @transaction-bundle_cleaned_put.json \
+  | jq '[.entry[].response.status] | group_by(.) | map({(.[0]): length}) | add'
 ```
+# → { "201": 823 }
 
 ### Upload-Vorbereitung für UKW-Musterdatensatz (+1 Patient)
 (Nur ein `searchset` gegeben, prepare_upload.sh übernimmt daher die Erstellung eines `transaction`-Bundles)
@@ -273,7 +285,9 @@ bash convert_to_put.sh ~/musterdatenspende-diz/UKW/UKW-2025-12-05_cleaned_prepar
 cd ~/musterdatenspende-diz/UKW/
 curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
-  --data @UKW-2025-12-05_cleaned_prepared_put.json | jq
+  --data @UKW-2025-12-05_cleaned_prepared_put.json \
+  | jq '[.entry[].response.status] | group_by(.) | map({(.[0]): length}) | add'
+# → { "201": 234 }
 ```
 
 ___
@@ -282,9 +296,9 @@ ___
 
 | Standort | Original | Nach Bereinigung | Removed |
 | :--- | :--- | :--- | :--- |
-| **UKSH** | 8,451 | 8,088 | 363 (Encounter, Location, etc.) |
+| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) |
 | **UKW** | 235 | 234 | 1 (`MedicationAdministration`) |
-| **UKHD** | 1,384 | 836 | 548 (`Medication`, `MedicationRequest`) |
+| **UKHD** | 1,371 | 823 | 548 (`Medication`, `MedicationRequest`) |
 
 ___
 
@@ -308,6 +322,6 @@ ___
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
@@ -179,7 +179,7 @@ Wir werden nun ein eigenes Profil definieren, das von einem bestehenden MII-Basi
 
 Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) homogen zu modellieren.
 
-Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehaltet, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver gestalten, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
+Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehalten, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver gestalten, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
 
 1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
 
@@ -463,6 +463,6 @@ Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshsc
 
 ___
 ___
-[Prerequisites](prerequisites.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___

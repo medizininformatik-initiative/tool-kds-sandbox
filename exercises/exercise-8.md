@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • **Exercise 8**
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • **Exercise 8**
 ___
 ___
 
@@ -8,92 +8,99 @@ ___
 
 **Nächste Schritte:**
 
-- Erweitere die Übungsreihenfolge um eigene Themen
-- Teste alternative Validatoren (HAPI, Firely)
-- Erstelle eigene FHIR-Profile für deinen Anwendungsfall
+- Lerne Alternativen zu den Werkzeugen aus den Übungen kennen
+- Verstehe, warum Versionen von Codesystemen und Profilen wichtig sind
+- Verschaffe dir einen Überblick über die Lizenzen der Codesysteme
 
-## Einführung & Kontext
+In den vorherigen Übungen hast du **FHIR-Profile definiert**, **Daten in einen FHIR-Server geladen**, **Abfragen gestellt**, **Terminologien geladen** und **Ressourcen validiert**.
 
-In den vorherigen Übungen hast du gelernt, **FHIR-Profile zu definieren**, **Daten in den Server zu laden**, **Abfragen durchzuführen**, **Terminologien zu laden** und **Ressourcen zu validieren**.
-
-In dieser letzten Übung schauen wir auf **Alternative Werkzeuge**, **Versionierung**, **Lizenzen** und **Zukunftsausblick** — ohne praktische Übung, aber mit dem nötigen Kontext, um im DIZ-Alltag informierte Entscheidungen zu treffen.
+In dieser letzten Übung schauen wir auf **alternative Werkzeuge**, **Versionierung** und **Lizenzen** – ohne praktische Übung, aber mit dem nötigen Kontext, um im DIZ-Alltag informierte Entscheidungen zu treffen.
 
 ___
 
 📋 **Übersicht:**
 
-- [Alternative Werkzeuge](#-alternative-werkzeuge)
-- [Versionierung von Codesystemen](#-versionierung-von-codesystemen)
-- [Lizenzen](#-lizenzen)
-- [Zukunft: Erweiterungen](#zukunft-erweiterungen)
-- [Abschluss](#-zusammenfassung)
+- [Alternative Werkzeuge](#alternativen)
+- [Versionierung von Codesystemen und Profilen](#versionierung)
+- [Lizenzen](#lizenzen)
+- [Ideen für weitere Themen](#weitere-themen)
+- [Zusammenfassung](#zusammenfassung)
 
 ___
 
-## 🔧 Alternative Werkzeuge
+## <a id="alternativen"></a>🔧 Alternative Werkzeuge
 
 ### 1.1 Terminologieserver
 
-| Server | Vorteile | Einsatz |
-| ------ | -------- | ------- |
-| **Blaze TermServ** (MII-Standard) | Einfach, integriert mit Blaze, Open Source | DIZ-Standard |
-| **HAPI FHIR** | Reife Implementation, viele Features, großes Community | Alt-DIZ, migrierte Systeme |
-| **SMART on FHIR** | App-Plattform | Apps, externe Integration |
-| **MII SU-TermServ** (zentral) | Aktuelle Codes, support durch MII | Alle DIZe (zusätzlich zu lokal) |
+| Server | Eigenschaften | Einsatz |
+| ------ | ------------- | ------- |
+| **FHIRsmith** ([Exercise 5](exercise-5.md)) | Open Source (BSD-3), Software hinter tx.fhir.org | Lokale Tests, Lernen, eigene Instanzen |
+| **Ontoserver** (CSIRO) | Kommerziell, sehr ausgereift, SNOMED-CT-Unterstützung | Betrieben von der MII Service Unit Terminologie (SU-TermServ) |
+| **Blaze** mit Terminologie-Modul | Open Source, derselbe Blaze wie aus [Exercise 2](exercise-2.md), kann LOINC und SNOMED CT laden | Standard-Terminologieserver im Setup des MII FHIR Validators |
+| **HAPI FHIR** | Open Source, Terminologie-Funktionen als Teil des FHIR-Servers | Wenn HAPI ohnehin als FHIR-Server läuft |
 
 ___
 
-### 1.2 Validierungsservices
+### 1.2 Validatoren
 
-| Service | Vorteile |
-| ------- | -------- |
-| **MII FHIR Validator** (lokal) | Konformität zu MII-Standards, ICD-10-GM/LOINC/SNOMED |
-| **HAPI Validator** | Universell, alle FHIR-Versionen |
-| **Firely Validator** | Schnell, modern, CLI-Tool |
-| **Simplifier.net** (Web) | Visuell, gute UX, Community-Profiles |
+| Werkzeug | Eigenschaften |
+| -------- | ------------- |
+| **MII FHIR Validator** ([Exercise 6](exercise-6.md)) | HL7-Validator als HTTP-Dienst, vorkonfiguriert mit den MII-KDS-Paketen |
+| **HL7 Validator** (`validator_cli.jar`) | Referenz-Validator von HL7, Basis von MII FHIR Validator und IG Publisher; Kommandozeile, gut für CI |
+| **Firely Terminal / Firely SDK** | Eigene Validator-Implementierung (.NET); Firely Terminal kennst du aus [Exercise 1](exercise-1.md) |
+| **gematik Referenzvalidator** | Basiert auf dem HL7-Validator, vorkonfiguriert für Anwendungen der Telematikinfrastruktur (z. B. E-Rezept, ISiK) |
+| **Simplifier.net** | Webplattform mit Validierung, Profil-Browser und Paket-Registry |
+
+> 💡 Validatoren auf derselben Basis (HL7-Validator) liefern bei gleicher Konfiguration dieselben Ergebnisse. Unterschiede entstehen vor allem durch geladene Pakete, Versionen und den Terminologieserver.
 
 ___
 
 ### 1.3 FHIR-Server
 
-| Server | Vorteile |
-| ------ | -------- |
-| **Blaze** (MII-Standard) | Einfach, Open Source, gut dokumentiert |
-| **HAPI FHIR** | Reif, viele Erweiterungen (web UI, full-text) |
-| **AWS HealthLake** | Skalierbar, AWS-Integration |
-| **Azure FHIR Service** | Azure-Integration, Managed |
+| Server | Eigenschaften |
+| ------ | ------------- |
+| **Blaze** ([Exercise 2](exercise-2.md)) | Open Source (Apache 2.0), leichtgewichtig, in der MII weit verbreitet |
+| **HAPI FHIR JPA Server** | Open Source, sehr verbreitet, viele Erweiterungen |
+| **Firely Server** | Kommerziell (.NET) |
+| **Cloud-Dienste** (AWS HealthLake, Azure Health Data Services, Google Cloud Healthcare API) | Gemanagt, aber Datenhaltung in der Cloud ist für Patientendaten im DIZ meist keine Option |
 
 ___
 
-## 🔢 Versionierung von Codesystemen
+## <a id="versionierung"></a>🔢 Versionierung von Codesystemen und Profilen
 
 ### 2.1 Warum Versionierung?
 
-| Szenario | Problem ohne Versionierung |
+| Szenario | Problem ohne Versionsangabe |
 | -------- | -------------------------- |
-| **Neuer LOINC-Code** | Alte Daten mit altem Code bleiben gültig, neue mit neuem Code — aber wie kombinieren? |
-| **ICD-10-GM Update** | Diagnosen im Jahr 2024 mit ICD-10-GM 2024, 2025 mit 2025 — wie Abfragen? |
-| **Audit & Nachvollziehbarkeit** | Wie weiß man, welcher Code zum Zeitpunkt X verwendet wurde? |
+| **ICD-10-GM-Update** | Die ICD-10-GM erscheint jährlich. Ein Code aus 2023 kann 2026 gestrichen oder umbenannt sein. Gegen welche Version prüft man? |
+| **Neue Profilversion** | Die Musterdaten nennen Profile von 2024/2025, der Validator aus [Exercise 6](exercise-6.md) lädt 2026. Welche Regeln gelten? |
+| **Nachvollziehbarkeit** | Welcher Code und welches Profil galten zum Zeitpunkt der Dokumentation? |
 
 ___
 
-### 2.2 FHIR-Approach: `code.system` + `code.version`
+### 2.2 Versionen in FHIR angeben
 
-In FHIR kannst Du eine **Version** angucken:
+Eine `Coding` kann die Version des Codesystems mitführen:
 
 ```json
 {
   "code": {
     "coding": [
       {
-        "system": "http://loinc.org",
-        "code": "4548-4",
-        "version": "2.82.0",
-        "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+        "version": "2026",
+        "code": "I10.90",
+        "display": "Essentielle Hypertonie, nicht näher bezeichnet: Ohne Angabe einer hypertensiven Krise"
       }
     ]
   }
 }
+```
+
+Profile werden mit `|` und Version referenziert, z. B. in `meta.profile`:
+
+```text
+https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDefinition/Diagnose|2025.0.0
 ```
 
 ___
@@ -102,99 +109,72 @@ ___
 
 | Praxis-Problem | Lösung |
 | -------------- | ------ |
-| **Mehrere Versionen parallel** | Verwende `code.version` in allen Ressourcen |
-| **Versions-Migration** | Update-Skripte (z. B. `4548-4\|2.81.0` → `4548-4\|2.82.0`) |
-| **Validierung mit alter Version** | Validator mit `?version=2.81.0` aufrufen (falls supported) |
-
-> ⚠️ **Hinweis:** Nicht alle Validatoren unterstützen `code.version`. Prüfe vor dem Einsatz!
+| **Mehrere Codesystem-Versionen parallel** | `coding.version` befüllen; Terminologieserver mit allen benötigten Versionen bestücken |
+| **Codes ändern sich zwischen Versionen** | Überleitungstabellen des BfArM für ICD-10-GM und OPS nutzen |
+| **Daten mit älterer Profilversion** | Vor der Validierung festlegen, gegen welche Version geprüft wird, und die passenden Pakete laden |
 
 ___
 
-## 📜 Lizenzen
+## <a id="lizenzen"></a>📜 Lizenzen
 
-### 3.1 Codesystem-Lizenzen im Überblick
+### 3.1 Codesysteme
 
-| Codesystem | Lizenz | Kosten | Download |
-| ---------- | ------ | ------ | -------- |
-| **LOINC** | Apache 2.0 (ab 2025) | Kostenlos | [loinc.org](https://loinc.org) |
-| **SNOMED-CT** | SNOMED International License | Kosten (Country License) | [snomed.org](https://snomed.org) |
-| **ICD-10-GM** | public domain (BFarm) | Kostenlos | [terminologien.bfarm.de](https://terminologien.bfarm.de) |
-| **OPS** | public domain (BFarm) | Kostenlos | [terminologien.bfarm.de](https://terminologien.bfarm.de) |
-| **UCUM** | BSD 3-Clause | Kostenlos | [ucum.org](https://ucum.org) |
+| Codesystem | Lizenz | Kosten | Bezug |
+| ---------- | ------ | ------ | ----- |
+| **ICD-10-GM, OPS, Alpha-ID-SE** | Downloadbedingungen des BfArM | Kostenfrei | [BfArM](https://www.bfarm.de/DE/Kodiersysteme/_node.html) |
+| **LOINC** | Eigene LOINC-Lizenz (Regenstrief Institute) | Kostenfrei, Registrierung nötig | [loinc.org](https://loinc.org) |
+| **SNOMED CT** | SNOMED-International-Affiliate-Lizenz | In Deutschland kostenfrei (nationale Lizenz), Lizenzvergabe über das BfArM | [BfArM](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/SNOMED-CT/_node.html) |
+| **UCUM** | Eigene Nutzungsbedingungen (Regenstrief Institute) | Kostenfrei | [ucum.org](https://ucum.org) |
 
-> 💡 **Hinweis:** SNOMED-CT ist in Deutschland **kostenpflichtig** (via BIH/DAISM). Im Rahmen der MII sollten die meisten DIZ inzwischen über eine SNOMED CT-Lizenz verfügen.
-
-___
-
-### 3.2 Lizenzkompatibilität
-
-- **Apache 2.0 + MIT + BSD** → ✅ Kompatibel (kann zu Apache 2.0 kombiniert werden)  
-- **GPL** → ❌ Nicht kompatibel mit Apache 2.0 (außer双重 Lizenz)  
-- **SNOMED International** → 🟡 Einschränkungen (Verbreitung, Embedding)
+> 💡 **SNOMED CT** ist seit 2021 in Deutschland national lizenziert. Nutzende brauchen trotzdem eine eigene (kostenfreie) Affiliate-Lizenz über das BfArM, bevor sie die Release-Dateien herunterladen dürfen.
 
 ___
 
-### 3.3 Lizenz-Hinweise in DIZ
+### 3.2 Software
 
-- ✅ **Doku führen:** Welche Lizenzen wurden heruntergeladen? (Audit!)  
-- ✅ **Hinweise geben:** Im DIZ-Handbuch: Benutzungsbedingungen (z. B. „Nicht weiterverbreiten“)  
-- ✅ **Lizenz-Updates:** Monatliche Prüfung (z. B. für ICD-10-GM Updates)
+Die Werkzeuge der Übungen stehen unter Open-Source-Lizenzen: Blaze, der MII FHIR Validator und der HL7-Validator unter Apache 2.0, FHIRsmith unter BSD-3. Diese Lizenzen regeln nur die **Software**. Die Inhalte, die du lädst (z. B. LOINC oder SNOMED CT), haben eigene Lizenzen, und die gelten auch dann, wenn die Software frei ist.
 
----
+___
 
-## <a id="zukunft-erweiterungen"></a>🚀 Zukunft: Weitere Inhalte
+### 3.3 Lizenz-Hinweise im DIZ
 
-### 4.1 Ausblick: Themen für zukünftige Übungen
+- ✅ **Dokumentieren:** Welche Terminologien in welcher Version unter welcher Lizenz geladen wurden
+- ✅ **Weitergabe prüfen:** Lizenzpflichtige Inhalte (z. B. SNOMED-CT-Releasedateien) nicht in Repositories oder Docker-Images einbauen
+- ✅ **Releasezyklen im Blick behalten:** ICD-10-GM und OPS erscheinen jährlich, LOINC zweimal im Jahr
+
+___
+
+## <a id="weitere-themen"></a>🚀 Ideen für weitere Themen
 
 | Themenbereich | Inhalt | Relevanz |
 | ------------- | ------ | -------- |
-| **Pseudonymisierung** | Anonymisierung von FHIR-Ressourcen (de-idenfikation, k-Anonymity) | ✅✅✅ Kritisch für Forschungsdaten |
-| **Datenanalyse mit Skripten** | Externe Forschende liefern R-Skripte/Python-Skripte | ✅✅✅ Alltag in DIZ |
-| **DIMP/DUP-Pipeline** | aether-orchestrierte Datenbereitstellung | ✅✅✅ Backend für Forschungsanfragen |
-| **consent-Management** | MII Consent-Validierung (DSTU2 vs. R4) | ✅✅✅ Rechtliche Compliance |
-| **FHIR-Konformance** | CapabilityStatement, StructureDefinition-Validation | ✅✅ Technische Qualität |
+| **Pseudonymisierung** | De-Identifikation von FHIR-Ressourcen, z. B. mit dem FHIR Pseudonymizer | ✅✅✅ Kritisch für Forschungsdaten |
+| **Datenanalyse mit Skripten** | Externe Forschende liefern R- oder Python-Skripte, die im DIZ laufen | ✅✅✅ Alltag im DIZ |
+| **Datenausleitung (TORCH, DIMP/DUP)** | Aether-orchestrierte Datenbereitstellung für Forschungsanfragen | ✅✅✅ Backend für Forschungsanfragen |
+| **Consent** | MII-Consent-Profile, Prüfung der Einwilligung bei der Datenausleitung | ✅✅✅ Rechtliche Grundlage |
+| **FHIR-Konformität** | `CapabilityStatement` lesen, Profile eines Servers prüfen | ✅✅ Technische Qualität |
 
 ___
 
-### 4.2 Konkrete Ideen für weitere Übungen
+## <a id="zusammenfassung"></a>🏁 Zusammenfassung
 
-#### **Exercise 8: Pseudonymisierung von FHIR-Daten**
+### Womit du in den Übungen gearbeitet hast
 
-- MII FHIR-Pseudonymizer
-
-#### **Exercise 9: Analyse mit externen Skripten**
-
-- R-Script / Python-Script von Forschendem bekommen  
-- Ergebnis exportieren (CSV, JSON, FHIR-Bundle)
-
-#### **Exercise 10: DIMP/DUP-Pipeline (Ausblick)**
-
-- Welche Daten werden in die Pipeline eingespeist?  
-- Wie wird eine Forschungsanfrage bearbeitet? (DIMP → DUP → Export)  
-- Aether-Orchestrierung (Kubernetes, ArgoCD)
-
-___
-
-## 🏁 Zusammenfassung
-
-### Zusammenfassung: Womit du im DIZ-Arbeitsalltag arbeitest
-
-| Werkzeug | Getestet | Lokal/remote? | Lizenz |
-| -------- | -------- | ------------- | ------ |
-| **Blaze Server** | ✅ Ja | ✅ Lokal | Apache 2.0 |
-| **MII SU-TermServ** | ✅ Ja | ✅ Beides | — |
-| **MII FHIR Validator** | ✅ Ja | ✅ Lokal | Apache 2.0 |
-| **LOINC** | ✅ Ja | ✅ Kostenlos | Apache 2.0 |
-| **ICD-10-GM/OPS** | ✅ Ja | ✅ Kostenlos | public domain |
-| **SNOMED-CT** | ✅ Ja | ❌ kostenpflichtig | SNOMED International |
+| Werkzeug / Inhalt | In Übung | Betrieb | Lizenz |
+| ----------------- | -------- | ------- | ------ |
+| **SUSHI, IG Publisher** | [Exercise 1](exercise-1.md) | Lokal | Apache 2.0 |
+| **Blaze** | [Exercise 2](exercise-2.md)–[4](exercise-4.md) | Lokal (Docker) | Apache 2.0 |
+| **FHIRsmith** | [Exercise 5](exercise-5.md) | Lokal (Docker) | BSD-3 |
+| **ICD-10-GM, OPS, Alpha-ID-SE** | [Exercise 5](exercise-5.md) | Auf FHIRsmith geladen | BfArM, kostenfrei |
+| **MII FHIR Validator** | [Exercise 6](exercise-6.md)–[7](exercise-7.md) | Lokal (Docker) | Apache 2.0 |
+| **LOINC, SNOMED CT** | Nur als Codes in den Daten | Nicht geladen | Siehe [Lizenzen](#lizenzen) |
 
 ### Ausblick
 
-Keine weiteren Übungen - das Tutorial ist damit abgeschlossen!  
-Du hast nun die wichtigsten Werkzeuge und Prozesse für die FHIR-Entwicklung kennengelernt.
+Das Tutorial ist damit abgeschlossen. Du hast die wichtigsten Werkzeuge und Abläufe kennengelernt, mit denen ein DIZ FHIR-Daten modelliert, speichert, abfragt und prüft.
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • **Exercise 8**
+[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • **Exercise 8**
 ___
 ___

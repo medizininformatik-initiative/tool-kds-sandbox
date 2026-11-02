@@ -1,56 +1,75 @@
 ___
 ___
-**Prerequisites** • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+**Prerequisites** • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
 
 # ⚪ Prerequisites
 
-Bevor du mit den Übungen startest, stelle sicher, dass deine lokale Entwicklungsumgebung die folgenden Voraussetzungen erfüllt. Das spart Zeit und verhindert Frustration bei den späteren Validierungs- und Build-Schritten.
+Bevor du mit den Übungen startest, stelle sicher, dass deine Umgebung die folgenden Voraussetzungen erfüllt. Die genaue Installation der Werkzeuge erklären die jeweiligen Übungen.
+
+___
 
 ## 💻 Technische Mindestanforderungen
 
-* **Betriebssystem:** Linux (bspw. Ubuntu/Debian) oder Windows mit **WSL2** (Windows Subsystem for Linux).
-* **Hardware:** Mindestens **8 GB Arbeitsspeicher (RAM)**. Der FHIR-Publisher und der lokale Validierungsservice benötigen temporär viel Speicher.
-* **Rechte:** Du benötigst **Sudo-Rechte** auf dem System, um Pakete (wie Docker, Java, Node.js) zu installieren.
+- **Betriebssystem:** Linux (z. B. Ubuntu/Debian) oder Windows mit **WSL2**
+- **Arbeitsspeicher:** mindestens **8 GB**, empfohlen **16 GB**. Ab [Exercise 6](exercise-6.md) laufen FHIR-Server, Terminologieserver und Validator gleichzeitig und brauchen zusammen bis zu 10 GB.
+- **Rechte:** Sudo-Rechte, um Pakete zu installieren
+- **Internet:** für Paketinstallationen, Docker-Images und FHIR-Pakete
 
 ___
 
-## 🛠️ Benötigte Werkzeuge (Installations-Checkliste)
+## 🛠️ Benötigte Werkzeuge
 
-Die Übungen bauen aufeinander auf. Du wirst im Laufe des Tutorials folgende Tools einrichten (die genaue Anleitung erfolgt in den jeweiligen Übungen):
+| Werkzeug | Wofür | Ab Übung | Installation |
+| --- | --- | --- | --- |
+| `git`, `curl`, `jq`, `unzip` | Repositories klonen, Server abfragen, JSON auswerten, Musterdaten entpacken | 1 | Befehl unten |
+| Node.js mit `npm`, `sushi` | FSH-Profile kompilieren | 1 | [Exercise 1](exercise-1.md) |
+| .NET und Firely Terminal | FHIR-Pakete verwalten | 1 | [Exercise 1](exercise-1.md) |
+| Java (empfohlen 17 oder 21) und Jekyll | IG Publisher | 1 | [Exercise 1](exercise-1.md) |
+| Docker und Docker Compose | FHIR-Server, Terminologieserver, Validator | 2 | [Exercise 2](exercise-2.md) |
+| Python 3 oder R | Skriptbasierte Auswertung (optional) | 4 | [Exercise 4](exercise-4.md) |
 
-1. **Für die Modellierung (Exercise 1):** Node.js mit `npm`, der Compiler `sushi` sowie das `Firely Terminal`.
-2. **Für das HTML-Rendering (Exercise 1):** Eine aktuelle **Java-Umgebung** (mindestens Java 11, empfohlen Java 17 oder 21) sowie **Jekyll**, um die Weboberfläche deines Leitfadens lokal zu generieren.
-3. **Für die Infrastruktur (Exercise 2–5):** `Docker` und `Docker-Compose` zum Starten des lokalen FHIR-Servers (`blaze`), des Terminologieservers und des MII-Validators.
+Die Basiswerkzeuge der ersten Zeile installierst du unter Ubuntu/Debian (auch WSL2) so:
 
-## 💡 **Hinweis zu den Übungsmaterialien & Lösungen:**
+```bash
+sudo apt update && sudo apt install -y git curl jq unzip
+```
 
-> Bearbeite die Übungen am Besten selbstständig in deinem lokalen Main-Branch.
+Sobald alles eingerichtet ist, kannst du die Installation prüfen:
 
-Alle Ordnerstrukturen, Konfigurationsdateien (wie `docker-compose.yml`) und fertigen FSH-Beispieldateien der einzelnen Übungen sind im Git-Repository über separate Branches organisiert. Die Beispieldateien bzw. Musterlösungen stehen dir jeweils im passenden Solution-Branch (z. B. `solution_exercise-1`, `solution_exercise-2` etc.) zur Verfügung.
+```bash
+git --version
+jq --version
+sushi --version
+java -version
+docker compose version
+```
+
+___
+
+## 🧩 Benötigte Dienste
+
+Ab [Exercise 2](exercise-2.md) startest du drei Dienste als Docker-Container. Sie bauen aufeinander auf und laufen auf festen Ports:
+
+| Dienst | Port | Ab Übung |
+| --- | --- | --- |
+| FHIR-Server **Blaze** | `8080` | [Exercise 2](exercise-2.md) |
+| Terminologieserver **FHIRsmith** | `8081` | [Exercise 5](exercise-5.md) |
+| **MII FHIR Validator** | `8082` | [Exercise 6](exercise-6.md) |
+
+Die Übungen leiten dich Schritt für Schritt durch das Aufsetzen. Alle `docker-compose.yml`-Dateien, Start- und Prüfbefehle findest du zusätzlich gesammelt auf der Seite **[Dienste](services.md)**.
 
 ___
 
-## Copy-Pasta (später entfernen)
+## 💡 Hinweis zu den Übungsmaterialien & Lösungen
 
-💡 Leuchtende Glühbirne (Fokus & Wichtiges, für Tipps, Ideen, Merksätze)  
-⚠️ Warnschild / Achtung (für Stolperfallen oder Fehlerquellen)  
-❗ Ausrufezeichen (für wichtige Hinweise)  
-🔍 Lupe (für Details oder „Genau hinschauen“)
-🚀 Rakete (für den Start oder „Schnellkurs“)  
-🏁 Zielflagge (für das Endergebnis oder Zwischenziele)  
-🛠️ Werkzeug / Hammer & Schraubenschlüssel (für Vorbereitung/Setup)  
-🧩 Puzzleteil (für Module oder Zusammenhänge)  
-📋 Struktur & Navigation  
-📌 Pinnnadel (für Fixpunkte oder Zusammenfassungen)  
-📖 Offenes Buch (für Theorie-Grundlagen)  
-💻 Laptop / Computer (für Praxis-Schritte am Bildschirm)  
-✅ Grünes Häkchen (für erledigte Schritte oder "Richtig-Beispiele")  
-❌ Rotes Kreuz (für "Falsch-Beispiele")  
+Bearbeite die Übungen am besten selbstständig in deinem lokalen `main`-Branch.
+
+Die Musterlösungen der einzelnen Übungen (z. B. FSH-Dateien, Skripte) stehen dir jeweils im passenden Solution-Branch zur Verfügung (`solution_exercise-1`, `solution_exercise-2` usw.).
 
 ___
 ___
-**Prerequisites** • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+**Prerequisites** • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
 ___
 ___
