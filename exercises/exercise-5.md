@@ -4,7 +4,7 @@ ___
 ___
 ___
 
-# 🔴 Terminologien prüfen mit FHIR-Operationen
+# 🔴 Gegen Terminologien prüfen mit FHIR-Operationen
 
 **Nächste Schritte:**
 
@@ -37,15 +37,17 @@ ___
 
 ### Codesysteme im DIZ
 
-| Codesystem | Herausgeber | Typische Verwendung im KDS | Beschaffung |
-| --- | --- | --- | --- |
-| **ICD-10-GM** | BfArM | Diagnosen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
-| **OPS** | BfArM | Prozeduren (`Procedure.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
-| **Alpha-ID-SE** | BfArM | Seltene Erkrankungen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
-| **ATC** | BfArM / WHO | Wirkstoffe (`Medication.code`) | Frei verfügbar |
-| **LOINC** | Regenstrief Institute | Laborwerte (`Observation.code`) | Kostenfrei, eigene LOINC-Lizenz, Registrierung nötig |
-| **SNOMED CT** | SNOMED International | Klinische Begriffe (viele Elemente) | Lizenzpflichtig; in Deutschland national lizenziert, kostenfreie Affiliate-Lizenz über das BfArM |
-| **UCUM** | Regenstrief Institute | Maßeinheiten (`valueQuantity.code`) | Kostenfrei (eigene Nutzungsbedingungen) |
+| Codesystem | Herausgeber | Typische Verwendung im KDS | Beschaffung | Download / Bezug |
+| --- | --- | --- | --- | --- |
+| **ICD-10-GM** | BfArM | Diagnosen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) | [BfArM-Downloads](https://www.bfarm.de/DE/Kodiersysteme/Services/Downloads/_node.html) · [Infoseite](https://www.bfarm.de/DE/Kodiersysteme/Klassifikationen/ICD/ICD-10-GM/_node.html) |
+| **OPS** | BfArM | Prozeduren (`Procedure.code`) | Kostenfrei (Downloadbedingungen des BfArM) | [BfArM-Downloads](https://www.bfarm.de/DE/Kodiersysteme/Services/Downloads/_node.html) · [Infoseite](https://www.bfarm.de/DE/Kodiersysteme/Klassifikationen/OPS-ICHI/OPS/_node.html) |
+| **Alpha-ID-SE** | BfArM | Seltene Erkrankungen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) | [BfArM-Downloads](https://www.bfarm.de/DE/Kodiersysteme/Services/Downloads/_node.html) · [Infoseite](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/Alpha-ID-SE/_node.html) |
+| **ATC** | BfArM / WHO | Wirkstoffe (`Medication.code`) | Kostenfrei (Downloadbedingungen des BfArM) | [BfArM-Downloads](https://www.bfarm.de/DE/Kodiersysteme/Klassifikationen/ATC/Downloads/_node.html) · [Infoseite](https://www.bfarm.de/DE/Kodiersysteme/Klassifikationen/ATC/_node.html) |
+| **LOINC** | Regenstrief Institute | Laborwerte (`Observation.code`) | Kostenfrei, eigene LOINC-Lizenz, Registrierung nötig | [LOINC-Downloads](https://loinc.org/downloads/) · [Infoseite](https://loinc.org/) |
+| **SNOMED CT** | SNOMED International | Klinische Begriffe (viele Elemente) | Lizenzpflichtig; in Deutschland national lizenziert, kostenfreie Affiliate-Lizenz über das BfArM | [BfArM-Lizenz](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/SNOMED-CT/Lizenz/_node.html) (Download nach Lizenzierung) · [Infoseite](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/SNOMED-CT/_node.html) |
+| **UCUM** | Regenstrief Institute | Maßeinheiten (`valueQuantity.code`) | Kostenfrei ([Nutzungsbedingungen](https://ucum.org/license)) | [UCUM-Repository](https://github.com/ucum-org/ucum) · [Infoseite](https://ucum.org/ucum) |
+
+> 💡 **Klassifikation vs. FHIR-Paket:** Das BfArM stellt die Klassifikationen als Text-, XML- oder CSV-Dateien bereit. Ein FHIR-Terminologieserver braucht sie aber als FHIR-Ressource (`CodeSystem`). Die MII stellt ICD-10-GM, OPS und Alpha-ID-SE deshalb zusätzlich als fertige FHIR-Pakete bereit ([gitlab.com/mii-termserv](https://gitlab.com/mii-termserv)). Diese Pakete lädst du in [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-1a) in deinen eigenen Terminologieserver. Eine Ausnahme ist **UCUM**: Einheiten wie `mmol/L` werden nach Regeln aus Bausteinen zusammengesetzt, eine vollständige Liste als `CodeSystem` gibt es deshalb nicht. Terminologieserver haben UCUM fest eingebaut und lesen dazu die Definitionsdatei `ucum-essence.xml` aus dem UCUM-Repository.
 
 > ⚠️ **Versionen:** Codesysteme ändern sich regelmäßig, die ICD-10-GM z. B. jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 fehlen oder anders heißen. Ein Terminologieserver kann mehrere Versionen parallel vorhalten.
 
@@ -280,10 +282,64 @@ Hast du in [Übung 3 · Musterdaten laden](exercise-3.md) auch UKHD und UKW gela
 
 ```bash
 curl -s "http://localhost:8080/fhir/Encounter?_count=4000" \
-  | jq -c '[.entry[].resource.diagnosis[]?.use.coding[]?] | unique'
+  | jq -r '[.entry[].resource | .id as $id | .diagnosis[]?.use.coding[]? | {id: $id, system, code}]
+           | group_by(.system, .code) | .[] | "\(length)\t\(.[0].code)\t\(.[0].system)\t\(.[0].id)"'
 ```
 
-Die Einträge aus UKW nutzen als `system` die URL `http://hl7.org/fhir/ValueSet/diagnosis-role`, die aus UKHD dagegen `http://terminology.hl7.org/CodeSystem/diagnosis-role`. Prüfe einen davon:
+✅ **Erwartetes Ergebnis** (Anzahl, Code, System, ein Beispiel-Encounter):
+
+```text
+2	AD	http://hl7.org/fhir/ValueSet/diagnosis-role	Encounter-9384622
+2	CC	http://hl7.org/fhir/ValueSet/diagnosis-role	Encounter-9384622
+23	CM	http://hl7.org/fhir/ValueSet/diagnosis-role	Encounter-8163579
+9	DD	http://hl7.org/fhir/ValueSet/diagnosis-role	Encounter-8163579
+7	AD	http://terminology.hl7.org/CodeSystem/diagnosis-role	0061845260-e
+8	CC	http://terminology.hl7.org/CodeSystem/diagnosis-role	0061845260-e
+```
+
+🔍 **Woher stammen die Daten?** Einen Standort-Eintrag haben die Ressourcen nicht durchgängig. Jeder Standort vergibt seine IDs aber nach einem eigenen Muster:
+
+| Standort | Patient | Encounter |
+| --- | --- | --- |
+| UKSH | `PID-013b68fc…` | `PV-70cdf2f6…` |
+| UKHD | `0002690836` (nur Ziffern) | `0061845260-e` |
+| UKW | `Patient-54211` | `Encounter-8163579` |
+
+Welcher Standort nutzt also welche Variante?
+
+### 🛠️ Aufgabe: Welche Variante ist richtig?
+
+Finde selbst heraus, welche der beiden URLs in `system` gehört:
+
+1. **Profil der Daten herausfinden:** Welche Regeln für eine Ressource gelten, steht in ihrem Profil. Welches Profil das ist, gibt die Ressource selbst in `meta.profile` an. Schau dir einen betroffenen Encounter aus der Ausgabe oben an:
+
+```bash
+curl -s "http://localhost:8080/fhir/Encounter/Encounter-8163579" | jq '.meta.profile'
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```json
+[
+  "https://www.medizininformatik-initiative.de/fhir/core/modul-fall/StructureDefinition/KontaktGesundheitseinrichtung"
+]
+```
+
+> 💡 Das ist die **kanonische URL** des Profils. Sie identifiziert das Profil eindeutig, ist aber nicht unbedingt eine Webseite. Steht dahinter `|2024.0.0` o. Ä., ist zusätzlich die Version angegeben – prüfe das zum Vergleich mit dem UKHD-Encounter mit ID `0061845260-e`.
+
+2. **Profil nachschlagen:** Kopiere die URL in das Suchfeld von [Simplifier: Resolve Canonical](https://simplifier.net/resolve). Simplifier ist die Plattform, auf der die MII ihre Profile veröffentlicht. Die Suche führt dich zum Profil **MII_PR_Fall_KontaktGesundheitseinrichtung** im Projekt *MII Kerndatensatz Basis* ([direkter Link](https://simplifier.net/mii-kerndatensatz-basis/mii_pr_fall_kontaktgesundheitseinrichtung)). Suche dort das Element `Encounter.diagnosis.use`: Auf welches **ValueSet** verweist es (Binding)?
+
+<!-- TODO beim Test: Resolve-Ergebnis prüfen; prüfen, was Simplifier bei Encounter.diagnosis.use anzeigt (Binding/Slices) und ob sich das Binding zwischen den Profilversionen der Daten (2024/ohne Version) und der aktuellen Version unterscheidet -->
+
+3. **Das ValueSet auflösen:** Lass dir die Codes dieses ValueSets mit `$expand` anzeigen. Aus welchem **Codesystem** stammen sie?
+
+```bash
+curl -s -G "$TX/ValueSet/\$expand" \
+  --data-urlencode "url=http://hl7.org/fhir/ValueSet/diagnosis-role" \
+  | jq -r '.expansion.contains[] | "\(.code)\t\(.system)\t\(.display)"'
+```
+
+4. **Die falsche Variante prüfen:** Was antwortet der Terminologieserver, wenn die ValueSet-URL als Codesystem verwendet wird?
 
 ```bash
 curl -s -G "$TX/CodeSystem/\$validate-code" \
@@ -292,9 +348,17 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-✅ `message: The Coding references a value set, not a code system ('http://hl7.org/fhir/ValueSet/diagnosis-role')`
+<details>
+<summary>Lösung</summary>
 
-❗ Das ist ein echter **Datenfehler**: In `system` gehört die URL eines **CodeSystems** (`http://terminology.hl7.org/CodeSystem/diagnosis-role`), nicht die eines ValueSets. UKHD macht es richtig.
+- Beide Standorte verwenden dasselbe Profil `…/modul-fall/StructureDefinition/KontaktGesundheitseinrichtung` (UKW ohne Versionsangabe, UKHD mit `|2024.0.0`).
+- Das Element `Encounter.diagnosis.use` ist an das **ValueSet** `http://hl7.org/fhir/ValueSet/diagnosis-role` gebunden.
+- `$expand` zeigt: Alle Codes dieses ValueSets (`AD`, `DD`, `CC`, `CM`, …) stammen aus dem **CodeSystem** `http://terminology.hl7.org/CodeSystem/diagnosis-role`.
+- Der Terminologieserver antwortet auf die falsche Variante mit `result: false` und `message: The Coding references a value set, not a code system ('http://hl7.org/fhir/ValueSet/diagnosis-role')`.
+
+❗ In `Coding.system` gehört immer die URL des **CodeSystems**. Das ValueSet legt nur fest, welche Codes erlaubt sind. Die Prüfung zeigt also einen **Fehler in den Ressourcen**: Bei einem Teil der Encounter steht in `system` die URL des ValueSets statt der des CodeSystems – vermutlich wurde sie aus dem Binding des Profils übernommen. Solche Verwechslungen passieren beim Aufbau einer ETL-Strecke leicht. Die Musterdatenspende ist ein historischer Datenstand; an den Standorten sind solche Fehler inzwischen in der Regel behoben. Genau dafür gibt es Prüfungen wie diese.
+
+</details>
 
 ___
 
@@ -306,7 +370,7 @@ tx.fhir.org ist für internationale Terminologien gemacht. Für die Kerndatensat
 - **Codesysteme der deutschen Basisprofile und der MII**, z. B. `Kontaktebene` oder `Vitalstatus`
 - **Deutsche Bezeichnungen**, z. B. die deutsche Edition von SNOMED CT
 
-Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieserver mit diesen Inhalten: den **MII Ontoserver** der SU-TermServ oder einen **eigenen Terminologieserver**. Beides richtest du am Anfang von [Übung 6 · Ressourcen validieren](exercise-6.md) ein.
+Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieserver mit diesen Inhalten: den **MII Ontoserver** der SU-TermServ oder einen **eigenen Terminologieserver**. Beides schauen wir uns am Anfang von [Übung 6 · Ressourcen validieren](exercise-6.md) an.
 
 ___
 
@@ -321,13 +385,13 @@ ___
 
 **Was du mitnehmen sollst:**
 
-- Jeder Code gehört zu einem Codesystem. Ohne das richtige `system` ist ein Code wertlos.
+- Jeder Code gehört zu einem Codesystem. Ohne das richtige `system` ist ein Code wertlos. Ohne Angabe der verwendeten `version` ist die Überprüfbarkeit zumindest fragwürdig.
 - Ein Terminologieserver kann nur prüfen, was er kennt. „Codesystem unbekannt“ ist etwas anderes als „Code ungültig“.
-- Welche Inhalte ein Terminologieserver hat, entscheidet darüber, wofür er taugt.
+- Welche Inhalte ein Terminologieserver hat, entscheidet darüber, wofür er genutzt werden kann.
 
 **Ausblick:**
 
-- [Übung 6 · Ressourcen validieren](exercise-6.md): Terminologieserver mit deutschen Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
+- [Übung 6 · Ressourcen validieren](exercise-6.md): Terminologieserver mit zusätzlichen (deutschen) Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
 - [Übung 7 · Berichte auswerten](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen, Versionen von Codesystemen und Profilen einordnen
 
 ___
