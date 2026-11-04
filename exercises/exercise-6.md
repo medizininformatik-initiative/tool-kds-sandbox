@@ -247,9 +247,14 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-✅ **Erwartetes Ergebnis:** `result: true` und als `display` die deutsche Bezeichnung „Kopfschmerz“.
+✅ **Erwartetes Ergebnis:**
 
-<!-- TODO beim Test: genaue Ausgabe eintragen -->
+```text
+result: true
+display: Kopfschmerz
+```
+
+Dein eigener Server kennt die ICD-10-GM und liefert sogar die deutsche Bezeichnung. tx.fhir.org konnte den Code in Übung 5 gar nicht prüfen.
 
 > 💡 **Ausprobieren:** Alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Prüfe die Codesysteme aus Blaze wie in Übung 5, Schritt 5, diesmal an deinem Server:
 >
