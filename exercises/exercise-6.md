@@ -311,7 +311,13 @@ ___
 > ⚠️ **Voraussetzung:** Blaze (Port 8080) läuft, und dein Terminologieserver aus Schritt 1 ist erreichbar. Prüfe das kurz:
 >
 > ```bash
+> # Blaze
 > curl -s http://localhost:8080/fhir/metadata | jq '.software'
+>
+> # Terminologieserver: TX auf den Server aus Schritt 1 setzen (nur eine Zeile ohne #)
+> TX=http://localhost:8081/fhir        # A: eigener FHIRsmith
+> # TX=http://localhost:8083/fhir      # B: MII Ontoserver über den Proxy
+> # TX=https://tx.fhir.org/r4          # C: tx.fhir.org
 > curl -s "$TX/metadata" | jq '.software'
 > ```
 
@@ -371,9 +377,15 @@ docker compose up -d
 docker compose logs -f validator
 ```
 
-Beim Start lädt der Validator die Pakete und baut seine Profile auf. Das dauert einige Minuten. Mit `Strg+C` beendest du die Log-Anzeige; der Validator läuft weiter.
+Beim ersten Start kopiert der Container zuerst die mitgelieferten FHIR-Pakete in seinen Cache. Das dauert einige Minuten, und das Log bleibt so lange **leer**. Danach lädt der Validator die Pakete und baut seine Profile auf. Insgesamt dauert der erste Start etwa **5 Minuten**. Der Validator ist bereit, wenn diese Zeile erscheint:
 
-<!-- TODO beim Test: Zeile im Log notieren, an der der Validator bereit ist -->
+```text
+FHIR Validator HTTP Service started on  0.0.0.0/0.0.0.0:8080
+```
+
+Mit `Strg+C` beendest du die Log-Anzeige; der Validator läuft weiter.
+
+> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Findest du die vier Pakete aus `IG_PARAMS`?
 
 Prüfe, ob der Validator antwortet, indem du eine minimale Patient-Ressource validierst:
 
@@ -385,9 +397,15 @@ echo '{"resourceType": "Patient"}' \
   | jq
 ```
 
-✅ **Erwartetes Ergebnis:** Ein `OperationOutcome` mit einem `issue` der Schwere `information` (z. B. „All OK“).
+✅ **Erwartetes Ergebnis:** Ein `OperationOutcome` mit genau einem `issue`, einer **Warnung**:
 
-<!-- TODO beim Test: tatsächliche Antwort eintragen -->
+```text
+"severity": "warning",
+"code": "invariant",
+"details": { "text": "Constraint failed: dom-6: 'A resource should have narrative for robust management' ... (Best Practice Recommendation)" }
+```
+
+Der Validator antwortet also und prüft. Die Warnung ist nur eine Empfehlung: Eine Ressource sollte einen lesbaren Text (`text`, Narrative) mitbringen. Fehler (`error`) gibt es keine, denn ein leerer Patient ist nach dem FHIR-Basisstandard gültig.
 
 > 💡 `--data @-` liest die Ressource aus der Pipe statt aus einer Datei. So kannst du Ressourcen direkt aus Blaze an den Validator weiterreichen.
 

@@ -287,9 +287,8 @@ Usage: #example
 * issued = "2026-06-13T16:35:00+02:00"
 
 * effectiveDateTime = 2026-06-17
-* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.system = "https://www.medizininformatik-initiative.de/fhir/core/modul-labor/CodeSystem/QuelleKlinischesBezugsdatum"
-* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.code = #Probenentnahme
-* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding.display = "Datum der Probenentnahme"
+// Quelle des Datums: Probenentnahme (SNOMED CT, laut ValueSet des MII-Labormoduls)
+* effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding = http://snomed.info/sct#399445004 "Specimen collection date (observable entity)"
 
 // 1. Dein fixierter LOINC-Code (wird hier exakt belegt)
 * code.coding[0].version = "2.82.0"
