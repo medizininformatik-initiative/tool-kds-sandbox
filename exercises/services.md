@@ -102,7 +102,7 @@ services:
       - "./data:/app/data"
 ```
 
-Starten und prüfen (der erste Start dauert einige Minuten):
+Starten und prüfen (der erste Start dauert ca. 15 Minuten):
 
 ```bash
 cd ~/terminology-server
@@ -135,6 +135,7 @@ services:
         -ig de.medizininformatikinitiative.kerndatensatz.meta#2026.0.0
         -ig de.medizininformatikinitiative.kerndatensatz.base#2026.0.1
         -ig de.medizininformatikinitiative.kerndatensatz.laborbefund#2026.0.3
+        -ig de.medizininformatikinitiative.kerndatensatz.diagnose#2025.0.1
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -148,7 +149,7 @@ volumes:
   tx-cache:
 ```
 
-Starten und prüfen (der Start dauert einige Minuten):
+Starten und prüfen (der erste Start dauert ca. 5 Minuten, das Log bleibt anfangs leer):
 
 ```bash
 cd ~/validator

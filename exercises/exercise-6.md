@@ -251,7 +251,13 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 
 <!-- TODO beim Test: genaue Ausgabe eintragen -->
 
-> 💡 **Ausprobieren:** Alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Lass die Schleife aus Übung 5, Schritt 5 noch einmal laufen: Welche Codesysteme kennt dein Server, welche tx.fhir.org?
+> 💡 **Ausprobieren:** Alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Prüfe die Codesysteme aus Blaze wie in Übung 5, Schritt 5, diesmal an deinem Server:
+>
+> ```bash
+> bash ~/tool-kds-sandbox/solution-exercise-5/check_codesystems.sh http://localhost:8081/fhir
+> ```
+>
+> Welche Codesysteme kennt dein Server, welche tx.fhir.org?
 
 Dein Terminologieserver läuft. Weiter mit [Schritt 2](#schritt-2): Dort legst du den Validator an und verbindest ihn mit diesem Server.
 
@@ -349,6 +355,7 @@ services:
         -ig de.medizininformatikinitiative.kerndatensatz.meta#2026.0.0
         -ig de.medizininformatikinitiative.kerndatensatz.base#2026.0.1
         -ig de.medizininformatikinitiative.kerndatensatz.laborbefund#2026.0.3
+        -ig de.medizininformatikinitiative.kerndatensatz.diagnose#2025.0.1
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -385,7 +392,7 @@ FHIR Validator HTTP Service started on  0.0.0.0/0.0.0.0:8080
 
 Mit `Strg+C` beendest du die Log-Anzeige; der Validator läuft weiter.
 
-> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Findest du die vier Pakete aus `IG_PARAMS`?
+> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Findest du die fünf Pakete aus `IG_PARAMS`?
 
 Prüfe, ob der Validator antwortet, indem du eine minimale Patient-Ressource validierst:
 
@@ -436,20 +443,40 @@ curl -s -X POST http://localhost:8082/validateResource \
 
 🔍 **Genau hinschauen:** Was meldet der Validator zu deinem Studienprofil? Kennt er es überhaupt?
 
-<!-- TODO beim Test: erwartete Meldungen eintragen (vermutlich: Profil unbekannt, da das ExampleIG nicht geladen ist) -->
+✅ **Erwartetes Ergebnis:** 2 Fehler und 9 Warnungen. Sortiert nach Ursache:
+
+| Schwere | Meldung (gekürzt) | Ursache |
+| --- | --- | --- |
+| `warning` | `Profile reference 'http://example.org/…/pr-studie-hba1c' has not been checked because it could not be found` | Der Validator kennt dein Studienprofil nicht und prüft **nicht** dagegen |
+| `error` | `Example URLs are not allowed in this context` (2×: Profil-URL und `identifier.system`) | `example.org` und `acme.com` sind Platzhalter-Adressen, in echten Daten nicht erlaubt |
+| `warning` | `A definition for CodeSystem 'http://loinc.org' … could not be found` (2×) | Dein Terminologieserver hat kein LOINC (siehe Schritt 1) |
+| `warning` | `A definition for CodeSystem 'http://snomed.info/sct' … could not be found` (3×, mit `Error begin -1 …`) | Dein Terminologieserver hat kein SNOMED CT |
+| `warning` | `None of the codings provided are in the value set 'IdentifierType'` | `OBI` verlangt der KDS, das allgemeine FHIR-ValueSet kennt es nicht. Kein Problem |
+| `warning` | `dom-6: A resource should have narrative`, `all observations should have a performer` | Best-Practice-Empfehlungen |
+
+Die Warnungen zu LOINC und SNOMED CT heißen: **nicht geprüft**, nicht falsch. Mit einem Terminologieserver, der beide kennt (z. B. dem MII Ontoserver), fallen sie weg.
 
 ### 3.2 Gegen das MII-Laborprofil validieren
 
-Dein Studienprofil erbt von `MII_PR_Labor_Laboruntersuchung`. Dieses Profil kennt der Validator. Mit dem Parameter `profiles` gibst du es beim Aufruf vor:
+Dein Studienprofil erbt von `MII_PR_Labor_Laboruntersuchung`. Dieses Profil kennt der Validator. Mit dem Parameter `profile` gibst du es beim Aufruf vor:
 
 ```bash
-curl -s -X POST "http://localhost:8082/validateResource?profiles=https://www.medizininformatik-initiative.de/fhir/core/modul-labor/StructureDefinition/ObservationLab" \
+curl -s -X POST "http://localhost:8082/validateResource?profile=https://www.medizininformatik-initiative.de/fhir/core/modul-labor/StructureDefinition/ObservationLab" \
   -H "Content-Type: application/fhir+json" \
   --data @hba1c.json \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]'
 ```
 
-<!-- TODO beim Test: erwartete Meldungen eintragen -->
+✅ **Erwartetes Ergebnis:** Wieder 2 Fehler und 9 Warnungen, fast dieselben wie in 3.1. Zwei Meldungen sind anders:
+
+| | Meldung | Warum |
+| --- | --- | --- |
+| entfällt | `None of the codings provided are in the value set 'IdentifierType'` | Das MII-Profil erlaubt `OBI` über ein eigenes ValueSet |
+| neu | `ValueSet 'http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips' not found` | Das MII-Profil verweist für `code` auf ein ValueSet, das der Validator nicht geladen hat. Nur eine Empfehlung (`preferred`), daher eine Warnung |
+
+Gegen das MII-Profil gibt es also **keine strukturellen Fehler**: Pflichtfelder, Kategorien, Einheit und Bezugsdatum passen. Übrig bleiben die Platzhalter-URLs aus dem Beispiel und Codes, die dein Terminologieserver nicht prüfen kann.
+
+> 💡 **Parameternamen:** In der verwendeten Version des Validators (`0.0.1-alpha.9`) heißen die Parameter `profile` und `checkDisplay` (Schritt 4.4). Neuere Versionen nennen sie laut Dokumentation `profiles` und `displayOption`. Meldet der Validator `Unable to process param`, probiere die andere Schreibweise.
 
 > 💡 **Eigene Profile laden:** Damit der Validator dein Studienprofil selbst kennt, bräuchte er das Paket deines IG. Der IG Publisher erzeugt es in [Übung 1 · Profil erstellen](exercise-1.md) als `output/package.tgz`. Über `IG_PARAMS` (z. B. `-ig /igs/package.tgz`) und einen eingebundenen Ordner `/igs` kann der Validator es laden. Für diese Übung reicht die Prüfung gegen das MII-Profil.
 
@@ -470,7 +497,16 @@ curl -s -X POST http://localhost:8082/validateResource \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]'
 ```
 
-<!-- TODO beim Test: erwartete Meldungen eintragen (erwartet: unbekannter ICD-10-GM-Code, ggf. Hinweis zur Profilversion) -->
+✅ **Erwartetes Ergebnis:** 2 Fehler und 2 Warnungen:
+
+| Schwere | Meldung (gekürzt) | Bedeutung |
+| --- | --- | --- |
+| `error` | `Unknown code '570762' in the CodeSystem '…/icd-10-gm' version '2025'` | Den Code gibt es in der ICD-10-GM nicht |
+| `error` | `The code provided … was not found in the value set 'MII VS Diagnose ICD-10-GM' … a code from this value set is required` | Das KDS-Profil verlangt einen Code aus diesem ValueSet (Bindung `required`) |
+| `warning` | `Constraint failed: icd-regex: 'In code sind nur gültige ICD-10-Codes ohne Zusätze erlaubt'` | Der Code hat nicht einmal das Format eines ICD-10-Codes |
+| `warning` | `dom-6: A resource should have narrative` | Best-Practice-Empfehlung |
+
+Hier findet der Validator einen **echten Datenfehler**: Der Code ist kein ICD-10-GM-Code.
 
 ### 4.2 Eine gültige Diagnose zum Vergleich
 
@@ -483,9 +519,23 @@ curl -s -X POST http://localhost:8082/validateResource \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]'
 ```
 
-🔍 **Genau hinschauen:** Vergleiche `meta.profile` der Ressource (`jq '.meta.profile' condition-r51.json`) mit den Paketen, die der Validator geladen hat (`IG_PARAMS`). Die Musterdaten wurden 2025 erzeugt und nennen Profilversionen wie `|2025.0.0`. Der Validator kennt die Version 2026. Wie geht er damit um?
+✅ **Erwartetes Ergebnis:** Kein Fehler, aber auch keine echte Prüfung:
 
-<!-- TODO beim Test: Verhalten bei abweichender Profilversion beschreiben -->
+| Schwere | Meldung (gekürzt) |
+| --- | --- |
+| `information` | `A definition could not be found for Canonical URL '…/StructureDefinition/Diagnose\|2024.0.0'` |
+| `warning` | `Profile reference '…/Diagnose\|2024.0.0' has not been checked because it could not be found …` |
+| `warning` | `dom-6: A resource should have narrative` |
+
+🔍 **Genau hinschauen:** Vergleiche `meta.profile` der beiden Diagnosen mit dem Diagnose-Paket in `IG_PARAMS` (`#2025.0.1`):
+
+```bash
+jq '.meta.profile' condition-570762.json condition-r51.json
+```
+
+Die Diagnose aus 4.1 nennt `Diagnose|2025.0.0`. Der Validator hat das Profil aus dem geladenen Paket 2025.0.1 verwendet und gegen das KDS-Profil geprüft. Die Diagnose aus 4.2 nennt `Diagnose|2024.0.0`. Diese Version kennt der Validator nicht. Er prüft dann **nur gegen den FHIR-Basisstandard** und sagt das lediglich als `information` und `warning`.
+
+> ❗ **Merke:** „Keine Fehler" heißt nicht automatisch „gültig nach KDS". Prüfe immer, ob der Validator das Profil überhaupt gefunden hat. Mit dem Parameter `profile` aus Schritt 3.2 kannst du die Prüfung gegen ein bestimmtes Profil erzwingen.
 
 ### 4.3 Ein Laborwert
 
@@ -500,34 +550,108 @@ curl -s -X POST http://localhost:8082/validateResource \
 
 🔍 **Genau hinschauen:** Der Laborwert ist mit LOINC kodiert. Kennt dein Terminologieserver LOINC? Auf dem eigenen FHIRsmith aus Schritt 1a ist LOINC nicht geladen, tx.fhir.org kennt LOINC dagegen. Was meldet der Validator in deinem Fall?
 
-<!-- TODO beim Test: erwartete Meldungen für Option A (FHIRsmith) und ggf. B/C eintragen -->
+✅ **Erwartetes Ergebnis mit eigenem FHIRsmith (Weg A):** Kein Fehler, 1 Information und 6 Warnungen:
 
-### 4.4 Anzeigetexte mitprüfen
+| Schwere | Meldung (gekürzt) | Bedeutung |
+| --- | --- | --- |
+| `information` / `warning` | `…/ObservationLab\|2025.0.2' … could not be found` / `has not been checked` | Wie in 4.2: Diese Profilversion kennt der Validator nicht, er prüft nur gegen FHIR-Basis |
+| `warning` | `A definition for the code system 'http://loinc.org' could not be found` | FHIRsmith hat kein LOINC |
+| `warning` | `A definition for CodeSystem 'http://medic.uksh.de/fhir/CodeSystem/Laborparameter' could not be found` | Der lokale Laborcode des UKSH ist keinem Terminologieserver bekannt |
+| `warning` | `None of the codings provided are in the value set 'IdentifierType'` | `OBI` fehlt im allgemeinen FHIR-ValueSet, kein Problem |
+| `warning` | `dom-6` und `performer` | Best-Practice-Empfehlungen |
 
-Standardmäßig ignoriert der Validator, ob das `display` zum Code passt. Mit `displayOption=Check` prüft er auch das. Der Validator fragt dafür mit `$validate-code` beim Terminologieserver nach – so wie du es in [Übung 5 · Codes prüfen](exercise-5.md) von Hand gemacht hast:
+Auch hier gilt: Ohne gefundenes Profil bedeutet „kein Fehler" nur „gültiges FHIR". Prüfe den Laborwert deshalb wie in Schritt 3.2 gegen das aktuelle MII-Profil:
 
 ```bash
-curl -s -X POST "http://localhost:8082/validateResource?displayOption=Check" \
-  -H "Content-Type: application/fhir+json" \
-  --data @condition-r51.json \
+curl -s -X POST "http://localhost:8082/validateResource?profile=https://www.medizininformatik-initiative.de/fhir/core/modul-labor/StructureDefinition/ObservationLab" \
+  -H "Content-Type: application/fhir+json" --data @hb.json \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics)}]'
 ```
 
-### 🛠️ Aufgabe: Mehrere Diagnosen prüfen
+✅ **Erwartetes Ergebnis:** Weiterhin kein Fehler. Die Meldungen zu `…\|2025.0.2` bleiben (sie beziehen sich auf `meta.profile`), aber die Ressource wird jetzt zusätzlich gegen das aktuelle Laborprofil geprüft. Erkennbar ist das wie in 3.2: Die `IdentifierType`-Warnung entfällt, dafür erscheint `ValueSet '…results-laboratory-observations-uv-ips' not found`. Der Laborwert aus den Musterdaten erfüllt also auch das aktuelle MII-Laborprofil.
 
-Die folgende Schleife holt die ersten 10 Diagnosen aus Blaze, validiert jede einzeln und zählt die Meldungen je Schwere:
+<!-- TODO beim Test: Weg B (Ontoserver) und C (tx.fhir.org) – LOINC-Warnung sollte entfallen -->
+
+### 4.4 Anzeigetexte mitprüfen
+
+Ein Code kann neben `code` auch einen Anzeigetext (`display`) tragen. Standardmäßig prüft der Validator nicht, ob dieser Text zum Code passt. Mit dem Parameter `checkDisplay=Check` fragt er dafür mit `$validate-code` beim Terminologieserver nach, so wie du es in [Übung 5 · Codes prüfen](exercise-5.md) von Hand gemacht hast.
+
+Die Diagnosen aus den Musterdaten haben keinen Anzeigetext. Wir nehmen deshalb eine Prozedur mit OPS-Code:
 
 ```bash
-for id in $(curl -s "http://localhost:8080/fhir/Condition?_count=10" | jq -r '.entry[].resource.id'); do
-  curl -s "http://localhost:8080/fhir/Condition/$id" \
-    | curl -s -X POST http://localhost:8082/validateResource \
-        -H "Content-Type: application/fhir+json" --data @- \
-    | jq -c --arg id "${id:0:20}" '{id: $id, meldungen: ([.issue[].severity] | group_by(.) | map({(.[0]): length}) | add)}'
+curl -s "http://localhost:8080/fhir/Procedure?code=http://fhir.de/CodeSystem/bfarm/ops|1-63a&_count=1" \
+  | jq '.entry[0].resource' > procedure-ops.json
+
+jq '.code.coding[] | {system, version, code, display}' procedure-ops.json
+```
+
+✅ **Erwartetes Ergebnis:** OPS-Code `1-63a` in der Version `2017` mit dem Anzeigetext „Kapselendoskopie des Dünndarms“.
+
+Validiere die Prozedur zuerst wie bisher, ohne Prüfung der Anzeigetexte:
+
+```bash
+curl -s -X POST "http://localhost:8082/validateResource" \
+  -H "Content-Type: application/fhir+json" --data @procedure-ops.json \
+  | jq '[.issue[] | {severity, text: (.details.text // .diagnostics)}]'
+```
+
+Dann mit Prüfung der Anzeigetexte:
+
+```bash
+curl -s -X POST "http://localhost:8082/validateResource?checkDisplay=Check" \
+  -H "Content-Type: application/fhir+json" --data @procedure-ops.json \
+  | jq '[.issue[] | {severity, text: (.details.text // .diagnostics)}]'
+```
+
+✅ **Erwartetes Ergebnis:** Beide Male dieselben 4 Meldungen, keine davon zum Anzeigetext. Der Anzeigetext stimmt also, und der Validator hat nichts zu beanstanden. Die übrigen Meldungen kennst du schon: Das Prozedurprofil ist nicht in `IG_PARAMS` geladen (wie in 4.2), SNOMED CT kennt dein Terminologieserver nicht, dazu `dom-6`.
+
+Zur Kontrolle fragst du den Terminologieserver selbst, wie in Übung 5:
+
+```bash
+curl -s -G "$TX/CodeSystem/\$validate-code" \
+  --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/ops" \
+  --data-urlencode "version=2017" \
+  --data-urlencode "code=1-63a" \
+  --data-urlencode "display=Kapselendoskopie des Dünndarms" \
+  | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(.valueBoolean // .valueString)"'
+```
+
+✅ **Erwartetes Ergebnis:** `result: true`
+
+> 💡 **Keine Meldung ist auch ein Ergebnis:** Nicht jede Prüfung muss einen Fehler finden. Hier bestätigt der Validator, dass Code und Anzeigetext zusammenpassen. Stünde im `display` ein falscher Text, käme mit `checkDisplay=Check` eine Meldung zum Anzeigetext.
+
+### 🛠️ Aufgabe: Mehrere Diagnosen prüfen
+
+In 4.2 hast du gesehen: Nennt eine Diagnose eine Profilversion, die der Validator nicht kennt, prüft er nur gegen den FHIR-Basisstandard. Wir nehmen deshalb nur Diagnosen, die das Profil in der Version `2025.0.0` nennen. Diese prüft der Validator gegen das KDS-Profil.
+
+**1. Die IDs von 10 solchen Diagnosen in eine Datei schreiben:**
+
+```bash
+curl -s -G "http://localhost:8080/fhir/Condition" \
+  --data-urlencode "_profile=https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDefinition/Diagnose|2025.0.0" \
+  --data-urlencode "_count=10" \
+  | jq -r '.entry[].resource.id' > diagnosen.txt
+
+cat diagnosen.txt
+```
+
+**2. Jede Diagnose holen, validieren und nur die Fehler ausgeben:**
+
+```bash
+for id in $(cat diagnosen.txt); do
+  echo "== Condition/$id"
+  curl -s "http://localhost:8080/fhir/Condition/$id" > diagnose.json
+  curl -s -X POST http://localhost:8082/validateResource \
+    -H "Content-Type: application/fhir+json" --data @diagnose.json \
+    | jq -r '.issue[] | select(.severity == "error") | .details.text // .diagnostics'
 done
 ```
 
-- Welche Diagnosen haben `error`-Meldungen?
-- Sind es bei allen dieselben Meldungen? Lass dir die Texte einer Diagnose mit dem Befehl aus 4.2 ausgeben.
+Steht unter einer Diagnose nichts, hat der Validator keinen Fehler gefunden.
+
+✅ **Erwartetes Ergebnis:** Unter keiner der 10 Diagnosen steht ein Fehler. Sie erfüllen das KDS-Profil, der fehlerhafte Code aus 4.1 ist eine Ausnahme in den Musterdaten.
+
+> 💡 **Ausprobieren:** Hänge die Diagnose aus 4.1 an die Liste an (`curl -s "http://localhost:8080/fhir/Condition?code=570762" | jq -r '.entry[0].resource.id' >> diagnosen.txt`) und lass die Schleife noch einmal laufen. Jetzt erscheinen unter der letzten Diagnose die beiden Fehler aus 4.1.
 
 > ⚠️ **Ganze Bundles:** Der Validator kann auch ein komplettes Bundle prüfen. Bei den rund 8.000 Ressourcen aus [Übung 3 · Musterdaten laden](exercise-3.md) dauert das aber sehr lange und braucht viel Speicher. Im DIZ-Alltag validiert man deshalb meist Stichproben oder einzelne Ressourcen direkt in der ETL-Strecke.
 
@@ -546,7 +670,7 @@ Der MII FHIR Validator startet intern den HL7-Validator (`validator_cli.jar`) im
 | `-version 4.0.1` | FHIR-Version (R4) | `FHIR_VERSION` |
 | `-ig <paket>#<version>` | Implementation Guide laden | `IG_PARAMS` |
 | `-tx <url>` | Terminologieserver | `TX_SERVER` |
-| `-profile <url>` | Gegen dieses Profil prüfen | Query-Parameter `profiles` |
+| `-profile <url>` | Gegen dieses Profil prüfen | Query-Parameter `profile` |
 
 Der Rückgabewert (Exit-Code) des Aufrufs zeigt, ob die Validierung erfolgreich war:
 
@@ -574,8 +698,8 @@ ___
 | Validator starten | `cd ~/validator && docker compose up -d` |
 | Start verfolgen | `docker compose logs -f validator` |
 | Ressource validieren | `curl -s -X POST http://localhost:8082/validateResource -H "Content-Type: application/fhir+json" --data @ressource.json` |
-| Gegen ein Profil validieren | `…/validateResource?profiles=<Profil-URL>` |
-| Anzeigetexte mitprüfen | `…/validateResource?displayOption=Check` |
+| Gegen ein Profil validieren | `…/validateResource?profile=<Profil-URL>` |
+| Anzeigetexte mitprüfen | `…/validateResource?checkDisplay=Check` |
 | Ressource direkt aus Blaze validieren | `curl -s <Blaze-URL> \| curl -s -X POST …/validateResource -H "…" --data @-` |
 | Validator stoppen | `cd ~/validator && docker compose down` |
 
@@ -583,7 +707,7 @@ ___
 
 - Ein Validator prüft Ressourcen gegen **Profile**. Welche Profile er kennt, bestimmen die geladenen IG-Pakete.
 - Alle Code-Prüfungen gibt er an **einen Terminologieserver** weiter. Was dort nicht geladen ist, kann er nicht prüfen – die Wahl des Terminologieservers bestimmt also, was die Validierung aussagt.
-- Profile haben **Versionen**. Daten, die gegen eine ältere Version erzeugt wurden, prüft man nicht automatisch gegen die richtige.
+- Profile haben **Versionen**. Nennt eine Ressource eine Profilversion, die der Validator nicht kennt, prüft er nur gegen den FHIR-Basisstandard. „Keine Fehler“ heißt dann nicht „gültig nach KDS“. Mit dem Parameter `profile` erzwingst du die Prüfung gegen ein bestimmtes Profil.
 
 **Ausblick:**
 

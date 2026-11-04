@@ -19,6 +19,8 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 - `local_notes/` – per `.gitignore` ausgeschlossen, nicht committen.
 - `exercises/figures/` – keine Binärdateien ohne Absprache.
 
+`solution-exercise-5/check_codesystems.sh` fasst die beiden Befehle aus Übung 5, Schritt 5 zusammen (Terminologieserver als Parameter, Standard tx.fhir.org); wird in Übung 6, Schritt 1a wiederverwendet. Bei Änderungen an Schritt 5 mitziehen.
+
 `solution-exercise-6/` enthält die Konfigurationsdateien aus Übung 6 (`terminology-server/`, `validator/`) als Kopie der Code-Blöcke – bei Änderungen in `exercises/exercise-6.md` mitziehen.
 
 `solution-exercise-1/` und `solution-exercise-2/` enthalten dasselbe `ExampleIG/`-Projekt – Änderungen an beiden Stellen nachziehen. Bewusste Ausnahmen (Übungen bauen aufeinander auf): `Organization-beispiel-labor.fsh` und `* id = "example-patient"` in `patient.fsh` gibt es nur in `solution-exercise-2/`.
@@ -78,7 +80,7 @@ Ermittelt mit den **echten Skripten** gegen den aktuellen Musterdatenspende-Stan
 | Übung 3 | ✅ Getestet | Upload aller drei Standorte; Upload-Ausgabe auf Status-Zählung umgestellt |
 | Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; Patient-ID in 5.4 wählen die Lernenden selbst |
 | Übung 5 | ✅ Getestet | 2026-11-04 neu aufgebaut und von Jenne getestet: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze, Download-Links der Codesysteme, Aufgabe zur Diagnose-Rolle (Profil über `meta.profile`/Simplifier, `$expand`) |
-| Übung 6 | 🟡 Test ausstehend | 2026-11-04: Schritt 1 Terminologieserver (FHIRsmith / MII Ontoserver / tx.fhir.org) ergänzt; erwartete Ausgaben als `<!-- TODO beim Test -->` markiert |
+| Übung 6 | ✅ Getestet (Weg A) | 2026-11-04 von Jenne auf GWDG-Server mit FHIRsmith (Weg A) komplett durchgespielt, erwartete Ausgaben eingetragen. Offen: Weg B (MII Ontoserver) und C (tx.fhir.org), siehe Offene Punkte |
 | Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
 
 ## Entscheidung: Terminologieserver (2026-11-04)
@@ -97,7 +99,8 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `localhost`. Dafür `localhost:8080` durch dessen Blaze-Adresse ersetzen und in Übung 6 `TX`/`TX_SERVER` auf den FHIRsmith dort setzen. Das eigene Test-Setup mappt FHIRsmith auf Port 80/443 statt 8081.
 
 - **Übung 6, Schritt 1:** FHIRsmith (1a) durchspielen (2026-11-04 auf GWDG-Server: Start lief durch, ca. 12 min, 2,8 GB Speicher – 4096 reicht), `$validate-code` für `R51` eintragen. Übung 6, Schritt 2 (2026-11-04, GWDG-Server mit FHIRsmith): Validator startet; erster Start ca. 5 min (davon ca. 4 min stilles Kopieren des Paket-Caches), Bereit-Zeile eingetragen. Im Log harmlose Warnung `$cache-control … caching disabled` (FHIRsmith kennt den Modus `START_CACHE` nicht). Ontoserver-Weg (1b) **noch ungetestet** (Stand 2026-11-04): Nutzerzertifikat (`.p12`) liegt vor, Passwort für den privaten Schlüssel nur im Büro – Test von dort. Dabei prüfen: Browser-Zugang, Umwandlung `.p12` → `client-cert.pem`/`client-key.key` (fehlt bisher in der Übung), Proxy + Validator, `TX` über Proxy `8083`. Nicht auf nicht-öffentliche Repositories verweisen.
-- **Übung 6, ab Schritt 2:** Erreicht der Validator FHIRsmith über `host.docker.internal`? Reicht `-Xmx4g` mit 4 IGs? Wie reagiert er auf Profilversionen `|2025.0.x` in den Musterdaten bei geladenen 2026er-Paketen? Welche Meldung kommt bei LOINC (nicht auf FHIRsmith)? Ab welcher Logzeile ist der Validator bereit?
+- **Übung 6, Ergebnisse Weg A (2026-11-04):** Validator erreicht FHIRsmith über `host.docker.internal`; `-Xmx4g` reicht (ca. 1,6 GB im Leerlauf). Image `0.0.1-alpha.9` nutzt die Query-Parameter `profile` und `checkDisplay` (nicht `profiles`/`displayOption` wie in der aktuellen Doku; unbekannte Parameter → `Unable to process param`). Diagnose-Paket `kerndatensatz.diagnose#2025.0.1` in `IG_PARAMS` ergänzt. Profilversionen: `Diagnose|2025.0.0` wird mit Paket 2025.0.1 geprüft, `|2024.0.0` und `ObservationLab|2025.0.2` werden nicht gefunden → nur FHIR-Basis-Prüfung (Lehrpunkt in 4.2). Beispiel aus Übung 1 nutzte ein nicht existierendes MII-CodeSystem für `QuelleKlinischesBezugsdatum` → auf SNOMED CT 399445004 umgestellt. Prozedur- und andere Modulprofile sind nicht geladen (bewusst).
+- **Übung 6, Weg C (tx.fhir.org):** nicht getestet; erwartet: LOINC-Warnungen entfallen, ICD-10-GM/OPS nicht prüfbar.
 - **Übung 7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
 
 ### Inhaltlich offen

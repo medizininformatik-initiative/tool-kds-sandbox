@@ -18,7 +18,7 @@ ___
 | 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
 | 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den UKSH-Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 15 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
-| 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | MII FHIR Validator, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
+| 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | FHIRsmith, MII FHIR Validator, Docker Compose, `curl`, `jq` | Groß · ca. 20 Befehlsblöcke, erster Start Terminologieserver ca. 15 min, Validator ca. 5 min | ✅ |
 | 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 6 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
 
 **Stand:** ✅ erprobt · 🚧 in Arbeit (Inhalte können sich noch ändern)
@@ -126,6 +126,7 @@ ___
 - Terminologieserver mit deutschen Klassifikationen bereitstellen: eigener FHIRsmith (ICD-10-GM, OPS, Alpha-ID-SE) oder MII Ontoserver
 - MII FHIR Validator per Docker Compose starten und mit diesem Terminologieserver verbinden
 - Eigene HbA1c-Observation gegen das MII-Laborprofil und einzelne Musterdaten aus Blaze validieren
+- Erkennen, wann der Validator ein Profil gar nicht prüft (unbekannte Profilversion), und die Prüfung gegen ein Profil erzwingen
 - Ausblick: Validierung über die Kommandozeile (`validator_cli.jar`)
 
 ## 🟤 [7 · Berichte auswerten](exercises/exercise-7.md)

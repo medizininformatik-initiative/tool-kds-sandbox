@@ -260,6 +260,14 @@ while read -r system code; do
 done < codes.txt
 ```
 
+> 💡 **Als Skript:** Beide Befehle zusammen liegen auch im Repository. Ohne Angabe prüft das Skript an tx.fhir.org:
+>
+> ```bash
+> bash ~/tool-kds-sandbox/solution-exercise-5/check_codesystems.sh
+> ```
+>
+> Du brauchst es in [Übung 6 · Ressourcen validieren](exercise-6.md) wieder, um deinen eigenen Terminologieserver mit tx.fhir.org zu vergleichen.
+
 ### 🛠️ Aufgabe: Was kennt tx.fhir.org?
 
 - Welche Codesysteme aus den Musterdaten kann tx.fhir.org prüfen, welche nicht?
