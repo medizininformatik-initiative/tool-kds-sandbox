@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • **Übung 3** • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
 
@@ -14,7 +14,7 @@ ___
 - Bereinige die Daten automatisch
 - Lade die Daten in den FHIR-Server und überprüfe den Upload
 
-In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Exercise 1) und diese per `curl` in einen FHIR-Server hochzuladen (Exercise 2).
+In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Übung 1) und diese per `curl` in einen FHIR-Server hochzuladen (Übung 2).
 
 Jetzt laden wir **echte Beispieldaten** aus der Medizininformatik-Initiative – die **Musterdatenspende der DIZe** (UKSH, UKHD, UKW).
 
@@ -314,14 +314,14 @@ ___
 
 ## 🚀 Ausblick: Nächste Schritte
 
-- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
-- **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
-- **Ex6:** MII FHIR Validator nutzen (Ressourcen/Profile checken)
+- **Übung 4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
+- **Übung 5:** Terminologien prüfen mit FHIR-Operationen (Codes aus den Musterdaten am Terminologieserver prüfen)
+- **Übung 6:** Terminologieserver mit deutschen Klassifikationen einrichten und den MII FHIR Validator nutzen
 
 ___
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • **Übung 3** • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___

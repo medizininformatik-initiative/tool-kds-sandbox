@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • **Übung 2** • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
 
@@ -12,7 +12,7 @@ ___
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-In [Exercise 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+In [Übung 1](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
 Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
@@ -178,7 +178,7 @@ In der Antwort des Servers steht nun die beim Upload festgelegte ID:
 
 ##### Observation hochladen (PUT)
 
-- Da unsere in Exercise 1 definierte Observation (`EXA_Studie_HbA1c.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten.
+- Da unsere in Übung 1 definierte Observation (`EXA_Studie_HbA1c.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten.
 
 - Da unser Example zusätzlich auf eine Organisation als "Assigner" für den identifier "analyseBefundCode" verweist, müssen wir diese ebenfalls anlegen und in den FHIR-Server hochladen.
 
@@ -279,12 +279,12 @@ Ein FHIR-Server löscht Daten **in der Regel** nicht physisch aus der Datenbank,
 
 ### Ausblick
 
-- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle, referenzielle Integrität)  
-- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)  
-- **Ex5:** Lokalen Terminologieserver aufsetzen (ICD-10-GM, LOINC, SNOMED-CT importieren)
+- **Übung 3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle, referenzielle Integrität)  
+- **Übung 4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)  
+- **Übung 5:** Terminologien prüfen mit FHIR-Operationen (Codes am Terminologieserver tx.fhir.org nachschlagen und prüfen)
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • **Exercise 2** • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • **Übung 2** • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___

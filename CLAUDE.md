@@ -2,7 +2,7 @@
 
 Projektkontext, Status und Regeln für die Arbeit an diesem Repository. Diese Datei ist die einzige Quelle dafür – bei Statusänderungen hier mitpflegen.
 
-> **Stand:** 2026-11-02
+> **Stand:** 2026-11-04
 
 ## Projekt
 
@@ -12,9 +12,9 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 
 ## Struktur
 
-- `exercises/prerequisites.md`, `exercises/exercise-1.md` … `exercise-8.md` – die Übungen; jede baut auf der vorherigen auf (FSH/SUSHI → Blaze-Upload → Musterdaten laden → Query → Terminologieserver → Validator → Ergebnisse interpretieren → Ausblick).
+- `exercises/prerequisites.md`, `exercises/exercise-1.md` … `exercise-7.md` – die Übungen; jede baut auf der vorherigen auf (FSH/SUSHI → Blaze-Upload → Musterdaten laden → Query → Terminologie-Operationen → Terminologieserver + Validator → Ergebnisse interpretieren). Jede Übung hat ein eigenes Lernziel mit praktischem Anteil; reine Ausblick-/Theorie-Übungen gibt es bewusst nicht (die frühere Übung 8 „Ausblick“ wurde 2026-11-04 gestrichen, relevante Inhalte stecken in Übung 5–7).
 - `solution-exercise-N/` – Musterlösung zur jeweiligen Übung (auf `develop` als Ordner). Die Übungstexte beschreiben den Zielzustand auf `main`, wo die Lösungen in Solution-Branches (`solution_exercise-N`) liegen sollen. Diese Hinweise nicht an den develop-Stand anpassen.
-- `exercises/services.md` – Nachschlageseite aller Dienste (Ports, `docker-compose.yml`, Start/Prüfen). Die Compose-Blöcke dort sind **Kopien** aus Exercise 2, 5 und 6 – bei Änderungen an einer Übung hier nachziehen (und umgekehrt). Steht in der Breadcrumb direkt hinter Prerequisites.
+- `exercises/services.md` – Nachschlageseite aller Dienste (Ports, `docker-compose.yml`, Start/Prüfen). Die Compose-Blöcke dort sind **Kopien** aus den Übungen 2, 5 und 6 – bei Änderungen an einer Übung hier nachziehen (und umgekehrt). Steht in der Breadcrumb direkt hinter Voraussetzungen.
 - `README.md` – Kurzübersicht aller Übungen; Überschriften/Farbemojis müssen zu den Übungstiteln passen.
 - `local_notes/` – per `.gitignore` ausgeschlossen, nicht committen.
 - `exercises/figures/` – keine Binärdateien ohne Absprache.
@@ -25,10 +25,10 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 
 - Laufzeitumgebung der Lernenden: Linux oder WSL2, Werkzeuge `sushi` (npm `fsh-sushi`), Java + IG Publisher, `docker compose`, `curl`, `jq`. Keine weiteren Abhängigkeiten einführen.
 - Pfade in den Übungen: `~/tool-kds-sandbox`, `~/musterdatenspende-diz`; keine nutzerspezifischen Absolutpfade.
-- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Exercise 5) `8081`, MII FHIR Validator (Exercise 6) `8082`. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben.
-- FHIR-Server ist **Blaze** (`samply/blaze`, `http://localhost:8080/fhir`, gestartet per `docker compose up -d` aus Exercise 2). Blaze erzwingt referenzielle Integrität und lässt sich nicht abschalten – das prägt Exercise 3.
-- Terminologieserver ist **FHIRsmith** (Exercise 5) mit ICD-10-GM, OPS und Alpha-ID-SE aus dem MII-TermServ-GitLab; LOINC und SNOMED CT sind bewusst nicht geladen.
-- Validator ist der **MII FHIR Validator** (Exercise 6, Image `ghcr.io/medizininformatik-initiative/mii-fhir-validator:0.0.1-alpha.9`, `POST /validateResource`) mit `TX_SERVER` = FHIRsmith. Das Standard-Setup des Validators (Blaze-Terminologie mit SNOMED-CT-Releasedateien, 16 GB RAM) wird bewusst nicht verwendet.
+- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Übung 6, optional) `8081`, MII FHIR Validator (Übung 6) `8082`; der Ontoserver-Proxy aus Übung 6, Schritt 1b liegt auf `8083`. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben.
+- FHIR-Server ist **Blaze** (`samply/blaze`, `http://localhost:8080/fhir`, gestartet per `docker compose up -d` aus Übung 2). Blaze erzwingt referenzielle Integrität und lässt sich nicht abschalten – das prägt Übung 3.
+- Terminologieserver: Übung 5 nutzt **tx.fhir.org**, Übung 6 einen eigenen **FHIRsmith** oder den **MII Ontoserver**. Alle Terminologie-Befehle nutzen die Shell-Variable `TX`. Siehe [Entscheidung: Terminologieserver](#entscheidung-terminologieserver-2026-11-04).
+- Validator ist der **MII FHIR Validator** (Übung 6, Image `ghcr.io/medizininformatik-initiative/mii-fhir-validator:0.0.1-alpha.9`, `POST /validateResource`) mit `TX_SERVER` = Terminologieserver aus Übung 6, Schritt 1. Das Standard-Setup des Validators (Blaze-Terminologie mit SNOMED-CT-Releasedateien, 16 GB RAM) wird bewusst nicht verwendet.
 - Datenquelle ist die **Musterdatenspende** (`medizininformatik-initiative/musterdatenspende-diz`) mit drei Standorten (UKSH, UKW, UKHD), nicht die MII-Testdaten.
 
 ## Architekturentscheidungen
@@ -42,9 +42,9 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 | **`transaction` statt `batch` (`prepare_upload.sh`)** | UKW enthält zirkuläre Referenzen (Condition ↔ Encounter); im `batch` scheitert die Integritätsprüfung pro Eintrag mit HTTP 409. |
 | **Doppelte IDs umbenennen** | UKW enthält `Observation/LabResult-000000335` und `-346` doppelt → Kollision bei PUT. `prepare_upload.sh` hängt ein Suffix an. |
 | **UKHD wie UKSH behandeln** | Alle Dateien aus dem Zip werden per `merge-bundles.sh` zusammengeführt. |
-| **HbA1c-Profil bleibt fachlich falsch** | Ex1 fixiert LOINC `4548-4` (Massenanteil, `%`) mit `mmol/mol`; richtig wäre `59261-8`. Wird in Ex7 als Beispiel für „Validator findet das nicht“ genutzt – **nicht korrigieren**. |
+| **HbA1c-Profil bleibt fachlich falsch** | Übung 1 fixiert LOINC `4548-4` (Massenanteil, `%`) mit `mmol/mol`; richtig wäre `59261-8`. Wird in Übung 7 als Beispiel für „Validator findet das nicht“ genutzt – **nicht korrigieren**. |
 
-### Exercise-3-Pipeline (`solution-exercise-3/`)
+### Übung-3-Pipeline (`solution-exercise-3/`)
 
 Die Skripte bilden eine Kette; Ausgabedateinamen werden an den Eingabenamen angehängt:
 
@@ -64,48 +64,61 @@ Ermittelt mit den **echten Skripten** gegen den aktuellen Musterdatenspende-Stan
 | UKHD | Zip, 4 Dateien | 1.371 | 823 | 548 | 3 |
 | UKW | 1 `searchset`-Datei | 235 | 234 | 1 | 1 |
 
-⚠️ `merge-bundles.sh` **verwirft die erste Eingabedatei** (`reduce inputs` ohne `jq -n`). Daher 271 statt 272 UKSH-Patienten und 3 statt 4 UKHD-Patienten. Der Bug liegt im Musterdatenspende-Repo; die Übungen beschreiben das tatsächliche Verhalten. Alle drei Standorte zusammen: 275 Patienten, zzgl. Testpatienten aus Exercise 2.
+⚠️ `merge-bundles.sh` **verwirft die erste Eingabedatei** (`reduce inputs` ohne `jq -n`). Daher 271 statt 272 UKSH-Patienten und 3 statt 4 UKHD-Patienten. Der Bug liegt im Musterdatenspende-Repo; die Übungen beschreiben das tatsächliche Verhalten. Alle drei Standorte zusammen: 275 Patienten, zzgl. Testpatienten aus Übung 2.
 
 ## Projektstatus
 
 | Übung | Status | Bemerkung |
 | --- | --- | --- |
-| Prerequisites | ✅ Fertig | 2026-11-02 gestrafft (Werkzeugtabelle, RAM 8/16 GB, Verweis auf `services.md`) |
-| Exercise 1 | ✅ Getestet | FSH-Profile, SUSHI, IG Publisher |
-| Exercise 2 | ✅ Getestet | Blaze starten, Ressourcen hochladen, FHIR Search |
-| Exercise 3 | ✅ Getestet | Upload aller drei Standorte; Upload-Ausgabe auf Status-Zählung umgestellt |
-| Exercise 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; Patient-ID in 5.4 wählen die Lernenden selbst |
-| Exercise 5 | 🟡 Test läuft | FHIRsmith; erwartete Ausgaben fehlen noch |
-| Exercise 6 | 🟡 Test ausstehend | Auf echten MII FHIR Validator umgestellt; erwartete Ausgaben als `<!-- TODO beim Test -->` markiert |
-| Exercise 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Ex6; Skript `solution-exercise-7/validate.sh` |
-| Exercise 8 | 🟡 Überarbeitet | Werkzeug- und Lizenztabellen korrigiert |
+| Voraussetzungen | ✅ Fertig | 2026-11-02 gestrafft (Werkzeugtabelle, RAM 8/16 GB, Verweis auf `services.md`) |
+| Übung 1 | ✅ Getestet | FSH-Profile, SUSHI, IG Publisher |
+| Übung 2 | ✅ Getestet | Blaze starten, Ressourcen hochladen, FHIR Search |
+| Übung 3 | ✅ Getestet | Upload aller drei Standorte; Upload-Ausgabe auf Status-Zählung umgestellt |
+| Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; Patient-ID in 5.4 wählen die Lernenden selbst |
+| Übung 5 | 🟡 Test ausstehend | 2026-11-04 neu: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze; Kernausgaben per tx.fhir.org verifiziert |
+| Übung 6 | 🟡 Test ausstehend | 2026-11-04: Schritt 1 Terminologieserver (FHIRsmith / MII Ontoserver / tx.fhir.org) ergänzt; erwartete Ausgaben als `<!-- TODO beim Test -->` markiert |
+| Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
+
+## Entscheidung: Terminologieserver (2026-11-04)
+
+Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht stundenlang auf das Einlesen von Terminologien warten.
+
+- **Übung 5** vermittelt die Terminologie-Operationen (`$lookup`, `$validate-code`, `$expand`) am öffentlichen **tx.fhir.org** mit Codes aus den Musterdaten in Blaze. tx.fhir.org kennt LOINC, SNOMED CT International, UCUM und die HL7-Codesysteme, aber **nicht** ICD-10-GM, OPS, ATC (BfArM), die `fhir.de`-Codesysteme der Basisprofile und die MII-Codesysteme (geprüft 2026-11-04 per `$validate-code`: „A definition for CodeSystem … could not be found“). Diese Grenze ist bewusst das Lernziel am Ende von Übung 5.
+- **Übung 6** beginnt mit dem Bereitstellen eines Terminologieservers für den Validator: **A** eigener FHIRsmith (empfohlen; ICD-10-GM, OPS, Alpha-ID-SE, ohne LOINC/SNOMED CT), **B** MII Ontoserver über die Ontoserver-Konfiguration aus dem Repo des MII FHIR Validators (mTLS-Client-Zertifikat, nur Entwicklung, keine Personendaten, keine Massenvalidierung), **C** tx.fhir.org als schnelle Notlösung (ohne deutsche Klassifikationen).
+- LOINC- und SNOMED-CT-Import (mehrere Stunden) nur als Vertiefung in Übung 6 erwähnen, nicht in den Übungsablauf aufnehmen.
+- Die Musterdatenspende ist öffentlich; bei `$validate-code` gehen nur Codes an tx.fhir.org. Trotzdem in Übung 5 auf „nie echte Patientendaten an öffentliche Server“ hinweisen.
 
 ## Offene Punkte
 
-### Beim Test von Exercise 5–7
+### Beim Test der Übungen 5–7
 
-- **Ex5:** Ende-zu-Ende-Test, erwartete Ausgaben eintragen; prüfen, ob `NODE_OPTIONS=--max-old-space-size=4096` reicht (eigenes Setup nutzt 8192).
-- **Ex6:** Erreicht der Validator FHIRsmith über `host.docker.internal`? Reicht `-Xmx4g` mit 4 IGs? Wie reagiert er auf Profilversionen `|2025.0.x` in den Musterdaten bei geladenen 2026er-Paketen? Welche Meldung kommt bei LOINC (nicht auf FHIRsmith)? Ab welcher Logzeile ist der Validator bereit?
-- **Ex7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
+Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `localhost`. Dafür `localhost:8080` durch dessen Blaze-Adresse ersetzen und in Übung 6 `TX`/`TX_SERVER` auf den FHIRsmith dort setzen. Das eigene Test-Setup mappt FHIRsmith auf Port 80/443 statt 8081.
+
+- **Übung 5:** Alle Befehle gegen tx.fhir.org durchspielen (Schleife in Schritt 5 erzeugt ca. 20 Anfragen); Lösungstabelle der Aufgabe abgleichen (offen: KBV-Codesysteme, `urn:iso:std:iso:11073:10101`, `dgkev/Aufnahmeanlass`); `$lookup`-Ausgabe eintragen.
+- **Übung 6, Schritt 1:** FHIRsmith (1a) durchspielen, Dauer des ersten Starts messen, prüfen ob `NODE_OPTIONS=--max-old-space-size=4096` reicht (eigenes Setup nutzt 8192), `$validate-code` für `C20` eintragen. Ontoserver-Weg (1b) nur mit Client-Zertifikat testbar. Nicht auf nicht-öffentliche Repositories verweisen.
+- **Übung 6, ab Schritt 2:** Erreicht der Validator FHIRsmith über `host.docker.internal`? Reicht `-Xmx4g` mit 4 IGs? Wie reagiert er auf Profilversionen `|2025.0.x` in den Musterdaten bei geladenen 2026er-Paketen? Welche Meldung kommt bei LOINC (nicht auf FHIRsmith)? Ab welcher Logzeile ist der Validator bereit?
+- **Übung 7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
 
 ### Inhaltlich offen
 
-- **Ex2:** Blaze-Image steht auf `samply/blaze:main` (ungepinnt) – auf ein Release festlegen (Stand 2026-11: `1.13.0`).
-- **Ex3:** Umstrukturierung & Präsentation (laut Commit `8f54a4d` offen). Ausblick nennt noch „LOINC, SNOMED-CT importieren“ für Ex5 – passt nicht mehr.
-- **Ex4, Abfrage 6.1:** Alle Patienten haben nur `deceasedBoolean`, kein `deceasedDateTime` – der Widerspruchs-Check ergibt deshalb strukturell immer 0.
+- **Übung 2:** Blaze-Image steht auf `samply/blaze:main` (ungepinnt) – auf ein Release festlegen (Stand 2026-11: `1.13.0`).
+- **Übung 3:** Umstrukturierung & Präsentation (laut Commit `8f54a4d` offen).
+- **Übung 4, Abfrage 6.1:** Alle Patienten haben nur `deceasedBoolean`, kein `deceasedDateTime` – der Widerspruchs-Check ergibt deshalb strukturell immer 0.
+- **Ideen für weitere Übungen** (aus der gestrichenen Übung 8; nur mit eigenem praktischen Lernziel aufnehmen): Pseudonymisierung von FHIR-Ressourcen (z. B. FHIR Pseudonymizer), Auswertung mit Skripten externer Forschender (R/Python), Datenausleitung mit TORCH und DIMP/DUP, Consent-Prüfung bei der Ausleitung, `CapabilityStatement` eines Servers lesen.
 - **Musterdatenspende:** `merge-bundles.sh`-Bug ggf. dort als Issue melden.
-- **Allgemein:** Abschnitte „Nächste Schritte“ (Anfang) und „Ausblick“ (Ende) in jeder Übung vereinheitlichen. Exercise 3–8 nutzen Emojis außerhalb der Palette (z. B. 🚫 🧹 📤 🔄 📊 🎯 🔧 🔢 📜) – Bereinigung nur nach Absprache.
+- **Allgemein:** Abschnitte „Nächste Schritte“ (Anfang) und „Ausblick“ (Ende) in jeder Übung vereinheitlichen. Die Übungen 3–7 nutzen Emojis außerhalb der Palette (z. B. 🚫 🧹 📤 🔄 📊 🎯 🔧 🔢 📜) – Bereinigung nur nach Absprache.
 - **Beim Merge nach `main`:** Alle Übungen komplett neu durchtesten (Zahlen, Ausgaben, Dateinamen) und Beschreibungen an die Repo-Struktur angleichen. Wird erst dann gemeinsam entschieden – vorher nichts vorwegnehmen.
 
 ## Konventionen für Übungsdateien
 
+- **Sprache:** Alle Übungen sind deutsch – auch Linktexte und Navigation („Voraussetzungen“, „Dienste“, „Übung N“). Dateinamen (`prerequisites.md`, `exercise-N.md`, `services.md`) bleiben englisch.
 - **Kopf und Fuß:** zwei `___`-Zeilen, Breadcrumb, zwei `___`-Zeilen. Breadcrumb verlinkt alle Seiten mit ` • ` als Trenner, die aktuelle Seite **fett ohne Link**; Kopf- und Fuß-Breadcrumb müssen identisch sein:
-  `[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • **Exercise 3** • [Exercise 4](exercise-4.md) • …`
+  `[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • **Übung 3** • [Übung 4](exercise-4.md) • …`
 - **Aufbau:** H1 mit Farbemoji → „**Nächste Schritte:**“ (kurze Liste) → Einleitung mit Bezug zu vorherigen Übungen → 📋 Übersicht → Abschnitte → 🏁 Zusammenfassung/Ausblick.
-- **Farbemoji** im H1 und in `README.md`: ⚪ Prerequisites, 🔵 1, 🟢 2, 🟡 3, 🟠 4, 🔴 5, 🟣 6, 🟤 7, ⚫ 8.
+- **Farbemoji** im H1 und in `README.md`: ⚪ Voraussetzungen, 🔵 1, 🟢 2, 🟡 3, 🟠 4, 🔴 5, 🟣 6, 🟤 7.
 - **Abschnitts-Emojis** nur aus dieser Palette: 💡 Tipp · ⚠️ Warnung · ❗ Wichtig · 🔍 Genau hinschauen/Vertiefung · 🚀 Start/Ausblick · 🏁 Ergebnis · 🛠️ Setup/Aufgabe · 🧩 Zusammenhang · 📋 Übersicht · 📌 Fixpunkt · 📖 Theorie · 💻 Praxis · ✅ Richtig · ❌ Falsch. Neue Emojis nur nach Absprache.
 - **Codeblöcke:** `bash` für Befehle (nicht `shell`), `json`, `yaml`, `fsh` (alternativ `bash`), `text` für Ausgaben. Erwartete Ergebnisse als Kommentar (`# → …`) oder eigener `text`-Block.
-- **Anker:** Bei Überschriften mit Emoji explizite `<a id="..."></a>` setzen (siehe Exercise 5–8).
+- **Anker:** Bei Überschriften mit Emoji explizite `<a id="..."></a>` setzen (siehe Übungen 5–7).
 - **Lösungsskripte** gehören nach `solution-exercise-N/`, nicht in die Übungsdatei eingebettet.
 - **Übungstexte** übernehmen einzelne Blöcke aus externen Anleitungen; Skripte kommen erst nach Absprache in die `solution-exercise-N`-Ordner.
 
@@ -121,7 +134,7 @@ Ermittelt mit den **echten Skripten** gegen den aktuellen Musterdatenspende-Stan
    - Interne Links und Anker funktionieren
    - Dateinamen in Kommentaren (`# → erzeugt: …`) stimmen mit der Skriptausgabe überein
    - `README.md` und Status/offene Punkte in dieser Datei aktualisiert
-5. Commit-Nachricht kurz und beschreibend, z. B. `Ex4 - Zahlen korrigiert`.
+5. Commit-Nachricht kurz und beschreibend, z. B. `Übung 4 - Zahlen korrigiert`.
 
 ### Nützliche Befehle
 

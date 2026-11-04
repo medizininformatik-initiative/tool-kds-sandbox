@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • **Übung 4** • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
 
@@ -8,7 +8,7 @@ ___
 
 **Nächste Schritte:**  
 
-- Prüfe, ob die UKSH-Musterdaten aus Exercise 3 im FHIR-Server liegen
+- Prüfe, ob die UKSH-Musterdaten aus Übung 3 im FHIR-Server liegen
 - Erkunde Patienten, Diagnosen und Laborwerte mit FHIR-Search
 - Verknüpfe Ressourcen über Chaining, `_has`, `_include` und `_revinclude`
 - Entdecke Auffälligkeiten in den Daten
@@ -17,7 +17,7 @@ ___
 
 ## Einführung & Kontext
 
-In [Exercise 3](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 271 pseudonymisierten Patienten.
+In [Übung 3](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 271 pseudonymisierten Patienten.
 
 In dieser Übung stellst du **strukturierte Abfragen** auf diese KDS-Daten: Du suchst nach Diagnosen (ICD-10-GM), Laborwerten (LOINC), Prozeduren (OPS), verknüpfst Ressourcen miteinander und stößt dabei auf typische Eigenheiten echter DIZ-Daten.
 
@@ -50,7 +50,7 @@ ___
 
 ## 🛠️ 0. Vorbereitung: Datenbestand prüfen
 
-> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` (aus [Exercise 2](exercise-2.md#container-definieren-und-starten)) und die bereinigten UKSH-Daten sind per `PUT` hochgeladen ([Exercise 3](exercise-3.md)).
+> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` (aus [Übung 2](exercise-2.md#container-definieren-und-starten)) und die bereinigten UKSH-Daten sind per `PUT` hochgeladen ([Übung 3](exercise-3.md)).
 
 Zähle die Ressourcen pro Typ – `_summary=count` liefert nur die Anzahl, keine Ressourcen:
 
@@ -73,9 +73,9 @@ ServiceRequest: 1276 (1276)
 Consent: 5 (84)
 ```
 
-> 💡 **Hinweis:** Die Zahlen in Klammern gelten, wenn du in [Exercise 3](exercise-3.md) zusätzlich UKHD (+3 Patienten) und UKW (+1 Patient) hochgeladen hast. Die Abfragen funktionieren in beiden Fällen.
+> 💡 **Hinweis:** Die Zahlen in Klammern gelten, wenn du in [Übung 3](exercise-3.md) zusätzlich UKHD (+3 Patienten) und UKW (+1 Patient) hochgeladen hast. Die Abfragen funktionieren in beiden Fällen.
 >
-> 💡 Deine Testressourcen aus [Exercise 2](exercise-2.md) liegen ebenfalls noch im Server und erhöhen einzelne Zahlen leicht: je hochgeladenem Beispiel-Patienten +1 bei `Patient`, die HbA1c-Observation +1 bei `Observation` und bei den Laborwerten.
+> 💡 Deine Testressourcen aus [Übung 2](exercise-2.md) liegen ebenfalls noch im Server und erhöhen einzelne Zahlen leicht: je hochgeladenem Beispiel-Patienten +1 bei `Patient`, die HbA1c-Observation +1 bei `Observation` und bei den Laborwerten.
 
 ___
 
@@ -165,7 +165,7 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 | `R11` | 15 | Übelkeit und Erbrechen |
 | `U99.0` | 13 (15) | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
 
-🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel in einem Terminologieserver, den wir in [Exercise 5](exercise-5.md) einrichten.
+🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel an einem Terminologieserver, wie du ihn in [Übung 5](exercise-5.md) nutzt.
 
 ### Abfrage 3.2: Alle Rektumkarzinom-Diagnosen (C20)
 
@@ -182,7 +182,7 @@ ___
 
 ## 💻 4. Laborwerte (LOINC)
 
-Die UKSH-Daten enthalten 1.888 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Exercise 1](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
+Die UKSH-Daten enthalten 1.888 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Übung 1](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
 
 ### Abfrage 4.1: Hämoglobin – LOINC vs. lokaler Code
 
@@ -398,7 +398,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&_i
 curl -s "http://localhost:8080/fhir/Condition?code=570762" | jq '.entry[].resource | {code: .code.coding[0], patient: .subject.reference}'
 ```
 
-❗ `570762` ist **kein gültiger ICD-10-GM-Code**. Solche Fehler fallen bei einer Suche nur auf, wenn man gezielt danach sucht. Systematisch finden sie erst der Terminologieserver ([Exercise 5](exercise-5.md)) und der Validator ([Exercise 6](exercise-6.md)).
+❗ `570762` ist **kein gültiger ICD-10-GM-Code**. Solche Fehler fallen bei einer Suche nur auf, wenn man gezielt danach sucht. Systematisch finden sie erst der Terminologieserver ([Übung 5](exercise-5.md)) und der Validator ([Übung 6](exercise-6.md)).
 
 ___
 
@@ -506,12 +506,12 @@ ___
 
 ### Ausblick
 
-- **Ex5:** Terminologieserver aufsetzen – Codes nachschlagen und prüfen  
-- **Ex6:** FHIR Validator – Ressourcen gegen Profile und Terminologien prüfen  
-- **Ex7:** Validierungsberichte interpretieren  
+- **Übung 5:** Terminologien prüfen mit FHIR-Operationen – Codes nachschlagen und prüfen  
+- **Übung 6:** Terminologieserver einrichten und mit dem FHIR Validator Ressourcen gegen Profile prüfen  
+- **Übung 7:** Validierungsberichte interpretieren  
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • **Exercise 4** • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • **Übung 4** • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___

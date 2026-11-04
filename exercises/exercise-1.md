@@ -1,6 +1,6 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **Übung 1** • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
 
@@ -457,12 +457,12 @@ Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshsc
 
 ### Ausblick
 
-- **Ex2:** Einfaches Beispiel FHIR-Search (lokal, Ressourcen uploaden, Search)  
-- **Ex3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle)  
-- **Ex4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
+- **Übung 2:** Einfaches Beispiel FHIR-Search (lokal, Ressourcen uploaden, Search)  
+- **Übung 3:** KDS-Beispieldaten in FHIR-Server laden (Musterdatenspende, clean_bundle)  
+- **Übung 4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • **Exercise 1** • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • [Exercise 5](exercise-5.md) • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **Übung 1** • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___

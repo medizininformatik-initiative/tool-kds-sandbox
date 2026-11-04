@@ -1,4 +1,4 @@
-# Lösung Exercise 3 – KDS-Beispieldaten in FHIR-Server laden
+# Lösung Übung 3 – KDS-Beispieldaten in FHIR-Server laden
 
 ## Enthaltene Dateien
 
@@ -10,7 +10,7 @@
 
 Jedes Skript hängt ein Suffix an den Namen der Eingabedatei an: `_cleaned`, `_prepared`, `_put`.
 
-## Verwendung (Empfohlener Workflow für Exercise 3)
+## Verwendung (Empfohlener Workflow für Übung 3)
 
 ### Hauptworkflow (UKSH, UKHD – `transaction` bundle aus `merge-bundles.sh`)
 

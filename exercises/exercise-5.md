@@ -1,34 +1,34 @@
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • **Übung 5** • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
 
-# 🔴 Aufsetzen eines lokalen Terminologieservers
+# 🔴 Terminologien prüfen mit FHIR-Operationen
 
 **Nächste Schritte:**
 
-- Terminologieserver **FHIRsmith** per Docker Compose starten
-- Deutsche Klassifikationen (ICD-10-GM, OPS, Alpha-ID-SE) laden
-- Codes nachschlagen (`$lookup`), prüfen (`$validate-code`) und suchen (`$expand`)
-- Diagnosecodes aus den Musterdaten in Blaze gegen den Terminologieserver prüfen
+- Finde heraus, welche Codesysteme in den Musterdaten in Blaze stecken
+- Schlage Codes nach (`$lookup`), prüfe sie (`$validate-code`) und suche Codes (`$expand`) – am öffentlichen Terminologieserver **tx.fhir.org**
+- Prüfe die Codes aus Blaze automatisch und erkenne, wo ein internationaler Terminologieserver an seine Grenzen stößt
 
-In den vorherigen Übungen hast du FHIR-Ressourcen in Blaze geladen und abgefragt. Dabei ging es um die **Struktur** der Daten. Ob ein Code wie `I10.90` in einer Diagnose aber tatsächlich existiert, in welcher Version er gilt und wie er heißt, weiß Blaze nicht. Dafür gibt es **Terminologieserver**: Sie kennen Codesysteme (z. B. ICD-10-GM) und ValueSets (Auswahllisten von Codes) und beantworten Fragen dazu über standardisierte FHIR-Operationen.
+In den vorherigen Übungen hast du FHIR-Ressourcen in Blaze geladen und abgefragt. Dabei ging es um die **Struktur** der Daten. Ob ein Code wie `718-7` in einem Laborwert aber tatsächlich existiert, in welcher Version er gilt und wie er heißt, weiß Blaze nicht. Dafür gibt es **Terminologieserver**: Sie kennen Codesysteme (z. B. LOINC) und ValueSets (Auswahllisten von Codes) und beantworten Fragen dazu über standardisierte FHIR-Operationen.
 
-In dieser Übung setzt du mit [FHIRsmith](https://github.com/HealthIntersections/FHIRsmith) einen eigenen Terminologieserver auf. FHIRsmith ist dieselbe Software, die auch hinter dem öffentlichen HL7-Terminologieserver [tx.fhir.org](https://tx.fhir.org) läuft. Den Server brauchst du in [Exercise 6](exercise-6.md) für die Validierung.
+In dieser Übung nutzt du den öffentlichen Terminologieserver von HL7, [tx.fhir.org](https://tx.fhir.org). Du musst nichts installieren und kannst die Operationen sofort ausprobieren. Dabei wirst du sehen, dass tx.fhir.org die deutschen Klassifikationen nicht kennt. Wie du einen Terminologieserver mit ICD-10-GM und OPS einrichtest, lernst du in [Übung 6](exercise-6.md).
+
+> ⚠️ **Datenschutz:** tx.fhir.org ist ein öffentlicher Dienst. Bei den Operationen dieser Übung verlassen nur Codes deinen Rechner, keine Ressourcen. Die Musterdatenspende ist ohnehin öffentlich. Echte Patientendaten gehören trotzdem **nie** an einen öffentlichen Server.
 
 ___
 
 📋 **Übersicht:**
 
 - [Hintergrund: Terminologien und Terminologieserver](#hintergrund)
-- [Aufbau von FHIRsmith](#aufbau)
-- [Schritt 1: Klassifikationen herunterladen](#schritt-1)
-- [Schritt 2: Konfiguration anlegen](#schritt-2)
-- [Schritt 3: Server starten](#schritt-3)
-- [Schritt 4: Terminologie-Operationen ausprobieren](#schritt-4)
-- [Schritt 5: Diagnosen aus Blaze prüfen](#schritt-5)
-- [Vertiefung: LOINC, SNOMED CT und HTTPS](#vertiefung)
+- [Schritt 1: Welche Codesysteme stecken in den Daten?](#schritt-1)
+- [Schritt 2: Code nachschlagen mit `$lookup`](#schritt-2)
+- [Schritt 3: Code prüfen mit `$validate-code`](#schritt-3)
+- [Schritt 4: Codes suchen mit `$expand`](#schritt-4)
+- [Schritt 5: Codes aus Blaze automatisch prüfen](#schritt-5)
+- [Was tx.fhir.org nicht kann](#grenzen)
 - [Zusammenfassung und Ausblick](#zusammenfassung)
 
 ___
@@ -39,15 +39,15 @@ ___
 
 | Codesystem | Herausgeber | Typische Verwendung im KDS | Beschaffung |
 | --- | --- | --- | --- |
-| **ICD-10-GM** | BfArM | Diagnosen (`Condition.code`) | Frei verfügbar |
-| **OPS** | BfArM | Prozeduren (`Procedure.code`) | Frei verfügbar |
-| **Alpha-ID-SE** | BfArM | Seltene Erkrankungen (`Condition.code`) | Frei verfügbar |
+| **ICD-10-GM** | BfArM | Diagnosen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
+| **OPS** | BfArM | Prozeduren (`Procedure.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
+| **Alpha-ID-SE** | BfArM | Seltene Erkrankungen (`Condition.code`) | Kostenfrei (Downloadbedingungen des BfArM) |
 | **ATC** | BfArM / WHO | Wirkstoffe (`Medication.code`) | Frei verfügbar |
-| **LOINC** | Regenstrief Institute | Laborwerte (`Observation.code`) | Kostenloser Account nötig |
-| **SNOMED CT** | SNOMED International | Klinische Begriffe (viele Elemente) | Lizenz nötig (in DE über das BfArM) |
-| **UCUM** | Regenstrief Institute | Maßeinheiten (`valueQuantity.code`) | Frei verfügbar |
+| **LOINC** | Regenstrief Institute | Laborwerte (`Observation.code`) | Kostenfrei, eigene LOINC-Lizenz, Registrierung nötig |
+| **SNOMED CT** | SNOMED International | Klinische Begriffe (viele Elemente) | Lizenzpflichtig; in Deutschland national lizenziert, kostenfreie Affiliate-Lizenz über das BfArM |
+| **UCUM** | Regenstrief Institute | Maßeinheiten (`valueQuantity.code`) | Kostenfrei (eigene Nutzungsbedingungen) |
 
-> ⚠️ **Versionen:** Codesysteme ändern sich regelmäßig, die ICD-10-GM z. B. jährlich. Ein Code, der 2023 gültig war, kann 2026 fehlen oder anders heißen. Ein Terminologieserver kann mehrere Versionen parallel vorhalten.
+> ⚠️ **Versionen:** Codesysteme ändern sich regelmäßig, die ICD-10-GM z. B. jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 fehlen oder anders heißen. Ein Terminologieserver kann mehrere Versionen parallel vorhalten.
 
 ### Was kann ein Terminologieserver?
 
@@ -55,288 +55,258 @@ Alle FHIR-Terminologieserver bieten dieselben Standard-Operationen an:
 
 | Operation | Frage | Beispiel |
 | --- | --- | --- |
-| `$lookup` | Was bedeutet dieser Code? | ICD-10-GM `I10.90` → „Essentielle Hypertonie, nicht näher bezeichnet …“ |
-| `$validate-code` | Gibt es diesen Code (in diesem ValueSet)? Passt der Anzeigetext? | Ist `I10.99` ein gültiger ICD-10-GM-Code? |
-| `$expand` | Welche Codes enthält ein ValueSet? | Alle ICD-10-GM-Codes, die „Hypertonie“ enthalten |
+| `$lookup` | Was bedeutet dieser Code? | LOINC `718-7` → „Hemoglobin [Mass/volume] in Blood“ |
+| `$validate-code` | Gibt es diesen Code (in diesem ValueSet)? Passt der Anzeigetext? | Ist `718-8` ein gültiger LOINC-Code? |
+| `$expand` | Welche Codes enthält ein ValueSet? | Alle LOINC-Codes, die „hemoglobin“ enthalten |
 | `$translate` | Wie lautet der Code in einem anderen System? | Mapping über eine ConceptMap |
 
 ### Terminologieserver im Überblick
 
-| | tx.fhir.org | MII Ontoserver | FHIRsmith (lokal) |
+| | tx.fhir.org | MII Ontoserver | Eigener FHIRsmith |
 | --- | --- | --- | --- |
-| **Betreiber** | HL7 (öffentlich) | MII Service Unit Terminologie | Du selbst |
+| **Betreiber** | HL7 (öffentlich) | MII Service Unit Terminologie (SU-TermServ) | Du selbst |
 | **Software** | FHIRsmith | Ontoserver (CSIRO) | FHIRsmith |
-| **Zugang** | Öffentlich, ohne Login | Client-Zertifikat nötig | Lokal, ohne Login |
-| **Inhalt** | Internationale Terminologien | MII-/KDS-Terminologien | Was du lädst |
-| **Einsatz** | Standard für IG Publisher und Validator | Entwicklung, keine Personendaten | Lernen, offline, eigene Tests |
-
-> 💡 **Warum lokal?** Ein lokaler Server funktioniert offline, du bestimmst selbst die Versionen der Codesysteme, und es verlassen keine Daten deinen Rechner. Das ist wichtig, sobald du echte Daten prüfst.
+| **Zugang** | Öffentlich, ohne Login | Client-Zertifikat, nur für Personen und Einrichtungen in Deutschland | Lokal, ohne Login |
+| **Inhalt** | Internationale Terminologien (u. a. LOINC, SNOMED CT International, UCUM, HL7-Codesysteme) | MII-/KDS-Terminologien inkl. deutscher Klassifikationen | Was du lädst |
+| **Einsatz** | Standard für IG Publisher und HL7-Validator | Entwicklung, keine Personendaten | Lernen, offline, eigene Tests |
+| **In dieser Schulung** | Übung 5 | Übung 6 (optional) | Übung 6 |
 
 ___
 
-## <a id="aufbau"></a>🧩 Aufbau von FHIRsmith
+## <a id="schritt-1"></a>💻 Schritt 1: Welche Codesysteme stecken in den Daten?
 
-FHIRsmith ist ein Node.js-Server, den wir als Docker-Container starten. Er liest beim Start zwei Dateien aus seinem Datenordner:
+> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` und enthält die Musterdaten aus [Übung 3](exercise-3.md).
+
+Jeder Code in FHIR steht zusammen mit seinem Codesystem in einem `Coding`: `{"system": "http://loinc.org", "code": "718-7"}`. Der folgende Befehl holt alle Ressourcen eines Typs aus Blaze, sucht darin jedes `Coding` und zählt, wie oft welches Codesystem vorkommt:
+
+```bash
+for type in Condition Procedure Observation Encounter; do
+  echo "== $type"
+  curl -s "http://localhost:8080/fhir/$type?_count=4000" \
+    | jq -r '[.entry[].resource | .. | objects | select(has("system") and has("code")) | .system]
+             | group_by(.) | map({anzahl: length, system: .[0]}) | sort_by(-.anzahl) | .[] | "\(.anzahl)\t\(.system)"'
+done
+```
+
+✅ **Erwartetes Ergebnis** (nur UKSH geladen, gekürzt):
 
 ```text
-~/terminology-server/
-├── docker-compose.yml          ← startet den Container (Port 8081)
-└── data/                       ← Datenordner des Servers
-    ├── config.json             ← WELCHE Module laufen (hier nur: Terminologieserver unter /fhir)
-    ├── library.yml             ← WELCHE Terminologien geladen werden
-    ├── de.bfarm.icd-10-gm/     ← heruntergeladene Pakete (Schritt 1)
-    ├── de.bfarm.ops/
-    └── de.bfarm.alpha-id-se/
+== Condition
+425	http://fhir.de/CodeSystem/bfarm/icd-10-gm
+== Procedure
+180	http://fhir.de/CodeSystem/bfarm/ops
+180	http://snomed.info/sct
+4	https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_SEITENLOKALISATION
+== Observation
+4797	http://unitsofmeasure.org
+4555	http://loinc.org
+3480	http://terminology.hl7.org/CodeSystem/observation-category
+1888	http://medic.uksh.de/fhir/CodeSystem/Laborparameter
+...
+1579	https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus
+...
+== Encounter
+1170	http://fhir.de/CodeSystem/Kontaktebene
+1170	http://terminology.hl7.org/CodeSystem/v3-ActCode
+...
 ```
 
-Die `library.yml` ist das Herzstück: Jede Zeile ist eine Quelle für Terminologien. Manche bringt FHIRsmith selbst mit (`internal:`, `ucum:`), manche lädt er beim Start aus der FHIR-Paket-Registry (`npm:`), andere liest er aus einem lokalen Ordner (`folder:`).
+🔍 **Genau hinschauen:** Du findest drei Arten von Codesystemen:
+
+- **International:** LOINC, SNOMED CT, UCUM und die Codesysteme von HL7 (`terminology.hl7.org`)
+- **Deutsch:** ICD-10-GM und OPS des BfArM, Codesysteme der deutschen Basisprofile (`fhir.de`) und der MII (`medizininformatik-initiative.de`)
+- **Lokal:** Hauscodes des UKSH (`medic.uksh.de`), die nur der Standort selbst kennt
 
 ___
 
-## <a id="schritt-1"></a>💻 Schritt 1: Klassifikationen herunterladen
+## <a id="schritt-2"></a>💻 Schritt 2: Code nachschlagen mit `$lookup`
 
-Die MII stellt ICD-10-GM, OPS und Alpha-ID-SE als fertige FHIR-Pakete bereit (aufbereitet aus den BfArM-Dateien). Lege einen eigenen Ordner für den Terminologieserver an und lade die Pakete herunter:
-
-```bash
-mkdir -p ~/terminology-server/data
-cd ~/terminology-server
-
-GITLAB="https://gitlab.com/api/v4/projects"
-
-mkdir -p data/de.bfarm.icd-10-gm
-curl -fsSL "$GITLAB/57608725/packages/npm/@mii-termserv/de.bfarm.icd-10-gm/-/@mii-termserv/de.bfarm.icd-10-gm-2026.0.2.tgz" \
-  | tar -xzf - -C data/de.bfarm.icd-10-gm --strip-components=1
-
-mkdir -p data/de.bfarm.ops
-curl -fsSL "$GITLAB/57608812/packages/npm/@mii-termserv/de.bfarm.ops/-/@mii-termserv/de.bfarm.ops-2026.0.2.tgz" \
-  | tar -xzf - -C data/de.bfarm.ops --strip-components=1
-
-mkdir -p data/de.bfarm.alpha-id-se
-curl -fsSL "$GITLAB/57608808/packages/npm/@mii-termserv/de.bfarm.alpha-id-se/-/@mii-termserv/de.bfarm.alpha-id-se-2026.0.0.tgz" \
-  | tar -xzf - -C data/de.bfarm.alpha-id-se --strip-components=1
-```
-
-Prüfe, was angekommen ist:
+Lege die Adresse des Terminologieservers in einer Variable ab. So kannst du später mit denselben Befehlen einen anderen Server ansprechen:
 
 ```bash
-ls data/de.bfarm.icd-10-gm/
+TX=https://tx.fhir.org/r4
+curl -s "$TX/metadata" | jq '{software: .software.name, version: .software.version, fhirVersion}'
 ```
 
-> 🔍 **Genau hinschauen:** Ein FHIR-Paket ist ein `.tgz`-Archiv mit JSON-Dateien. Für die ICD-10-GM enthält es u. a. eine `CodeSystem`-Ressource mit allen Codes der Version 2026. `--strip-components=1` entfernt dabei den Ordner `package/`, der in jedem FHIR-Paket steckt.
+> ⚠️ Eine Shell-Variable gilt nur im aktuellen Terminalfenster. Öffnest du ein neues Fenster, setze `TX` dort erneut.
 
-___
+Die URLs von Terminologie-Operationen enthalten oft Sonderzeichen. Mit `curl -G` und `--data-urlencode` übernimmt `curl` das korrekte Kodieren der Parameter. Vor dem Namen der Operation steht ein `\`, damit die Shell `$lookup` nicht als Variable liest, `$TX` aber schon.
 
-## <a id="schritt-2"></a>💻 Schritt 2: Konfiguration anlegen
-
-Lege die Datei `data/library.yml` an. Sie legt fest, welche Terminologien der Server bereitstellt:
-
-```yaml
-# Von hier lädt FHIRsmith Dateien nach, die nicht lokal vorliegen
-base:
-  url: https://packages2.fhir.org/packages
-
-# Welche Terminologien stellt der Server bereit?
-sources:
-  # Im Server eingebaute Codesysteme: Sprachen (BCP-47) und Länder (ISO 3166)
-  - internal:lang
-  - internal:country
-  # Maßeinheiten (UCUM) – die Definitionsdatei ist im Docker-Image enthalten
-  - ucum:tx/data/ucum-essence.xml
-  # FHIR-Pakete, die FHIRsmith beim Start selbst aus der Paket-Registry lädt
-  - npm:hl7.terminology.r4#7.3.0
-  - npm:de.medizininformatikinitiative.kerndatensatz.base#2027.0.0-ballot
-  # Deutsche Klassifikationen des BfArM, in Schritt 1 heruntergeladen
-  - folder:/app/data/de.bfarm.icd-10-gm
-  - folder:/app/data/de.bfarm.ops
-  - folder:/app/data/de.bfarm.alpha-id-se
-```
-
-> 💡 Die Pfade unter `folder:` beginnen mit `/app/data`, weil der Server sie **im Container** sieht. Dort wird dein Ordner `~/terminology-server/data` eingebunden (siehe `docker-compose.yml` in Schritt 3).
-
-Lege die Datei `data/config.json` an. FHIRsmith kann vieles (u. a. Paket-Registry, Validator); wir schalten nur den Terminologieserver ein und machen ihn unter dem Pfad `/fhir` erreichbar:
-
-```json
-{
-  "server": {
-    "port": 3000
-  },
-  "modules": {
-    "tx": {
-      "enabled": true,
-      "librarySource": "/app/data/library.yml",
-      "endpoints": [
-        {
-          "path": "/fhir",
-          "fhirVersion": "4.0",
-          "context": null
-        }
-      ]
-    }
-  }
-}
-```
-
-___
-
-## <a id="schritt-3"></a>💻 Schritt 3: Server starten
-
-Lege im Ordner `~/terminology-server` die Datei `docker-compose.yml` an:
-
-> 💡 Alle Dienste der Übungen mit Ports und `docker-compose.yml` findest du gesammelt auf der Seite [Dienste](services.md).
-
-
-```yaml
-services:
-  tx:
-    image: "ghcr.io/healthintersections/fhirsmith:v0.16.1"
-    environment:
-      FHIRSMITH_DATA_DIR: /app/data
-      NODE_OPTIONS: --max-old-space-size=4096
-    ports:
-      - "8081:3000"
-    volumes:
-      - "./data:/app/data"
-```
-
-> 💡 Blaze aus [Exercise 2](exercise-2.md) belegt Port 8080, der Terminologieserver läuft daher auf **Port 8081**. Beide Server können gleichzeitig laufen. `NODE_OPTIONS` erlaubt dem Server, bis zu 4 GB Arbeitsspeicher zu nutzen.
-
-Starte den Server und verfolge den Start im Log:
+Was bedeutet der LOINC-Code `718-7`, der in den Musterdaten bei Hämoglobin steht?
 
 ```bash
-cd ~/terminology-server
-docker compose up -d
-docker compose logs -f tx
-```
-
-Beim ersten Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Terminologien ein. Das dauert einige Minuten. Der Server ist bereit, wenn diese Zeile erscheint:
-
-```text
-=== Server running on http://localhost:3000 ===
-```
-
-`localhost:3000` ist die Adresse im Container. Von deinem Rechner aus erreichst du den Server unter `http://localhost:8081`. Mit `Strg+C` beendest du die Log-Anzeige; der Server läuft weiter.
-
-> 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Findest du ICD-10-GM, OPS und Alpha-ID-SE?
-
-Prüfe abschließend, ob der Server antwortet:
-
-```bash
-curl -s http://localhost:8081/fhir/metadata | jq '{software: .software, fhirVersion: .fhirVersion}'
-```
-
-> 💡 Öffne `http://localhost:8081/fhir` auch im Browser. FHIRsmith bringt eine Weboberfläche mit, in der du die geladenen Codesysteme durchsehen kannst.
-
-___
-
-## <a id="schritt-4"></a>💻 Schritt 4: Terminologie-Operationen ausprobieren
-
-Die URLs von Terminologie-Operationen enthalten oft Sonderzeichen. Mit `curl -G` und `--data-urlencode` übernimmt `curl` das korrekte Kodieren der Parameter. Die Operation steht in einfachen Anführungszeichen, damit die Shell `$lookup` nicht als Variable liest.
-
-### 4.1 Code nachschlagen: `$lookup`
-
-Was bedeutet der ICD-10-GM-Code `I10.90`?
-
-```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$lookup' \
-  --data-urlencode "system=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=I10.90" \
+curl -s -G "$TX/CodeSystem/\$lookup" \
+  --data-urlencode "system=http://loinc.org" \
+  --data-urlencode "code=718-7" \
   | jq -r '.parameter[] | select(.name=="name" or .name=="version" or .name=="display") | "\(.name): \(.valueString)"'
 ```
 
-Die Antwort nennt Codesystem, Version und Anzeigetext (Display) des Codes.
+✅ **Erwartetes Ergebnis:** Die Antwort nennt Codesystem, Version (z. B. `2.83`) und Anzeigetext `Hemoglobin [Mass/volume] in Blood`.
 
-Probiere dasselbe für einen OPS-Code:
+<!-- TODO beim Test: genaue Ausgabe eintragen -->
+
+Probiere dasselbe für einen SNOMED-CT-Code aus den Laborbefunden:
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$lookup' \
-  --data-urlencode "system=http://fhir.de/CodeSystem/bfarm/ops" \
-  --data-urlencode "code=5-470.11" \
-  | jq -r '.parameter[] | select(.name=="name" or .name=="version" or .name=="display") | "\(.name): \(.valueString)"'
+curl -s -G "$TX/CodeSystem/\$lookup" \
+  --data-urlencode "system=http://snomed.info/sct" \
+  --data-urlencode "code=260385009" \
+  | jq -r '.parameter[] | select(.name=="version" or .name=="display") | "\(.name): \(.valueString)"'
 ```
 
-### 4.2 Code prüfen: `$validate-code`
+✅ **Erwartetes Ergebnis:** `display: Negative`. Die Version zeigt, dass tx.fhir.org die **internationale** Edition von SNOMED CT nutzt (`…/900000000000207008/version/…`). Deutsche Bezeichnungen enthält sie nicht.
+
+___
+
+## <a id="schritt-3"></a>💻 Schritt 3: Code prüfen mit `$validate-code`
 
 Ein gültiger Code:
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$validate-code' \
-  --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=I10.90" \
+curl -s -G "$TX/CodeSystem/\$validate-code" \
+  --data-urlencode "url=http://loinc.org" \
+  --data-urlencode "code=718-7" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-Ein Code, den es nicht gibt:
+✅ `result: true` und `display: Hemoglobin [Mass/volume] in Blood`
+
+Ein Code, den es nicht gibt (eine Ziffer geändert):
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$validate-code' \
-  --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=I10.99" \
+curl -s -G "$TX/CodeSystem/\$validate-code" \
+  --data-urlencode "url=http://loinc.org" \
+  --data-urlencode "code=718-8" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-Ein gültiger Code mit falschem Anzeigetext:
+✅ `result: false` und `message: Unknown code '718-8' in the CodeSystem 'http://loinc.org' version '2.83'`
+
+> 💡 Die letzte Ziffer eines LOINC-Codes ist eine Prüfziffer. Tippfehler fallen deshalb fast immer auf.
+
+Eine Diagnose aus den Musterdaten, ICD-10-GM `C20`:
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$validate-code' \
+curl -s -G "$TX/CodeSystem/\$validate-code" \
   --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=I10.90" \
-  --data-urlencode "display=Bluthochdruck" \
+  --data-urlencode "code=C20" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-> 🔍 **Genau hinschauen:** Vergleiche die drei Antworten. Wie unterscheidet sich `result`? Was steht in `message`? Genau diese Prüfungen führt später der Validator in [Exercise 6](exercise-6.md) für jeden Code in einer Ressource durch.
+✅ `result: false` und `message: A definition for CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' could not be found, so the code cannot be validated`
 
-### 4.3 Codes suchen: `$expand`
+🔍 **Genau hinschauen:** Vergleiche die beiden `false`-Antworten. Bei `718-8` sagt der Server „diesen Code gibt es nicht“. Bei `C20` sagt er „dieses Codesystem kenne ich nicht“ – über den Code selbst weiß er nichts. Das ist ein wichtiger Unterschied: Ein `false` heißt nicht automatisch, dass die Daten falsch sind.
 
-`$expand` listet die Codes eines ValueSets auf. Jedes Codesystem hat ein „implizites“ ValueSet mit allen seinen Codes; dessen URL ist die Codesystem-URL mit angehängtem `?fhir_vs`. Mit `filter` durchsuchst du die Anzeigetexte:
+___
+
+## <a id="schritt-4"></a>💻 Schritt 4: Codes suchen mit `$expand`
+
+`$expand` listet die Codes eines ValueSets auf. Ein ValueSet aus der FHIR-Spezifikation, das du aus `Patient.gender` kennst:
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/ValueSet/$expand' \
-  --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm?fhir_vs" \
-  --data-urlencode "filter=Hypertonie" \
+curl -s -G "$TX/ValueSet/\$expand" \
+  --data-urlencode "url=http://hl7.org/fhir/ValueSet/administrative-gender" \
+  | jq -r '.expansion.contains[] | "\(.code)\t\(.display)"'
+```
+
+✅ **Erwartetes Ergebnis:** die vier Codes `male`, `female`, `other` und `unknown`.
+
+Jedes Codesystem hat außerdem ein ValueSet mit allen seinen Codes. Bei LOINC lautet seine URL `http://loinc.org/vs`. Mit `filter` durchsuchst du die Anzeigetexte:
+
+```bash
+curl -s -G "$TX/ValueSet/\$expand" \
+  --data-urlencode "url=http://loinc.org/vs" \
+  --data-urlencode "filter=hemoglobin" \
   --data-urlencode "count=10" \
   | jq -r '.expansion.contains[] | "\(.code)\t\(.display)"'
 ```
 
-> 💡 **Ausprobieren:** Ändere den Filter (z. B. `Diabetes`) oder suche mit `http://fhir.de/CodeSystem/bfarm/ops?fhir_vs` in den OPS-Codes.
+> 💡 **Ausprobieren:** Ändere den Filter (z. B. `potassium` oder `sodium`). Die Treffer enthalten neben Codes für Laborwerte (z. B. `718-7`) auch LOINC-„Parts“ (Codes, die mit `LP` beginnen) – Bausteine, aus denen LOINC seine Codes zusammensetzt.
 
 ___
 
-## <a id="schritt-5"></a>🛠️ Schritt 5: Diagnosen aus Blaze prüfen
+## <a id="schritt-5"></a>🛠️ Schritt 5: Codes aus Blaze automatisch prüfen
 
-Jetzt verbindest du beide Server: In Blaze liegen seit [Exercise 3](exercise-3.md) die Musterdaten. Sind die ICD-10-GM-Codes darin gültig?
+Jetzt verbindest du beide Server: Du nimmst aus Blaze **je Codesystem einen Code** und prüfst ihn an tx.fhir.org.
 
-Hole dir zuerst einige Diagnosecodes aus Blaze:
-
-```bash
-curl -s "http://localhost:8080/fhir/Condition?_count=20&_elements=code" \
-  | jq -c '.entry[].resource.code.coding[] | select(.system=="http://fhir.de/CodeSystem/bfarm/icd-10-gm") | {code, version}'
-```
-
-Die Ausgabe zeigt pro Diagnose den ICD-10-GM-Code und die Version, mit der kodiert wurde. Suche dir einen Code aus der Liste aus, setze ihn im folgenden Befehl anstelle von `I10.90` ein und prüfe ihn am Terminologieserver:
+Zuerst sammelst du die Codes in einer Datei `codes.txt`:
 
 ```bash
-curl -s -G 'http://localhost:8081/fhir/CodeSystem/$validate-code' \
-  --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=I10.90" \
-  | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
+for type in Condition Procedure Observation Encounter; do
+  curl -s "http://localhost:8080/fhir/$type?_count=4000" \
+    | jq -r '[.entry[].resource | .. | objects | select(has("system") and has("code"))]
+             | group_by(.system) | .[] | "\(.[0].system) \(.[0].code)"'
+done | sort -u > codes.txt
+
+cat codes.txt
 ```
 
-Wiederhole das mit zwei oder drei weiteren Codes.
+Dann prüfst du jede Zeile am Terminologieserver:
 
-> 🔍 **Genau hinschauen:** Die Musterdaten wurden teils mit älteren ICD-10-GM-Versionen kodiert (siehe `version`), auf dem Server liegt aber nur die Version 2026. Was bedeutet das, wenn ein Code inzwischen gestrichen wurde? Und welche Version sollte ein DIZ zum Prüfen verwenden?
+```bash
+while read -r system code; do
+  result=$(curl -s -G "$TX/CodeSystem/\$validate-code" \
+    --data-urlencode "url=$system" \
+    --data-urlencode "code=$code" \
+    | jq -r '.parameter[] | select(.name=="result") | .valueBoolean')
+  echo -e "$result\t$system"
+done < codes.txt
+```
 
-> 💡 Im DIZ-Alltag prüft niemand Codes einzeln von Hand. Das übernimmt der Validator, der für jede Ressource automatisch den Terminologieserver befragt. Genau darum geht es in [Exercise 6](exercise-6.md).
+### 🛠️ Aufgabe: Was kennt tx.fhir.org?
+
+- Welche Codesysteme aus den Musterdaten kann tx.fhir.org prüfen, welche nicht?
+- Bei welchen `false` liegt es am Code, bei welchen am unbekannten Codesystem? Prüfe einzelne Zeilen mit dem Befehl aus [Schritt 3](#schritt-3) und lies die `message`.
+
+<details>
+<summary>Lösung</summary>
+
+| Codesystem | tx.fhir.org | Warum? |
+| --- | --- | --- |
+| `http://loinc.org`, `http://snomed.info/sct`, `http://unitsofmeasure.org` | ✅ `true` | Internationale Terminologien |
+| `http://terminology.hl7.org/CodeSystem/...` | ✅ `true` | Codesysteme von HL7 |
+| `http://fhir.de/CodeSystem/bfarm/icd-10-gm`, `.../ops` | ❌ unbekannt | Deutsche Klassifikationen, auf tx.fhir.org nicht geladen |
+| `http://fhir.de/CodeSystem/...` (z. B. `Kontaktebene`) | ❌ unbekannt | Codesysteme der deutschen Basisprofile |
+| `https://www.medizininformatik-initiative.de/...` (z. B. `Vitalstatus`) | ❌ unbekannt | Codesysteme der MII |
+| `http://medic.uksh.de/...` | ❌ unbekannt | Lokale Hauscodes – kennt kein externer Terminologieserver |
+
+<!-- TODO beim Test: Tabelle mit der tatsächlichen Ausgabe abgleichen (z. B. KBV-Codesysteme, urn:iso:std:iso:11073:10101) -->
+
+</details>
+
+### 🔍 Ein Fehler in den Daten
+
+Hast du in [Übung 3](exercise-3.md) auch UKHD und UKW geladen? Dann prüfe die Rolle der Diagnosen im Encounter:
+
+```bash
+curl -s "http://localhost:8080/fhir/Encounter?_count=4000" \
+  | jq -c '[.entry[].resource.diagnosis[]?.use.coding[]?] | unique'
+```
+
+Die Einträge aus UKW nutzen als `system` die URL `http://hl7.org/fhir/ValueSet/diagnosis-role`, die aus UKHD dagegen `http://terminology.hl7.org/CodeSystem/diagnosis-role`. Prüfe einen davon:
+
+```bash
+curl -s -G "$TX/CodeSystem/\$validate-code" \
+  --data-urlencode "url=http://hl7.org/fhir/ValueSet/diagnosis-role" \
+  --data-urlencode "code=CM" \
+  | jq -r '.parameter[] | select(.name=="result" or .name=="message") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
+```
+
+✅ `message: The Coding references a value set, not a code system ('http://hl7.org/fhir/ValueSet/diagnosis-role')`
+
+❗ Das ist ein echter **Datenfehler**: In `system` gehört die URL eines **CodeSystems** (`http://terminology.hl7.org/CodeSystem/diagnosis-role`), nicht die eines ValueSets. UKHD macht es richtig.
 
 ___
 
-## <a id="vertiefung"></a>🔍 Vertiefung: LOINC, SNOMED CT und HTTPS
+## <a id="grenzen"></a>🔍 Was tx.fhir.org nicht kann
 
-Diese Punkte sind für die Übung nicht nötig, begegnen dir aber im DIZ-Alltag:
+tx.fhir.org ist für internationale Terminologien gemacht. Für die Kerndatensatz-Daten eines deutschen DIZ fehlt ihm Wesentliches:
 
-- **LOINC** erfordert einen kostenlosen Account bei [loinc.org](https://loinc.org/signup). FHIRsmith liest LOINC nicht direkt, sondern aus einer selbst erzeugten Datenbankdatei (`loinc_<version>.db`). Der FHIRsmith-Importer erstellt sie aus dem LOINC-Download; das dauert mehrere Stunden, ist aber nur einmal nötig. Eingebunden wird sie in der `library.yml` mit `- loinc:loinc_2.83.db`.
-- **SNOMED CT** ist lizenzpflichtig. In Deutschland vergibt das [BfArM](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/SNOMED-CT/_node.html) Lizenzen. Auch hier erzeugt der Importer zunächst eine Cache-Datei (`- snomed:sct_ger_<datum>.cache`); das dauert ebenfalls Stunden.
-- **HTTPS:** Der IG Publisher akzeptiert Terminologieserver nur über HTTPS und lokale Adressen nur nach expliziter Freigabe in der `fhir-settings.json`. Dafür setzt man einen Reverse Proxy (z. B. nginx mit selbstsigniertem Zertifikat) vor FHIRsmith. Mehr dazu in [Exercise 6](exercise-6.md).
+- **Deutsche Klassifikationen** wie ICD-10-GM, OPS, Alpha-ID-SE und ATC (BfArM-Version)
+- **Codesysteme der deutschen Basisprofile und der MII**, z. B. `Kontaktebene` oder `Vitalstatus`
+- **Deutsche Bezeichnungen**, z. B. die deutsche Edition von SNOMED CT
+
+Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieserver mit diesen Inhalten: den **MII Ontoserver** der SU-TermServ oder einen **eigenen Terminologieserver**. Beides richtest du am Anfang von [Übung 6](exercise-6.md) ein.
 
 ___
 
@@ -344,21 +314,24 @@ ___
 
 | Schritt | Befehl |
 | --- | --- |
-| Server starten | `cd ~/terminology-server && docker compose up -d` |
-| Start verfolgen | `docker compose logs -f tx` |
-| Code nachschlagen | `curl -s -G 'http://localhost:8081/fhir/CodeSystem/$lookup' --data-urlencode "system=…" --data-urlencode "code=…"` |
-| Code prüfen | `curl -s -G 'http://localhost:8081/fhir/CodeSystem/$validate-code' --data-urlencode "url=…" --data-urlencode "code=…"` |
-| Codes suchen | `curl -s -G 'http://localhost:8081/fhir/ValueSet/$expand' --data-urlencode "url=…?fhir_vs" --data-urlencode "filter=…"` |
-| Server stoppen | `cd ~/terminology-server && docker compose down` |
+| Terminologieserver festlegen | `TX=https://tx.fhir.org/r4` |
+| Code nachschlagen | `curl -s -G "$TX/CodeSystem/\$lookup" --data-urlencode "system=…" --data-urlencode "code=…"` |
+| Code prüfen | `curl -s -G "$TX/CodeSystem/\$validate-code" --data-urlencode "url=…" --data-urlencode "code=…"` |
+| Codes eines ValueSets auflisten | `curl -s -G "$TX/ValueSet/\$expand" --data-urlencode "url=…" --data-urlencode "filter=…"` |
+
+**Was du mitnehmen sollst:**
+
+- Jeder Code gehört zu einem Codesystem. Ohne das richtige `system` ist ein Code wertlos.
+- Ein Terminologieserver kann nur prüfen, was er kennt. „Codesystem unbekannt“ ist etwas anderes als „Code ungültig“.
+- Welche Inhalte ein Terminologieserver hat, entscheidet darüber, wofür er taugt.
 
 **Ausblick:**
 
-- [Exercise 6](exercise-6.md): Ressourcen validieren und dabei den eigenen Terminologieserver nutzen
-- [Exercise 7](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen
-- [Exercise 8](exercise-8.md): Lizenzen und Versionierung von Codesystemen
+- [Übung 6](exercise-6.md): Terminologieserver mit deutschen Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
+- [Übung 7](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen, Versionen von Codesystemen und Profilen einordnen
 
 ___
 ___
-[Prerequisites](prerequisites.md) • [Dienste](services.md) • [Exercise 1](exercise-1.md) • [Exercise 2](exercise-2.md) • [Exercise 3](exercise-3.md) • [Exercise 4](exercise-4.md) • **Exercise 5** • [Exercise 6](exercise-6.md) • [Exercise 7](exercise-7.md) • [Exercise 8](exercise-8.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • **Übung 5** • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
 ___
 ___
