@@ -17,7 +17,7 @@ ___
 | 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 7 Befehlsblöcke | ✅ |
 | 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
 | 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den UKSH-Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
-| 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
+| 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 15 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | MII FHIR Validator, Docker Compose, `curl`, `jq` | Mittel · ca. 12 Befehlsblöcke, erster Start einige Minuten | 🚧 |
 | 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 6 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
 

@@ -143,9 +143,13 @@ curl -s -G "$TX/CodeSystem/\$lookup" \
   | jq -r '.parameter[] | select(.name=="name" or .name=="version" or .name=="display") | "\(.name): \(.valueString)"'
 ```
 
-✅ **Erwartetes Ergebnis:** Die Antwort nennt Codesystem, Version (z. B. `2.83`) und Anzeigetext `Hemoglobin [Mass/volume] in Blood`.
+✅ **Erwartetes Ergebnis:**
 
-<!-- TODO beim Test: genaue Ausgabe eintragen -->
+```text
+name: Logical Observation Identifier Names and Codes (LOINC)
+version: 2.83
+display: Hemoglobin [Mass/volume] in Blood
+```
 
 Probiere dasselbe für einen SNOMED-CT-Code aus den Laborbefunden:
 
@@ -267,12 +271,12 @@ done < codes.txt
 | --- | --- | --- |
 | `http://loinc.org`, `http://snomed.info/sct`, `http://unitsofmeasure.org` | ✅ `true` | Internationale Terminologien |
 | `http://terminology.hl7.org/CodeSystem/...` | ✅ `true` | Codesysteme von HL7 |
+| `urn:iso:std:iso:11073:10101` | ✅ `true` | Internationale Nomenklatur für Medizingeräte (z. B. Herzfrequenz vom Monitor) |
 | `http://fhir.de/CodeSystem/bfarm/icd-10-gm`, `.../ops` | ❌ unbekannt | Deutsche Klassifikationen, auf tx.fhir.org nicht geladen |
-| `http://fhir.de/CodeSystem/...` (z. B. `Kontaktebene`) | ❌ unbekannt | Codesysteme der deutschen Basisprofile |
+| `http://fhir.de/CodeSystem/...` (z. B. `Kontaktebene`, `dgkev/Aufnahmeanlass`) | ❌ unbekannt | Codesysteme der deutschen Basisprofile |
+| `https://fhir.kbv.de/CodeSystem/...` (z. B. `KBV_CS_SFHIR_ICD_SEITENLOKALISATION`) | ❌ unbekannt | Codesysteme der KBV |
 | `https://www.medizininformatik-initiative.de/...` (z. B. `Vitalstatus`) | ❌ unbekannt | Codesysteme der MII |
 | `http://medic.uksh.de/...` | ❌ unbekannt | Lokale Hauscodes – kennt kein externer Terminologieserver |
-
-<!-- TODO beim Test: Tabelle mit der tatsächlichen Ausgabe abgleichen (z. B. KBV-Codesysteme, urn:iso:std:iso:11073:10101) -->
 
 </details>
 
@@ -327,9 +331,13 @@ curl -s "http://localhost:8080/fhir/Encounter/Encounter-8163579" | jq '.meta.pro
 
 > 💡 Das ist die **kanonische URL** des Profils. Sie identifiziert das Profil eindeutig, ist aber nicht unbedingt eine Webseite. Steht dahinter `|2024.0.0` o. Ä., ist zusätzlich die Version angegeben – prüfe das zum Vergleich mit dem UKHD-Encounter mit ID `0061845260-e`.
 
-2. **Profil nachschlagen:** Kopiere die URL in das Suchfeld von [Simplifier: Resolve Canonical](https://simplifier.net/resolve). Simplifier ist die Plattform, auf der die MII ihre Profile veröffentlicht. Die Suche führt dich zum Profil **MII_PR_Fall_KontaktGesundheitseinrichtung** im Projekt *MII Kerndatensatz Basis* ([direkter Link](https://simplifier.net/mii-kerndatensatz-basis/mii_pr_fall_kontaktgesundheitseinrichtung)). Suche dort das Element `Encounter.diagnosis.use`: Auf welches **ValueSet** verweist es (Binding)?
+2. **Profil nachschlagen:** Kopiere die URL in das Suchfeld von [Simplifier: Resolve Canonical](https://simplifier.net/resolve). Simplifier ist die Plattform, auf der die MII ihre Profile veröffentlicht. Statt direkt auf ein Profil zu springen, zeigt Simplifier eine Trefferliste – dieselbe kanonische URL kommt in mehreren Paketen und Projekten vor. Die Sterne zeigen, wie gut ein Treffer passt; `claimed canonical` heißt, dass das Projekt die URL offiziell für sich beansprucht.
+   - Der beste Treffer ist das Paket **`de.medizininformatikinitiative.kerndatensatz.fall@2025.0.1`** – das Kerndatensatz-Modul Fall in der Version, die zeitlich zu den Musterdaten passt.
+   - Ab 2026 ist das Modul Fall Teil des Moduls Basis (`de.medizininformatikinitiative.kerndatensatz.base`). Dort findest du das Profil als [MII_PR_Fall_KontaktGesundheitseinrichtung](https://simplifier.net/mii-kerndatensatz-basis/mii_pr_fall_kontaktgesundheitseinrichtung).
 
-<!-- TODO beim Test: Resolve-Ergebnis prüfen; prüfen, was Simplifier bei Encounter.diagnosis.use anzeigt (Binding/Slices) und ob sich das Binding zwischen den Profilversionen der Daten (2024/ohne Version) und der aktuellen Version unterscheidet -->
+   Öffne den besten Treffer und suche das Element `Encounter.diagnosis.use`: Auf welches **ValueSet** verweist es (Binding)?
+
+> 💡 Das Binding von `Encounter.diagnosis.use` ist in allen Versionen des Profils gleich – von 2024 bis zum heutigen Modul Basis. Für diese Frage ist es also egal, welchen Treffer du öffnest.
 
 3. **Das ValueSet auflösen:** Lass dir die Codes dieses ValueSets mit `$expand` anzeigen. Aus welchem **Codesystem** stammen sie?
 

@@ -75,7 +75,7 @@ Ermittelt mit den **echten Skripten** gegen den aktuellen Musterdatenspende-Stan
 | Übung 2 | ✅ Getestet | Blaze starten, Ressourcen hochladen, FHIR Search |
 | Übung 3 | ✅ Getestet | Upload aller drei Standorte; Upload-Ausgabe auf Status-Zählung umgestellt |
 | Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; Patient-ID in 5.4 wählen die Lernenden selbst |
-| Übung 5 | 🟡 Test ausstehend | 2026-11-04 neu: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze; Kernausgaben per tx.fhir.org verifiziert |
+| Übung 5 | ✅ Getestet | 2026-11-04 neu aufgebaut und von Jenne getestet: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze, Download-Links der Codesysteme, Aufgabe zur Diagnose-Rolle (Profil über `meta.profile`/Simplifier, `$expand`) |
 | Übung 6 | 🟡 Test ausstehend | 2026-11-04: Schritt 1 Terminologieserver (FHIRsmith / MII Ontoserver / tx.fhir.org) ergänzt; erwartete Ausgaben als `<!-- TODO beim Test -->` markiert |
 | Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
 
@@ -90,11 +90,10 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 
 ## Offene Punkte
 
-### Beim Test der Übungen 5–7
+### Beim Test der Übungen 6 und 7
 
 Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `localhost`. Dafür `localhost:8080` durch dessen Blaze-Adresse ersetzen und in Übung 6 `TX`/`TX_SERVER` auf den FHIRsmith dort setzen. Das eigene Test-Setup mappt FHIRsmith auf Port 80/443 statt 8081.
 
-- **Übung 5:** Alle Befehle gegen tx.fhir.org durchspielen (Schleife in Schritt 5 erzeugt ca. 20 Anfragen); Lösungstabelle der Aufgabe abgleichen (offen: KBV-Codesysteme, `urn:iso:std:iso:11073:10101`, `dgkev/Aufnahmeanlass`); `$lookup`-Ausgabe eintragen.
 - **Übung 6, Schritt 1:** FHIRsmith (1a) durchspielen, Dauer des ersten Starts messen, prüfen ob `NODE_OPTIONS=--max-old-space-size=4096` reicht (eigenes Setup nutzt 8192), `$validate-code` für `C20` eintragen. Ontoserver-Weg (1b) nur mit Client-Zertifikat testbar. Nicht auf nicht-öffentliche Repositories verweisen.
 - **Übung 6, ab Schritt 2:** Erreicht der Validator FHIRsmith über `host.docker.internal`? Reicht `-Xmx4g` mit 4 IGs? Wie reagiert er auf Profilversionen `|2025.0.x` in den Musterdaten bei geladenen 2026er-Paketen? Welche Meldung kommt bei LOINC (nicht auf FHIRsmith)? Ab welcher Logzeile ist der Validator bereit?
 - **Übung 7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
