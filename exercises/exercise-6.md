@@ -1,6 +1,6 @@
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • **Übung 6** • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • **6 · Ressourcen validieren** • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___
 
@@ -10,14 +10,14 @@ ___
 
 - Stelle einen Terminologieserver mit deutschen Klassifikationen bereit: einen **eigenen FHIRsmith** oder den **MII Ontoserver**
 - Starte den **MII FHIR Validator** per Docker Compose und verbinde ihn mit diesem Terminologieserver
-- Validiere deine HbA1c-Observation aus [Übung 1](exercise-1.md) gegen das MII-Laborprofil
-- Validiere einzelne Musterdaten aus Blaze, darunter die Auffälligkeiten aus [Übung 4](exercise-4.md)
+- Validiere deine HbA1c-Observation aus [Übung 1 · Profil erstellen](exercise-1.md) gegen das MII-Laborprofil
+- Validiere einzelne Musterdaten aus Blaze, darunter die Auffälligkeiten aus [Übung 4 · Daten abfragen](exercise-4.md)
 
-In [Übung 5](exercise-5.md) hast du einzelne Codes am öffentlichen Terminologieserver tx.fhir.org geprüft – und gesehen, dass er ICD-10-GM, OPS und die Codesysteme der MII nicht kennt. Jetzt prüfst du **ganze Ressourcen** gegen die Profile des Kerndatensatzes. Dafür braucht der Validator einen Terminologieserver, der auch die deutschen Inhalte kennt.
+In [Übung 5 · Codes prüfen](exercise-5.md) hast du einzelne Codes am öffentlichen Terminologieserver tx.fhir.org geprüft – und gesehen, dass er ICD-10-GM, OPS und die Codesysteme der MII nicht kennt. Jetzt prüfst du **ganze Ressourcen** gegen die Profile des Kerndatensatzes. Dafür braucht der Validator einen Terminologieserver, der auch die deutschen Inhalte kennt.
 
 Ob eine FHIR-Ressource formal in Ordnung ist, lässt sich schnell und ohne Installation prüfen: Webtools wie fhirtoolbox.com laufen im Browser, finden Tippfehler, falsche Datentypen oder fehlende Pflichtfelder und liefern sofort Rückmeldung. Auch SUSHI weist beim Build auf Fehler im FSH-Quelltext hin, etwa auf Syntaxfehler oder unbekannte Elementpfade. Das reicht aber nur für die Struktur. Ob ein Code wirklich existiert, zum vorgeschriebenen ValueSet gehört und ein passendes Display hat, oder ob die Ressource das richtige Profil erfüllt, kann ein solches Tool nicht beurteilen. Dafür braucht es einen **Validator**, der die Profile kennt, und einen **Terminologieserver**, der die Codes prüft. Erst diese Kombination zeigt, ob eine Ressource nicht nur „gut aussieht“, sondern den Vorgaben des Kerndatensatzes entspricht.
 
-> 💡 **Ausblick:** In [Übung 7](exercise-7.md) lernst du, die Validierungsberichte aus dieser Übung **zu interpretieren** und einzuordnen.
+> 💡 **Ausblick:** In [Übung 7 · Berichte auswerten](exercise-7.md) lernst du, die Validierungsberichte aus dieser Übung **zu interpretieren** und einzuordnen.
 
 ___
 
@@ -52,7 +52,7 @@ ___
 | **Terminologieserver nötig?** | Nein | Ja |
 | **Typischer Einsatz** | Schneller Check beim Schreiben | Vor Release, in CI, in der ETL-Strecke |
 
-> ⚠️ **Grenzen:** Ein Validator prüft **nicht**, ob Inhalte fachlich plausibel sind (z. B. ein Laborwert von 300 g/dL Hämoglobin) oder ob Code und Einheit fachlich zusammenpassen. Ob referenzierte Ressourcen (z. B. `Patient/...`) tatsächlich existieren, prüft er bei einer einzelnen Ressource ebenfalls nicht. Das hat in [Übung 3](exercise-3.md) Blaze beim Upload übernommen.
+> ⚠️ **Grenzen:** Ein Validator prüft **nicht**, ob Inhalte fachlich plausibel sind (z. B. ein Laborwert von 300 g/dL Hämoglobin) oder ob Code und Einheit fachlich zusammenpassen. Ob referenzierte Ressourcen (z. B. `Patient/...`) tatsächlich existieren, prüft er bei einer einzelnen Ressource ebenfalls nicht. Das hat in [Übung 3 · Musterdaten laden](exercise-3.md) Blaze beim Upload übernommen.
 
 ### Welcher Validator für welchen Zweck?
 
@@ -60,12 +60,12 @@ Es gibt nicht *den einen* FHIR-Validator. Die meisten Werkzeuge nutzen im Kern d
 
 | Werkzeug | Aufruf | Typischer Einsatz | Kennst du aus |
 | --- | --- | --- | --- |
-| `$validate-code` am Terminologieserver | REST-Anfrage | Einzelnen Code prüfen | [Übung 5](exercise-5.md) |
-| IG Publisher | Build-Prozess | Profile und Beispiele eines eigenen IG prüfen (QA-Report) | [Übung 1](exercise-1.md) |
+| `$validate-code` am Terminologieserver | REST-Anfrage | Einzelnen Code prüfen | [Übung 5 · Codes prüfen](exercise-5.md) |
+| IG Publisher | Build-Prozess | Profile und Beispiele eines eigenen IG prüfen (QA-Report) | [Übung 1 · Profil erstellen](exercise-1.md) |
 | HL7 Validator (`validator_cli.jar`) | Kommandozeile | Beliebige Ressourcen gegen beliebige IGs, z. B. in CI | [Vertiefung](#vertiefung) |
 | **MII FHIR Validator** | HTTP: `POST /validateResource` | **Ressourcen gegen die MII-KDS-Profile prüfen** | **diese Übung** |
 
-Im MII-Kontext nutzen wir den [MII FHIR Validator](https://github.com/medizininformatik-initiative/mii-fhir-validator): Er ist der HL7-Validator im Server-Modus, als Docker-Image fertig vorkonfiguriert mit den Paketen der MII-Kerndatensatz-Module. Daneben gibt es z. B. den Validator von Firely (.NET; das Firely Terminal kennst du aus [Übung 1](exercise-1.md)) und den gematik Referenzvalidator für Anwendungen der Telematikinfrastruktur. Validatoren auf derselben Basis (HL7-Validator) liefern bei gleicher Konfiguration dieselben Ergebnisse – Unterschiede entstehen vor allem durch geladene Pakete, Versionen und den Terminologieserver.
+Im MII-Kontext nutzen wir den [MII FHIR Validator](https://github.com/medizininformatik-initiative/mii-fhir-validator): Er ist der HL7-Validator im Server-Modus, als Docker-Image fertig vorkonfiguriert mit den Paketen der MII-Kerndatensatz-Module. Daneben gibt es z. B. den Validator von Firely (.NET; das Firely Terminal kennst du aus [Übung 1 · Profil erstellen](exercise-1.md)) und den gematik Referenzvalidator für Anwendungen der Telematikinfrastruktur. Validatoren auf derselben Basis (HL7-Validator) liefern bei gleicher Konfiguration dieselben Ergebnisse – Unterschiede entstehen vor allem durch geladene Pakete, Versionen und den Terminologieserver.
 
 ___
 
@@ -84,7 +84,7 @@ In dieser Übung arbeiten drei Server zusammen:
 
 | Server | Port | Aus Übung | Aufgabe |
 | --- | --- | --- | --- |
-| Blaze | `8080` | [Übung 2](exercise-2.md) | FHIR-Server mit den Musterdaten |
+| Blaze | `8080` | [Übung 2 · FHIR-Server starten](exercise-2.md) | FHIR-Server mit den Musterdaten |
 | Terminologieserver | `8081` (eigener FHIRsmith) oder extern (MII Ontoserver) | diese Übung, Schritt 1 | Kennt die Codesysteme, z. B. ICD-10-GM, OPS, UCUM |
 | MII FHIR Validator | `8082` | diese Übung, Schritt 2 | Prüft Ressourcen gegen Profile, fragt Codes beim Terminologieserver an |
 
@@ -213,7 +213,7 @@ services:
       - "./data:/app/data"
 ```
 
-> 💡 Blaze aus [Übung 2](exercise-2.md) belegt Port 8080, der Terminologieserver läuft daher auf **Port 8081**. `NODE_OPTIONS` erlaubt dem Server, bis zu 4 GB Arbeitsspeicher zu nutzen.
+> 💡 Blaze aus [Übung 2 · FHIR-Server starten](exercise-2.md) belegt Port 8080, der Terminologieserver läuft daher auf **Port 8081**. `NODE_OPTIONS` erlaubt dem Server, bis zu 4 GB Arbeitsspeicher zu nutzen.
 
 ```bash
 cd ~/terminology-server
@@ -233,7 +233,7 @@ Beim ersten Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Term
 
 > 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Findest du ICD-10-GM, OPS und Alpha-ID-SE?
 
-**4. Prüfen.** Setze die Variable `TX` aus [Übung 5](exercise-5.md) auf deinen eigenen Server und wiederhole die Prüfung der Diagnose `C20`, an der tx.fhir.org gescheitert ist:
+**4. Prüfen.** Setze die Variable `TX` aus [Übung 5 · Codes prüfen](exercise-5.md) auf deinen eigenen Server und wiederhole die Prüfung der Diagnose `C20`, an der tx.fhir.org gescheitert ist:
 
 ```bash
 TX=http://localhost:8081/fhir
@@ -248,7 +248,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 
 <!-- TODO beim Test: genaue Ausgabe eintragen -->
 
-> 💡 **Ausprobieren:** Alle Befehle aus [Übung 5](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Lass die Schleife aus Übung 5, Schritt 5 noch einmal laufen: Welche Codesysteme kennt dein Server, welche tx.fhir.org?
+> 💡 **Ausprobieren:** Alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Lass die Schleife aus Übung 5, Schritt 5 noch einmal laufen: Welche Codesysteme kennt dein Server, welche tx.fhir.org?
 
 Weiter mit [Schritt 2](#schritt-2). Dort trägst du `TX_SERVER: "http://host.docker.internal:8081/fhir"` ein.
 
@@ -285,7 +285,7 @@ docker compose logs -f validator-ontoserver
 
 <!-- TODO beim Test (nur mit Client-Zertifikat möglich): Ablauf prüfen, Arbeitsspeicher mit allen 17 IGs prüfen, ggf. IG_PARAMS in .env reduzieren -->
 
-Über den Proxy erreichst du den Ontoserver auch direkt. Setze `TX` auf ihn, dann funktionieren alle Befehle aus [Übung 5](exercise-5.md):
+Über den Proxy erreichst du den Ontoserver auch direkt. Setze `TX` auf ihn, dann funktionieren alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md):
 
 ```bash
 TX=http://localhost:8083/fhir
@@ -385,7 +385,7 @@ ___
 
 ## <a id="schritt-3"></a>💻 Schritt 3: Eigene Ressource validieren
 
-Deine HbA1c-Observation aus [Übung 1](exercise-1.md) liegt seit [Übung 2](exercise-2.md) in Blaze. Hole sie dir als Datei:
+Deine HbA1c-Observation aus [Übung 1 · Profil erstellen](exercise-1.md) liegt seit [Übung 2 · FHIR-Server starten](exercise-2.md) in Blaze. Hole sie dir als Datei:
 
 ```bash
 cd ~/validator
@@ -423,13 +423,13 @@ curl -s -X POST "http://localhost:8082/validateResource?profiles=https://www.med
 
 <!-- TODO beim Test: erwartete Meldungen eintragen -->
 
-> 💡 **Eigene Profile laden:** Damit der Validator dein Studienprofil selbst kennt, bräuchte er das Paket deines IG. Der IG Publisher erzeugt es in [Übung 1](exercise-1.md) als `output/package.tgz`. Über `IG_PARAMS` (z. B. `-ig /igs/package.tgz`) und einen eingebundenen Ordner `/igs` kann der Validator es laden. Für diese Übung reicht die Prüfung gegen das MII-Profil.
+> 💡 **Eigene Profile laden:** Damit der Validator dein Studienprofil selbst kennt, bräuchte er das Paket deines IG. Der IG Publisher erzeugt es in [Übung 1 · Profil erstellen](exercise-1.md) als `output/package.tgz`. Über `IG_PARAMS` (z. B. `-ig /igs/package.tgz`) und einen eingebundenen Ordner `/igs` kann der Validator es laden. Für diese Übung reicht die Prüfung gegen das MII-Profil.
 
 ___
 
 ## <a id="schritt-4"></a>💻 Schritt 4: Musterdaten aus Blaze validieren
 
-Jetzt prüfst du echte KDS-Daten. In [Übung 4](exercise-4.md) sind dir dabei schon Auffälligkeiten begegnet. Was sagt der Validator dazu?
+Jetzt prüfst du echte KDS-Daten. In [Übung 4 · Daten abfragen](exercise-4.md) sind dir dabei schon Auffälligkeiten begegnet. Was sagt der Validator dazu?
 
 ### 4.1 Der seltsame Diagnosecode
 
@@ -476,7 +476,7 @@ curl -s -X POST http://localhost:8082/validateResource \
 
 ### 4.4 Anzeigetexte mitprüfen
 
-Standardmäßig ignoriert der Validator, ob das `display` zum Code passt. Mit `displayOption=Check` prüft er auch das. Der Validator fragt dafür mit `$validate-code` beim Terminologieserver nach – so wie du es in [Übung 5](exercise-5.md) von Hand gemacht hast:
+Standardmäßig ignoriert der Validator, ob das `display` zum Code passt. Mit `displayOption=Check` prüft er auch das. Der Validator fragt dafür mit `$validate-code` beim Terminologieserver nach – so wie du es in [Übung 5 · Codes prüfen](exercise-5.md) von Hand gemacht hast:
 
 ```bash
 curl -s -X POST "http://localhost:8082/validateResource?displayOption=Check" \
@@ -501,9 +501,9 @@ done
 - Welche Diagnosen haben `error`-Meldungen?
 - Sind es bei allen dieselben Meldungen? Lass dir die Texte einer Diagnose mit dem Befehl aus 4.2 ausgeben.
 
-> ⚠️ **Ganze Bundles:** Der Validator kann auch ein komplettes Bundle prüfen. Bei den rund 8.000 Ressourcen aus [Übung 3](exercise-3.md) dauert das aber sehr lange und braucht viel Speicher. Im DIZ-Alltag validiert man deshalb meist Stichproben oder einzelne Ressourcen direkt in der ETL-Strecke.
+> ⚠️ **Ganze Bundles:** Der Validator kann auch ein komplettes Bundle prüfen. Bei den rund 8.000 Ressourcen aus [Übung 3 · Musterdaten laden](exercise-3.md) dauert das aber sehr lange und braucht viel Speicher. Im DIZ-Alltag validiert man deshalb meist Stichproben oder einzelne Ressourcen direkt in der ETL-Strecke.
 
-Die Berichte aus diesem Schritt wertest du in [Übung 7](exercise-7.md) genauer aus. Lass die Dateien `hba1c.json`, `condition-570762.json`, `condition-c20.json` und `hb.json` im Ordner `~/validator` liegen.
+Die Berichte aus diesem Schritt wertest du in [Übung 7 · Berichte auswerten](exercise-7.md) genauer aus. Lass die Dateien `hba1c.json`, `condition-570762.json`, `condition-c20.json` und `hb.json` im Ordner `~/validator` liegen.
 
 ___
 
@@ -511,7 +511,7 @@ ___
 
 ### Validator über die Kommandozeile
 
-Der MII FHIR Validator startet intern den HL7-Validator (`validator_cli.jar`) im Server-Modus. Denselben Validator kannst du auch direkt per Kommandozeile aufrufen, z. B. in einer CI-Pipeline. Java hast du seit [Übung 1](exercise-1.md) installiert. Die wichtigsten Parameter:
+Der MII FHIR Validator startet intern den HL7-Validator (`validator_cli.jar`) im Server-Modus. Denselben Validator kannst du auch direkt per Kommandozeile aufrufen, z. B. in einer CI-Pipeline. Java hast du seit [Übung 1 · Profil erstellen](exercise-1.md) installiert. Die wichtigsten Parameter:
 
 | Parameter | Bedeutung | Entspricht im MII FHIR Validator |
 | --- | --- | --- |
@@ -534,7 +534,7 @@ Der Rückgabewert (Exit-Code) des Aufrufs zeigt, ob die Validierung erfolgreich 
 - **SNOMED CT** ist lizenzpflichtig; in Deutschland vergibt das [BfArM](https://www.bfarm.de/DE/Kodiersysteme/Terminologien/SNOMED-CT/_node.html) kostenfreie Lizenzen. Auch hier erzeugt der Importer zunächst eine Cache-Datei (`- snomed:sct_ger_<datum>.cache`); das dauert ebenfalls Stunden. Lizenzpflichtige Inhalte wie die SNOMED-CT-Releasedateien gehören nie in ein Git-Repository oder ein Docker-Image.
 - **HTTPS:** Der IG Publisher akzeptiert Terminologieserver nur über HTTPS und lokale Adressen nur nach expliziter Freigabe in der `fhir-settings.json`. Dafür setzt man einen Reverse Proxy (z. B. nginx mit selbstsigniertem Zertifikat) vor FHIRsmith.
 
-> 💡 Der [IG Publisher](exercise-1.md) aus Übung 1 nutzt intern ebenfalls diesen Validator. Seinen QA-Report kannst du deshalb mit dem Wissen aus [Übung 7](exercise-7.md) genauso lesen.
+> 💡 Der [IG Publisher](exercise-1.md) aus Übung 1 nutzt intern ebenfalls diesen Validator. Seinen QA-Report kannst du deshalb mit dem Wissen aus [Übung 7 · Berichte auswerten](exercise-7.md) genauso lesen.
 
 ___
 
@@ -559,10 +559,10 @@ ___
 
 **Ausblick:**
 
-- [Übung 7](exercise-7.md): Validierungsberichte lesen, filtern und Meldungen einordnen
+- [Übung 7 · Berichte auswerten](exercise-7.md): Validierungsberichte lesen, filtern und Meldungen einordnen
 
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • **Übung 6** • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • **6 · Ressourcen validieren** • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___

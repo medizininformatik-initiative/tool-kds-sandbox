@@ -1,6 +1,6 @@
 ___
 ___
-[Voraussetzungen](prerequisites.md) • **Dienste** • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • **Dienste** • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___
 
@@ -24,9 +24,9 @@ ___
 
 | Dienst | Aufgabe | Port | Ordner | Arbeitsspeicher | Eingeführt in |
 | --- | --- | --- | --- | --- | --- |
-| **Blaze** | FHIR-Server mit den Musterdaten | `8080` | z. B. `~/blaze` | bis 2 GB | [Übung 2](exercise-2.md) |
-| **FHIRsmith** (optional) | Eigener Terminologieserver (ICD-10-GM, OPS, Alpha-ID-SE …) | `8081` | `~/terminology-server` | bis 4 GB | [Übung 6](exercise-6.md#schritt-1a) |
-| **MII FHIR Validator** | Prüft Ressourcen gegen die KDS-Profile | `8082` | `~/validator` | bis 4 GB | [Übung 6](exercise-6.md) |
+| **Blaze** | FHIR-Server mit den Musterdaten | `8080` | z. B. `~/blaze` | bis 2 GB | [Übung 2 · FHIR-Server starten](exercise-2.md) |
+| **FHIRsmith** (optional) | Eigener Terminologieserver (ICD-10-GM, OPS, Alpha-ID-SE …) | `8081` | `~/terminology-server` | bis 4 GB | [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-1a) |
+| **MII FHIR Validator** | Prüft Ressourcen gegen die KDS-Profile | `8082` | `~/validator` | bis 4 GB | [Übung 6 · Ressourcen validieren](exercise-6.md) |
 
 So arbeiten die Dienste zusammen:
 
@@ -49,7 +49,7 @@ ___
 
 ## <a id="blaze"></a>💻 Blaze (FHIR-Server)
 
-Eingeführt in [Übung 2](exercise-2.md#container-definieren-und-starten). Datei `~/blaze/docker-compose.yml`:
+Eingeführt in [Übung 2 · FHIR-Server starten](exercise-2.md#container-definieren-und-starten). Datei `~/blaze/docker-compose.yml`:
 
 ```yaml
 services:
@@ -114,7 +114,7 @@ ___
 
 ## <a id="validator"></a>💻 MII FHIR Validator
 
-Eingeführt in [Übung 6](exercise-6.md#schritt-2). Der Validator braucht einen erreichbaren Terminologieserver (eigener FHIRsmith auf Port 8081, MII Ontoserver oder tx.fhir.org). Trage dessen Adresse bei `TX_SERVER` ein.
+Eingeführt in [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-2). Der Validator braucht einen erreichbaren Terminologieserver (eigener FHIRsmith auf Port 8081, MII Ontoserver oder tx.fhir.org). Trage dessen Adresse bei `TX_SERVER` ein.
 
 Datei `~/validator/docker-compose.yml`:
 
@@ -182,12 +182,12 @@ Dienst stoppen (die Daten bleiben erhalten):
 docker compose down
 ```
 
-> ⚠️ `docker compose down -v` löscht zusätzlich die Volumes, bei Blaze also **alle hochgeladenen Daten**. Danach musst du die Musterdaten aus [Übung 3](exercise-3.md) neu laden.
+> ⚠️ `docker compose down -v` löscht zusätzlich die Volumes, bei Blaze also **alle hochgeladenen Daten**. Danach musst du die Musterdaten aus [Übung 3 · Musterdaten laden](exercise-3.md) neu laden.
 >
 > 💡 **Port schon belegt?** Meldet `docker compose up` einen Fehler wie `port is already allocated`, läuft auf dem Port bereits ein anderer Dienst. `docker ps` zeigt, welcher.
 
 ___
 ___
-[Voraussetzungen](prerequisites.md) • **Dienste** • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • **Dienste** • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___

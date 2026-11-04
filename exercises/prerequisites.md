@@ -1,6 +1,6 @@
 ___
 ___
-**Voraussetzungen** • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+**Voraussetzungen** • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___
 
@@ -13,7 +13,7 @@ ___
 ## 💻 Technische Mindestanforderungen
 
 - **Betriebssystem:** Linux (z. B. Ubuntu/Debian) oder Windows mit **WSL2**
-- **Arbeitsspeicher:** mindestens **8 GB**, empfohlen **16 GB**. Ab [Übung 6](exercise-6.md) laufen FHIR-Server, Terminologieserver und Validator gleichzeitig und brauchen zusammen bis zu 10 GB.
+- **Arbeitsspeicher:** mindestens **8 GB**, empfohlen **16 GB**. Ab [Übung 6 · Ressourcen validieren](exercise-6.md) laufen FHIR-Server, Terminologieserver und Validator gleichzeitig und brauchen zusammen bis zu 10 GB.
 - **Rechte:** Sudo-Rechte, um Pakete zu installieren
 - **Internet:** für Paketinstallationen, Docker-Images und FHIR-Pakete
 
@@ -24,11 +24,11 @@ ___
 | Werkzeug | Wofür | Ab Übung | Installation |
 | --- | --- | --- | --- |
 | `git`, `curl`, `jq`, `unzip` | Repositories klonen, Server abfragen, JSON auswerten, Musterdaten entpacken | 1 | Befehl unten |
-| Node.js mit `npm`, `sushi` | FSH-Profile kompilieren | 1 | [Übung 1](exercise-1.md) |
-| .NET und Firely Terminal | FHIR-Pakete verwalten | 1 | [Übung 1](exercise-1.md) |
-| Java (empfohlen 17 oder 21) und Jekyll | IG Publisher | 1 | [Übung 1](exercise-1.md) |
-| Docker und Docker Compose | FHIR-Server, Terminologieserver, Validator | 2 | [Übung 2](exercise-2.md) |
-| Python 3 oder R | Skriptbasierte Auswertung (optional) | 4 | [Übung 4](exercise-4.md) |
+| Node.js mit `npm`, `sushi` | FSH-Profile kompilieren | 1 | [Übung 1 · Profil erstellen](exercise-1.md) |
+| .NET und Firely Terminal | FHIR-Pakete verwalten | 1 | [Übung 1 · Profil erstellen](exercise-1.md) |
+| Java (empfohlen 17 oder 21) und Jekyll | IG Publisher | 1 | [Übung 1 · Profil erstellen](exercise-1.md) |
+| Docker und Docker Compose | FHIR-Server, Terminologieserver, Validator | 2 | [Übung 2 · FHIR-Server starten](exercise-2.md) |
+| Python 3 oder R | Skriptbasierte Auswertung (optional) | 4 | [Übung 4 · Daten abfragen](exercise-4.md) |
 
 Die Basiswerkzeuge der ersten Zeile installierst du unter Ubuntu/Debian (auch WSL2) so:
 
@@ -50,13 +50,13 @@ ___
 
 ## 🧩 Benötigte Dienste
 
-Ab [Übung 2](exercise-2.md) startest du bis zu drei Dienste als Docker-Container. Sie bauen aufeinander auf und laufen auf festen Ports. In [Übung 5](exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org, ganz ohne Installation.
+Ab [Übung 2 · FHIR-Server starten](exercise-2.md) startest du bis zu drei Dienste als Docker-Container. Sie bauen aufeinander auf und laufen auf festen Ports. In [Übung 5 · Codes prüfen](exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org, ganz ohne Installation.
 
 | Dienst | Port | Ab Übung |
 | --- | --- | --- |
-| FHIR-Server **Blaze** | `8080` | [Übung 2](exercise-2.md) |
-| Terminologieserver **FHIRsmith** (optional) | `8081` | [Übung 6](exercise-6.md) |
-| **MII FHIR Validator** | `8082` | [Übung 6](exercise-6.md) |
+| FHIR-Server **Blaze** | `8080` | [Übung 2 · FHIR-Server starten](exercise-2.md) |
+| Terminologieserver **FHIRsmith** (optional) | `8081` | [Übung 6 · Ressourcen validieren](exercise-6.md) |
+| **MII FHIR Validator** | `8082` | [Übung 6 · Ressourcen validieren](exercise-6.md) |
 
 Die Übungen leiten dich Schritt für Schritt durch das Aufsetzen. Alle `docker-compose.yml`-Dateien, Start- und Prüfbefehle findest du zusätzlich gesammelt auf der Seite **[Dienste](services.md)**.
 
@@ -70,6 +70,6 @@ Die Musterlösungen der einzelnen Übungen (z. B. FSH-Dateien, Skripte) stehen d
 
 ___
 ___
-**Voraussetzungen** • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+**Voraussetzungen** • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___

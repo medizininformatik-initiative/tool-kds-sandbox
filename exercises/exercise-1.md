@@ -1,6 +1,6 @@
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **Übung 1** • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **1 · Profil erstellen** • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___
 
@@ -463,6 +463,6 @@ Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshsc
 
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **Übung 1** • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • [Übung 5](exercise-5.md) • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • **1 · Profil erstellen** • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___

@@ -1,6 +1,6 @@
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • **Übung 5** • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • **5 · Codes prüfen** • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___
 
@@ -14,7 +14,7 @@ ___
 
 In den vorherigen Übungen hast du FHIR-Ressourcen in Blaze geladen und abgefragt. Dabei ging es um die **Struktur** der Daten. Ob ein Code wie `718-7` in einem Laborwert aber tatsächlich existiert, in welcher Version er gilt und wie er heißt, weiß Blaze nicht. Dafür gibt es **Terminologieserver**: Sie kennen Codesysteme (z. B. LOINC) und ValueSets (Auswahllisten von Codes) und beantworten Fragen dazu über standardisierte FHIR-Operationen.
 
-In dieser Übung nutzt du den öffentlichen Terminologieserver von HL7, [tx.fhir.org](https://tx.fhir.org). Du musst nichts installieren und kannst die Operationen sofort ausprobieren. Dabei wirst du sehen, dass tx.fhir.org die deutschen Klassifikationen nicht kennt. Wie du einen Terminologieserver mit ICD-10-GM und OPS einrichtest, lernst du in [Übung 6](exercise-6.md).
+In dieser Übung nutzt du den öffentlichen Terminologieserver von HL7, [tx.fhir.org](https://tx.fhir.org). Du musst nichts installieren und kannst die Operationen sofort ausprobieren. Dabei wirst du sehen, dass tx.fhir.org die deutschen Klassifikationen nicht kennt. Wie du einen Terminologieserver mit ICD-10-GM und OPS einrichtest, lernst du in [Übung 6 · Ressourcen validieren](exercise-6.md).
 
 > ⚠️ **Datenschutz:** tx.fhir.org ist ein öffentlicher Dienst. Bei den Operationen dieser Übung verlassen nur Codes deinen Rechner, keine Ressourcen. Die Musterdatenspende ist ohnehin öffentlich. Echte Patientendaten gehören trotzdem **nie** an einen öffentlichen Server.
 
@@ -75,7 +75,7 @@ ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Welche Codesysteme stecken in den Daten?
 
-> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` und enthält die Musterdaten aus [Übung 3](exercise-3.md).
+> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` und enthält die Musterdaten aus [Übung 3 · Musterdaten laden](exercise-3.md).
 
 Jeder Code in FHIR steht zusammen mit seinem Codesystem in einem `Coding`: `{"system": "http://loinc.org", "code": "718-7"}`. Der folgende Befehl holt alle Ressourcen eines Typs aus Blaze, sucht darin jedes `Coding` und zählt, wie oft welches Codesystem vorkommt:
 
@@ -276,7 +276,7 @@ done < codes.txt
 
 ### 🔍 Ein Fehler in den Daten
 
-Hast du in [Übung 3](exercise-3.md) auch UKHD und UKW geladen? Dann prüfe die Rolle der Diagnosen im Encounter:
+Hast du in [Übung 3 · Musterdaten laden](exercise-3.md) auch UKHD und UKW geladen? Dann prüfe die Rolle der Diagnosen im Encounter:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Encounter?_count=4000" \
@@ -306,7 +306,7 @@ tx.fhir.org ist für internationale Terminologien gemacht. Für die Kerndatensat
 - **Codesysteme der deutschen Basisprofile und der MII**, z. B. `Kontaktebene` oder `Vitalstatus`
 - **Deutsche Bezeichnungen**, z. B. die deutsche Edition von SNOMED CT
 
-Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieserver mit diesen Inhalten: den **MII Ontoserver** der SU-TermServ oder einen **eigenen Terminologieserver**. Beides richtest du am Anfang von [Übung 6](exercise-6.md) ein.
+Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieserver mit diesen Inhalten: den **MII Ontoserver** der SU-TermServ oder einen **eigenen Terminologieserver**. Beides richtest du am Anfang von [Übung 6 · Ressourcen validieren](exercise-6.md) ein.
 
 ___
 
@@ -327,11 +327,11 @@ ___
 
 **Ausblick:**
 
-- [Übung 6](exercise-6.md): Terminologieserver mit deutschen Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
-- [Übung 7](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen, Versionen von Codesystemen und Profilen einordnen
+- [Übung 6 · Ressourcen validieren](exercise-6.md): Terminologieserver mit deutschen Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
+- [Übung 7 · Berichte auswerten](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen, Versionen von Codesystemen und Profilen einordnen
 
 ___
 ___
-[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • [Übung 3](exercise-3.md) • [Übung 4](exercise-4.md) • **Übung 5** • [Übung 6](exercise-6.md) • [Übung 7](exercise-7.md)
+[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • **5 · Codes prüfen** • [6 · Ressourcen validieren](exercise-6.md) • [7 · Berichte auswerten](exercise-7.md)
 ___
 ___

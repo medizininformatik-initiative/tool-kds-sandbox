@@ -111,9 +111,10 @@ Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `l
 
 ## Konventionen für Übungsdateien
 
-- **Sprache:** Alle Übungen sind deutsch – auch Linktexte und Navigation („Voraussetzungen“, „Dienste“, „Übung N“). Dateinamen (`prerequisites.md`, `exercise-N.md`, `services.md`) bleiben englisch.
+- **Sprache:** Alle Übungen sind deutsch – auch Linktexte und Navigation („Voraussetzungen“, „Dienste“, Kurznamen der Übungen). Dateinamen (`prerequisites.md`, `exercise-N.md`, `services.md`) bleiben englisch.
 - **Kopf und Fuß:** zwei `___`-Zeilen, Breadcrumb, zwei `___`-Zeilen. Breadcrumb verlinkt alle Seiten mit ` • ` als Trenner, die aktuelle Seite **fett ohne Link**; Kopf- und Fuß-Breadcrumb müssen identisch sein:
-  `[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [Übung 1](exercise-1.md) • [Übung 2](exercise-2.md) • **Übung 3** • [Übung 4](exercise-4.md) • …`
+  `[Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • **3 · Musterdaten laden** • [4 · Daten abfragen](exercise-4.md) • …`
+- **Kurznamen der Übungen** (Nummer + Nomen + Verb, Trenner `·`): 1 · Profil erstellen, 2 · FHIR-Server starten, 3 · Musterdaten laden, 4 · Daten abfragen, 5 · Codes prüfen, 6 · Ressourcen validieren, 7 · Berichte auswerten. In der Navigationsleiste ohne „Übung“, in Links im Fließtext als `[Übung N · Kurzname](exercise-N.md)`. Die H1-Titel der Übungen sind länger und dürfen abweichen.
 - **Aufbau:** H1 mit Farbemoji → „**Nächste Schritte:**“ (kurze Liste) → Einleitung mit Bezug zu vorherigen Übungen → 📋 Übersicht → Abschnitte → 🏁 Zusammenfassung/Ausblick.
 - **Farbemoji** im H1 und in `README.md`: ⚪ Voraussetzungen, 🔵 1, 🟢 2, 🟡 3, 🟠 4, 🔴 5, 🟣 6, 🟤 7.
 - **Abschnitts-Emojis** nur aus dieser Palette: 💡 Tipp · ⚠️ Warnung · ❗ Wichtig · 🔍 Genau hinschauen/Vertiefung · 🚀 Start/Ausblick · 🏁 Ergebnis · 🛠️ Setup/Aufgabe · 🧩 Zusammenhang · 📋 Übersicht · 📌 Fixpunkt · 📖 Theorie · 💻 Praxis · ✅ Richtig · ❌ Falsch. Neue Emojis nur nach Absprache.
