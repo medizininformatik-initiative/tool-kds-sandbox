@@ -66,6 +66,7 @@ Alle FHIR-Terminologieserver bieten dieselben Standard-Operationen an:
 
 | | tx.fhir.org | MII Ontoserver | Eigener FHIRsmith |
 | --- | --- | --- | --- |
+| **Adresse** | [`https://tx.fhir.org/r4`](https://tx.fhir.org/r4) | [`https://ontoserver.mii-termserv.de/fhir`](https://ontoserver.mii-termserv.de/fhir) | z. B. `http://localhost:8081/fhir` |
 | **Betreiber** | HL7 (öffentlich) | MII Service Unit Terminologie (SU-TermServ) | Du selbst |
 | **Software** | FHIRsmith | Ontoserver (CSIRO) | FHIRsmith |
 | **Zugang** | Öffentlich, ohne Login | Client-Zertifikat, nur für Personen und Einrichtungen in Deutschland | Lokal, ohne Login |
@@ -190,18 +191,18 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 
 > 💡 Die letzte Ziffer eines LOINC-Codes ist eine Prüfziffer. Tippfehler fallen deshalb fast immer auf.
 
-Eine Diagnose aus den Musterdaten, ICD-10-GM `C20`:
+Eine Diagnose aus den Musterdaten, ICD-10-GM `R51` (Kopfschmerz):
 
 ```bash
 curl -s -G "$TX/CodeSystem/\$validate-code" \
   --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=C20" \
+  --data-urlencode "code=R51" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
 ✅ `result: false` und `message: A definition for CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' could not be found, so the code cannot be validated`
 
-🔍 **Genau hinschauen:** Vergleiche die beiden `false`-Antworten. Bei `718-8` sagt der Server „diesen Code gibt es nicht“. Bei `C20` sagt er „dieses Codesystem kenne ich nicht“ – über den Code selbst weiß er nichts. Das ist ein wichtiger Unterschied: Ein `false` heißt nicht automatisch, dass die Daten falsch sind.
+🔍 **Genau hinschauen:** Vergleiche die beiden `false`-Antworten. Bei `718-8` sagt der Server „diesen Code gibt es nicht“. Bei `R51` sagt er „dieses Codesystem kenne ich nicht“ – über den Code selbst weiß er nichts. Das ist ein wichtiger Unterschied: Ein `false` heißt nicht automatisch, dass die Daten falsch sind.
 
 ___
 

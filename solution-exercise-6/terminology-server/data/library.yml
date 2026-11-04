@@ -1,0 +1,18 @@
+# Von hier lädt FHIRsmith Dateien nach, die nicht lokal vorliegen
+base:
+  url: https://packages2.fhir.org/packages
+
+# Welche Terminologien stellt der Server bereit?
+sources:
+  # Im Server eingebaute Codesysteme: Sprachen (BCP-47) und Länder (ISO 3166)
+  - internal:lang
+  - internal:country
+  # Maßeinheiten (UCUM) – die Definitionsdatei ist im Docker-Image enthalten
+  - ucum:tx/data/ucum-essence.xml
+  # FHIR-Pakete, die FHIRsmith beim Start selbst aus der Paket-Registry lädt
+  - npm:hl7.terminology.r4#7.3.0
+  - npm:de.medizininformatikinitiative.kerndatensatz.base#2027.0.0-ballot
+  # Deutsche Klassifikationen des BfArM, oben heruntergeladen
+  - folder:/app/data/de.bfarm.icd-10-gm
+  - folder:/app/data/de.bfarm.ops
+  - folder:/app/data/de.bfarm.alpha-id-se

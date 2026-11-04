@@ -1,0 +1,27 @@
+services:
+  validator:
+    image: "ghcr.io/medizininformatik-initiative/mii-fhir-validator:0.0.1-alpha.9"
+    environment:
+      # Arbeitsspeicher für den Validator (Standard des Images: 16 GB)
+      JAVA_OPTS: "-Xmx4g"
+      # Terminologieserver aus Schritt 1:
+      #   A: eigener FHIRsmith auf deinem Rechner: "http://host.docker.internal:8081/fhir"
+      #   C: tx.fhir.org:                          "https://tx.fhir.org/r4"
+      TX_SERVER: "http://host.docker.internal:8081/fhir"
+      # Nur die KDS-Pakete laden, die wir für die Musterdaten brauchen
+      IG_PARAMS: >-
+        -ig de.basisprofil.r4#1.5.4
+        -ig de.medizininformatikinitiative.kerndatensatz.meta#2026.0.0
+        -ig de.medizininformatikinitiative.kerndatensatz.base#2026.0.1
+        -ig de.medizininformatikinitiative.kerndatensatz.laborbefund#2026.0.3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8082:8080"
+    volumes:
+      - fhir-package-cache:/root/.fhir/packages
+      - tx-cache:/tmp/tx-cache
+
+volumes:
+  fhir-package-cache:
+  tx-cache:

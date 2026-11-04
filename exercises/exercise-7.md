@@ -128,13 +128,13 @@ ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Berichte speichern und auswerten
 
-> ⚠️ **Voraussetzung:** Der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) läuft auf Port 8082, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json`, `condition-c20.json` und `hb.json`.
+> ⚠️ **Voraussetzung:** Der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) läuft auf Port 8082, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json`, `condition-r51.json` und `hb.json`.
 
 Speichere zuerst die Berichte als Dateien. So musst du nicht bei jeder Auswertung neu validieren:
 
 ```bash
 cd ~/validator
-for f in hba1c condition-570762 condition-c20 hb; do
+for f in hba1c condition-570762 condition-r51 hb; do
   curl -s -X POST http://localhost:8082/validateResource \
     -H "Content-Type: application/fhir+json" \
     --data @$f.json > bericht-$f.json
@@ -250,7 +250,7 @@ ___
 Im DIZ-Alltag validiert man nicht von Hand, sondern per Skript, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
 
 ```bash
-bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-c20.json
+bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-r51.json
 bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-570762.json
 echo "Exit-Code: $?"
 ```

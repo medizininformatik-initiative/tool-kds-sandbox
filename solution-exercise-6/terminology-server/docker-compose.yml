@@ -1,0 +1,10 @@
+services:
+  tx:
+    image: "ghcr.io/healthintersections/fhirsmith:v0.16.1"
+    environment:
+      FHIRSMITH_DATA_DIR: /app/data
+      NODE_OPTIONS: --max-old-space-size=4096
+    ports:
+      - "8081:3000"
+    volumes:
+      - "./data:/app/data"

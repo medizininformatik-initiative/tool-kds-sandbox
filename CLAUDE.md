@@ -19,13 +19,15 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 - `local_notes/` – per `.gitignore` ausgeschlossen, nicht committen.
 - `exercises/figures/` – keine Binärdateien ohne Absprache.
 
+`solution-exercise-6/` enthält die Konfigurationsdateien aus Übung 6 (`terminology-server/`, `validator/`) als Kopie der Code-Blöcke – bei Änderungen in `exercises/exercise-6.md` mitziehen.
+
 `solution-exercise-1/` und `solution-exercise-2/` enthalten dasselbe `ExampleIG/`-Projekt – Änderungen an beiden Stellen nachziehen. Bewusste Ausnahmen (Übungen bauen aufeinander auf): `Organization-beispiel-labor.fsh` und `* id = "example-patient"` in `patient.fsh` gibt es nur in `solution-exercise-2/`.
 
 ## Gemeinsamer Kontext der Übungen
 
 - Laufzeitumgebung der Lernenden: Linux oder WSL2, Werkzeuge `sushi` (npm `fsh-sushi`), Java + IG Publisher, `docker compose`, `curl`, `jq`. Keine weiteren Abhängigkeiten einführen.
 - Pfade in den Übungen: `~/tool-kds-sandbox`, `~/musterdatenspende-diz`; keine nutzerspezifischen Absolutpfade.
-- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Übung 6, optional) `8081`, MII FHIR Validator (Übung 6) `8082`; der Ontoserver-Proxy aus Übung 6, Schritt 1b liegt auf `8083`. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben.
+- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Übung 6, optional) `8081`, MII FHIR Validator (Übung 6) `8082`; der Ontoserver-Proxy aus Übung 6, Schritt 1b liegt auf `8083`. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben. GWDG-Testserver: `ens3` hat MTU 1450 → Docker per `/etc/docker/daemon.json` auf MTU 1450 stellen, sonst brechen Downloads aus Containern ab (`ECONNRESET`). Nicht in die Übungen aufnehmen (betrifft Lernende auf `localhost` normalerweise nicht).
 - FHIR-Server ist **Blaze** (`samply/blaze`, `http://localhost:8080/fhir`, gestartet per `docker compose up -d` aus Übung 2). Blaze erzwingt referenzielle Integrität und lässt sich nicht abschalten – das prägt Übung 3.
 - Terminologieserver: Übung 5 nutzt **tx.fhir.org**, Übung 6 einen eigenen **FHIRsmith** oder den **MII Ontoserver**. Alle Terminologie-Befehle nutzen die Shell-Variable `TX`. Siehe [Entscheidung: Terminologieserver](#entscheidung-terminologieserver-2026-11-04).
 - Validator ist der **MII FHIR Validator** (Übung 6, Image `ghcr.io/medizininformatik-initiative/mii-fhir-validator:0.0.1-alpha.9`, `POST /validateResource`) mit `TX_SERVER` = Terminologieserver aus Übung 6, Schritt 1. Das Standard-Setup des Validators (Blaze-Terminologie mit SNOMED-CT-Releasedateien, 16 GB RAM) wird bewusst nicht verwendet.
@@ -94,7 +96,7 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 
 Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `localhost`. Dafür `localhost:8080` durch dessen Blaze-Adresse ersetzen und in Übung 6 `TX`/`TX_SERVER` auf den FHIRsmith dort setzen. Das eigene Test-Setup mappt FHIRsmith auf Port 80/443 statt 8081.
 
-- **Übung 6, Schritt 1:** FHIRsmith (1a) durchspielen, Dauer des ersten Starts messen, prüfen ob `NODE_OPTIONS=--max-old-space-size=4096` reicht (eigenes Setup nutzt 8192), `$validate-code` für `C20` eintragen. Ontoserver-Weg (1b) nur mit Client-Zertifikat testbar. Nicht auf nicht-öffentliche Repositories verweisen.
+- **Übung 6, Schritt 1:** FHIRsmith (1a) durchspielen (2026-11-04 auf GWDG-Server: Start lief durch, ca. 12 min, 2,8 GB Speicher – 4096 reicht), `$validate-code` für `R51` eintragen. Ontoserver-Weg (1b) **noch ungetestet** (Stand 2026-11-04): Nutzerzertifikat (`.p12`) liegt vor, Passwort für den privaten Schlüssel nur im Büro – Test von dort. Dabei prüfen: Browser-Zugang, Umwandlung `.p12` → `client-cert.pem`/`client-key.key` (fehlt bisher in der Übung), Proxy + Validator, `TX` über Proxy `8083`. Nicht auf nicht-öffentliche Repositories verweisen.
 - **Übung 6, ab Schritt 2:** Erreicht der Validator FHIRsmith über `host.docker.internal`? Reicht `-Xmx4g` mit 4 IGs? Wie reagiert er auf Profilversionen `|2025.0.x` in den Musterdaten bei geladenen 2026er-Paketen? Welche Meldung kommt bei LOINC (nicht auf FHIRsmith)? Ab welcher Logzeile ist der Validator bereit?
 - **Übung 7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
 

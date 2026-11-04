@@ -89,15 +89,15 @@ Eine FHIR-Suche hat immer die Form `GET [Basis-URL]/[Ressourcentyp]?[Parameter]=
 | `_count` | Einträge pro Seite | `Patient?_count=5` |
 | `_summary=count` | Nur Anzahl zurückgeben | `Condition?_summary=count` |
 | `_elements` | Nur bestimmte Elemente zurückgeben | `Patient?_elements=gender,birthDate` |
-| Token (`code`, `gender`, `class`, …) | Codes suchen, optional mit System: `system\|code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|C20` |
+| Token (`code`, `gender`, `class`, …) | Codes suchen, optional mit System: `system\|code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|R51` |
 | Datum (`birthdate`, `date`, …) | Mit Präfixen `lt`, `le`, `gt`, `ge`, `eq` | `Patient?birthdate=lt1950` |
 | Menge (`value-quantity`) | Zahlenwert mit Präfix, optional Einheit | `Observation?value-quantity=gt5` |
 | Referenz (`subject`, `encounter`) | Auf andere Ressourcen verweisen | `Condition?subject=Patient/PID-...` |
 | Chaining (`subject:Patient.gender`) | Über eine Referenz hinweg filtern | `Condition?subject:Patient.gender=female` |
-| Reverse Chaining (`_has`) | Nach Ressourcen filtern, die auf mich verweisen | `Patient?_has:Condition:subject:code=C20` |
+| Reverse Chaining (`_has`) | Nach Ressourcen filtern, die auf mich verweisen | `Patient?_has:Condition:subject:code=R51` |
 | `_include` / `_revinclude` | Verknüpfte Ressourcen mitliefern | `DiagnosticReport?_include=DiagnosticReport:result` |
 
-> 💡 **Merke:** Mehrere Parameter werden mit **UND** verknüpft. Mehrere Werte im selben Parameter, durch Komma getrennt, bedeuten **ODER**: `code=C20,C18`.
+> 💡 **Merke:** Mehrere Parameter werden mit **UND** verknüpft. Mehrere Werte im selben Parameter, durch Komma getrennt, bedeuten **ODER**: `code=R51,R11`.
 >
 > ⚠️ **Server-Unterschiede:** Nicht jeder FHIR-Server unterstützt jeden Parameter. Blaze kann z. B. mit `_sort` nur nach `_id` und `_lastUpdated` sortieren. Was ein Server kann, steht in seinem `CapabilityStatement` (`/fhir/metadata`).
 
@@ -167,14 +167,14 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 
 🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel an einem Terminologieserver, wie du ihn in [Übung 5 · Codes prüfen](exercise-5.md) nutzt.
 
-### Abfrage 3.2: Alle Rektumkarzinom-Diagnosen (C20)
+### Abfrage 3.2: Alle Kopfschmerz-Diagnosen (R51)
 
 ```bash
-curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20&_count=50" \
+curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51&_count=50" \
   | jq '{diagnosen: .total, patienten: ([.entry[].resource.subject.reference] | unique | length)}'
 ```
 
-✅ **Erwartetes Ergebnis:** `23` Diagnosen bei nur `5` Patienten.
+✅ **Erwartetes Ergebnis:** `21` Diagnosen bei nur `4` Patienten.
 
 💡 **Warum mehr Diagnosen als Patienten?** Eine Diagnose wird pro Fall (`Encounter`) dokumentiert. Wer mehrfach stationär behandelt wird, hat die gleiche Diagnose mehrfach.
 
@@ -255,11 +255,11 @@ ___
 
 ### Abfrage 5.1: Chaining – über eine Referenz hinweg filtern
 
-„Alle C20-Diagnosen bei **Frauen**“ – das Geschlecht steht nicht in der Condition, sondern im verknüpften Patient:
+„Alle R51-Diagnosen bei **Frauen**“ – das Geschlecht steht nicht in der Condition, sondern im verknüpften Patient:
 
 ```bash
-curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20&subject:Patient.gender=female&_summary=count" | jq '.total'
-# → 3
+curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51&subject:Patient.gender=female&_summary=count" | jq '.total'
+# → 13
 ```
 
 „Wie viele Diagnosen stammen aus **ambulanten** bzw. **stationären** Fällen?“ – die Fallart steht im verknüpften Encounter:
@@ -273,14 +273,14 @@ curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_sum
 
 ### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
 
-„Welche **Patienten** haben eine C20-Diagnose?“ – hier wird umgekehrt gesucht: Patienten, auf die eine passende Condition verweist:
+„Welche **Patienten** haben eine R51-Diagnose?“ – hier wird umgekehrt gesucht: Patienten, auf die eine passende Condition verweist:
 
 ```bash
-curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51" \
   | jq '[.entry[].resource | {id, gender, birthDate}]'
 ```
 
-✅ **Erwartetes Ergebnis:** 5 Patienten (3 männlich, 2 weiblich).
+✅ **Erwartetes Ergebnis:** 4 Patienten (2 männlich, 2 weiblich).
 
 `_has` lässt sich mit anderen Parametern kombinieren – z. B. Patienten mit **Pflegegrad 3** (OPS `9-984.8`):
 
@@ -302,10 +302,10 @@ curl -s "http://localhost:8080/fhir/DiagnosticReport?_id=REP-88ceb08a4e874daa01d
 
 ### Abfrage 5.4: `_revinclude` – die Patientenakte
 
-Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage. Wähle dafür einen der Patienten mit C20-Diagnose aus [Abfrage 5.2](#abfrage-52-reverse-chaining-_has--patienten-über-ihre-daten-finden) und speichere seine ID in einer Variablen:
+Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage. Wähle dafür einen der Patienten mit R51-Diagnose aus [Abfrage 5.2](#abfrage-52-reverse-chaining-_has--patienten-über-ihre-daten-finden) und speichere seine ID in einer Variablen:
 
 ```bash
-curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20" \
+curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51" \
   | jq -r '.entry[].resource.id'
 
 # Eine der ausgegebenen IDs einsetzen:
@@ -488,12 +488,12 @@ ___
 | Situation | Parameter | Beispiel |
 | --------- | --------- | -------- |
 | **Anzahl** | `_summary=count` | `Patient?_summary=count` |
-| **Code-Suche** | `code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|C20` |
+| **Code-Suche** | `code` | `Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm\|R51` |
 | **Werte filtern** | `value-quantity` | `Observation?code=http://loinc.org\|6298-4&value-quantity=gt5` |
 | **Datum filtern** | `birthdate`, `date` | `Patient?birthdate=lt1950` |
 | **Referenz-Suche** | `subject` | `Condition?subject=Patient/PID-...` |
 | **Chaining** | `subject:Patient.gender` | `Condition?subject:Patient.gender=female` |
-| **Reverse Chaining** | `_has` | `Patient?_has:Condition:subject:code=C20` |
+| **Reverse Chaining** | `_has` | `Patient?_has:Condition:subject:code=R51` |
 | **Mitliefern** | `_include`, `_revinclude` | `Patient?_id=...&_revinclude=Condition:subject` |
 | **Blättern** | `_count` + `next`-Link | `Patient?_count=5` |
 

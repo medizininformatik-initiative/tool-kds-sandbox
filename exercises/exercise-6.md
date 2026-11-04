@@ -77,7 +77,8 @@ In dieser Übung arbeiten drei Server zusammen:
                      Ressource (JSON)                    $validate-code, $expand
   curl  ─────────────────────────────────▶  Validator  ─────────────────────────▶  Terminologieserver
    ▲                                       :8082                                   (FHIRsmith :8081
-   │ Ressource holen                                                                oder MII Ontoserver)
+   │                                                                                oder MII Ontoserver)
+   │ GET Ressource
    │
  Blaze :8080  (Musterdaten aus Übung 3)
 ```
@@ -98,11 +99,12 @@ Der Validator gibt jede Code-Prüfung an **einen** Terminologieserver weiter. W�
 
 | | A: Eigener FHIRsmith (empfohlen) | B: MII Ontoserver | C: tx.fhir.org |
 | --- | --- | --- | --- |
+| **Adresse** | `http://localhost:8081/fhir` | [`https://ontoserver.mii-termserv.de/fhir`](https://ontoserver.mii-termserv.de/fhir) | `https://tx.fhir.org/r4` |
 | **Inhalt** | ICD-10-GM, OPS, Alpha-ID-SE, UCUM, HL7-Codesysteme, ValueSets der KDS-Basis; **ohne** LOINC und SNOMED CT | Die Terminologien der MII-Profile, betrieben von der SU-TermServ | Internationale Terminologien; **ohne** deutsche Klassifikationen |
-| **Aufwand** | Pakete herunterladen, Konfiguration anlegen, Start wenige Minuten | Zugang beantragen, Client-Zertifikat einrichten | Keiner |
+| **Aufwand** | Pakete herunterladen, Konfiguration anlegen, Start ca. 15 Minuten | Zugang beantragen, Client-Zertifikat einrichten | Keiner |
 | **Voraussetzung** | Docker, bis 4 GB Arbeitsspeicher | Client-Zertifikat (nur Personen und Einrichtungen in Deutschland) | Internetzugang |
 | **Einschränkung** | LOINC- und SNOMED-Codes können nicht geprüft werden | Nur für Entwicklung, keine Personendaten, keine Massenvalidierung | Diagnosen und Prozeduren können nicht geprüft werden |
-| **Weiter mit** | [Schritt 1a](#schritt-1a) | [Schritt 1b](#schritt-1b) | [Schritt 2](#schritt-2) mit `TX_SERVER: "https://tx.fhir.org/r4"` |
+| **Weiter mit** | [Schritt 1a](#schritt-1a) | [Schritt 1b](#schritt-1b) | [Schritt 2](#schritt-2): Dort legst du den Validator an und stellst ihn auf tx.fhir.org ein |
 
 > 💡 **Warum LOINC und SNOMED CT nicht im eigenen Server?** Beide lassen sich in FHIRsmith laden, ein Importer muss sie aber erst in eine Datenbankdatei umwandeln. Das dauert jeweils mehrere Stunden. Für die Übung verzichten wir darauf; im DIZ macht man das einmalig pro Version. Mehr dazu in der [Vertiefung](#vertiefung).
 
@@ -124,6 +126,8 @@ FHIRsmith ist ein Node.js-Server, den wir als Docker-Container starten. Er liest
 Die `library.yml` ist das Herzstück: Jede Zeile ist eine Quelle für Terminologien. Manche bringt FHIRsmith selbst mit (`internal:`, `ucum:`), manche lädt er beim Start aus der FHIR-Paket-Registry (`npm:`), andere liest er aus einem lokalen Ordner (`folder:`).
 
 **1. Klassifikationen herunterladen.** Die MII stellt ICD-10-GM, OPS und Alpha-ID-SE als fertige FHIR-Pakete bereit (aufbereitet aus den BfArM-Dateien):
+
+> 💡 **Woher kommen die Adressen?** Die Pakete liegen in der GitLab-Gruppe [gitlab.com/mii-termserv](https://gitlab.com/mii-termserv), ein Projekt pro Klassifikation. Die Zahl in der URL ist die Projekt-ID (steht auf der Projektseite), Paketname und Version findest du im Projekt unter **Deploy → Package registry**.
 
 ```bash
 mkdir -p ~/terminology-server/data
@@ -221,9 +225,8 @@ docker compose up -d
 docker compose logs -f tx
 ```
 
-Beim ersten Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Terminologien ein. Das dauert einige Minuten. Der Server ist bereit, wenn diese Zeile erscheint:
+Beim Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Terminologien ein. Das dauert etwa **15 Minuten**, den größten Teil davon braucht das Paket `hl7.terminology.r4`. Der Server ist bereit, wenn diese Zeile erscheint:
 
-<!-- TODO beim Test: Dauer des ersten Starts messen und eintragen -->
 
 ```text
 === Server running on http://localhost:3000 ===
@@ -233,35 +236,42 @@ Beim ersten Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Term
 
 > 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Findest du ICD-10-GM, OPS und Alpha-ID-SE?
 
-**4. Prüfen.** Setze die Variable `TX` aus [Übung 5 · Codes prüfen](exercise-5.md) auf deinen eigenen Server und wiederhole die Prüfung der Diagnose `C20`, an der tx.fhir.org gescheitert ist:
+**4. Prüfen.** Setze die Variable `TX` aus [Übung 5 · Codes prüfen](exercise-5.md) auf deinen eigenen Server und wiederhole die Prüfung der Diagnose `R51`, an der tx.fhir.org gescheitert ist:
 
 ```bash
 TX=http://localhost:8081/fhir
 
 curl -s -G "$TX/CodeSystem/\$validate-code" \
   --data-urlencode "url=http://fhir.de/CodeSystem/bfarm/icd-10-gm" \
-  --data-urlencode "code=C20" \
+  --data-urlencode "code=R51" \
   | jq -r '.parameter[] | select(.name=="result" or .name=="message" or .name=="display") | "\(.name): \(if has("valueBoolean") then .valueBoolean else .valueString end)"'
 ```
 
-✅ **Erwartetes Ergebnis:** `result: true` und als `display` die deutsche Bezeichnung „Bösartige Neubildung des Rektums“.
+✅ **Erwartetes Ergebnis:** `result: true` und als `display` die deutsche Bezeichnung „Kopfschmerz“.
 
 <!-- TODO beim Test: genaue Ausgabe eintragen -->
 
 > 💡 **Ausprobieren:** Alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md) funktionieren jetzt auch mit deinem eigenen Server. Lass die Schleife aus Übung 5, Schritt 5 noch einmal laufen: Welche Codesysteme kennt dein Server, welche tx.fhir.org?
 
-Weiter mit [Schritt 2](#schritt-2). Dort trägst du `TX_SERVER: "http://host.docker.internal:8081/fhir"` ein.
+Dein Terminologieserver läuft. Weiter mit [Schritt 2](#schritt-2): Dort legst du den Validator an und verbindest ihn mit diesem Server.
 
 ### <a id="schritt-1b"></a>💻 Schritt 1b: MII Ontoserver
 
-Die Service Unit Terminologische Dienste (SU-TermServ) der MII betreibt einen zentralen Terminologieserver mit den Terminologien der MII-Profile. Der Zugang ist über Client-Zertifikate geschützt:
+Die SU-TermServ der MII betreibt den Ontoserver unter [`https://ontoserver.mii-termserv.de/fhir`](https://ontoserver.mii-termserv.de/fhir). Ohne Client-Zertifikat lässt er dich nicht hinein.
 
-1. Zugang bei der SU-TermServ beantragen: [mii-termserv.de](https://mii-termserv.de). Zugang gibt es nur für Personen und Einrichtungen in Deutschland.
-2. Das erhaltene Client-Zertifikat und den **entschlüsselten** privaten Schlüssel bereitlegen (`client-cert.pem`, `client-key.key`).
+**Zertifikat besorgen:** Zugang bei der SU-TermServ beantragen ([mii-termserv.de](https://mii-termserv.de), nur für Personen und Einrichtungen in Deutschland).
 
-> ❗ **Nutzungsbedingungen:** Der MII Ontoserver ist nur für die Entwicklung gedacht. Keine Personendaten senden und keine Massenvalidierung (z. B. in ETL-Prozessen) darüber laufen lassen.
+Mit dem Zertifikat gibt es zwei Wege zum Server:
 
-Das Repository des MII FHIR Validators bringt für diesen Fall eine fertige Konfiguration mit: Ein nginx-Proxy meldet sich mit deinem Zertifikat am Ontoserver an, der Validator spricht nur mit dem Proxy. Damit sich die Ports nicht mit Blaze und FHIRsmith überschneiden, legen wir den Validator auf `8082` und den Proxy auf `8083`:
+| | Im Browser | Für den Validator |
+| --- | --- | --- |
+| **Wozu** | Server ansehen, Codes nachschlagen | Ressourcen automatisch prüfen |
+| **Wo liegt das Zertifikat** | Als `.p12` importiert. Windows: zentral im Windows-Zertifikatspeicher (Chrome/Edge). Linux: kein zentraler Speicher, Chrome-Browser teilen sich `~/.pki/nssdb`. Firefox: immer eigener Speicher | Als Dateien `client-cert.pem` und `client-key.key` (Schlüssel **entschlüsselt**) |
+| **Einrichtung** | [Anleitung der SU-TermServ](https://mii-termserv.de/faq/browser-certificate-setup/) | Die Befehle unten |
+
+> ❗ **Nutzungsbedingungen:** Nur für die Entwicklung. Keine Personendaten senden, keine Massenvalidierung (z. B. in ETL-Prozessen).
+
+Für den Validator nutzen wir eine fertige Konfiguration aus dem Repository des MII FHIR Validators. Ein Proxy (nginx) schickt jede Anfrage mit deinem Zertifikat an den Ontoserver. Der Validator spricht nur mit dem Proxy und braucht selbst kein Zertifikat. Ports: Validator `8082`, Proxy `8083`.
 
 ```bash
 cd ~
@@ -283,9 +293,9 @@ docker compose up -d
 docker compose logs -f validator-ontoserver
 ```
 
-<!-- TODO beim Test (nur mit Client-Zertifikat möglich): Ablauf prüfen, Arbeitsspeicher mit allen 17 IGs prüfen, ggf. IG_PARAMS in .env reduzieren -->
+<!-- TODO beim Test (Weg 1b noch ungetestet, Test aus dem Büro – dort liegt das Passwort für den privaten Schlüssel): Umwandlung .p12 → PEM ergänzen, Ablauf prüfen, Arbeitsspeicher mit allen 17 IGs prüfen, ggf. IG_PARAMS in .env reduzieren -->
 
-Über den Proxy erreichst du den Ontoserver auch direkt. Setze `TX` auf ihn, dann funktionieren alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md):
+Auch deine eigenen `curl`-Befehle kannst du über den Proxy schicken, ohne Zertifikat anzugeben. Setze `TX` auf den Proxy, dann funktionieren alle Befehle aus [Übung 5 · Codes prüfen](exercise-5.md):
 
 ```bash
 TX=http://localhost:8083/fhir
@@ -305,14 +315,14 @@ ___
 > curl -s "$TX/metadata" | jq '.software'
 > ```
 
-Lege einen eigenen Ordner für den Validator an:
+Der Validator läuft wie Blaze und FHIRsmith in einem eigenen Docker-Container. Lege dafür einen eigenen Ordner an:
 
 ```bash
 mkdir -p ~/validator
 cd ~/validator
 ```
 
-Lege dort die Datei `docker-compose.yml` an:
+Lege dort die Datei `docker-compose.yml` an. Die Zeile `TX_SERVER` legt fest, welchen Terminologieserver der Validator fragt. Sie zeigt auf deinen FHIRsmith aus Schritt 1a. Hast du tx.fhir.org gewählt, tausche die Adresse wie im Kommentar angegeben:
 
 > 💡 Alle Dienste der Übungen mit Ports und `docker-compose.yml` findest du gesammelt auf der Seite [Dienste](services.md).
 
@@ -447,15 +457,15 @@ curl -s -X POST http://localhost:8082/validateResource \
 ### 4.2 Eine gültige Diagnose zum Vergleich
 
 ```bash
-curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|C20&_count=1" | jq '.entry[0].resource' > condition-c20.json
+curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51&_count=1" | jq '.entry[0].resource' > condition-r51.json
 
 curl -s -X POST http://localhost:8082/validateResource \
   -H "Content-Type: application/fhir+json" \
-  --data @condition-c20.json \
+  --data @condition-r51.json \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]'
 ```
 
-🔍 **Genau hinschauen:** Vergleiche `meta.profile` der Ressource (`jq '.meta.profile' condition-c20.json`) mit den Paketen, die der Validator geladen hat (`IG_PARAMS`). Die Musterdaten wurden 2025 erzeugt und nennen Profilversionen wie `|2025.0.0`. Der Validator kennt die Version 2026. Wie geht er damit um?
+🔍 **Genau hinschauen:** Vergleiche `meta.profile` der Ressource (`jq '.meta.profile' condition-r51.json`) mit den Paketen, die der Validator geladen hat (`IG_PARAMS`). Die Musterdaten wurden 2025 erzeugt und nennen Profilversionen wie `|2025.0.0`. Der Validator kennt die Version 2026. Wie geht er damit um?
 
 <!-- TODO beim Test: Verhalten bei abweichender Profilversion beschreiben -->
 
@@ -481,7 +491,7 @@ Standardmäßig ignoriert der Validator, ob das `display` zum Code passt. Mit `d
 ```bash
 curl -s -X POST "http://localhost:8082/validateResource?displayOption=Check" \
   -H "Content-Type: application/fhir+json" \
-  --data @condition-c20.json \
+  --data @condition-r51.json \
   | jq '[.issue[] | {severity, text: (.details.text // .diagnostics)}]'
 ```
 
@@ -503,7 +513,7 @@ done
 
 > ⚠️ **Ganze Bundles:** Der Validator kann auch ein komplettes Bundle prüfen. Bei den rund 8.000 Ressourcen aus [Übung 3 · Musterdaten laden](exercise-3.md) dauert das aber sehr lange und braucht viel Speicher. Im DIZ-Alltag validiert man deshalb meist Stichproben oder einzelne Ressourcen direkt in der ETL-Strecke.
 
-Die Berichte aus diesem Schritt wertest du in [Übung 7 · Berichte auswerten](exercise-7.md) genauer aus. Lass die Dateien `hba1c.json`, `condition-570762.json`, `condition-c20.json` und `hb.json` im Ordner `~/validator` liegen.
+Die Berichte aus diesem Schritt wertest du in [Übung 7 · Berichte auswerten](exercise-7.md) genauer aus. Lass die Dateien `hba1c.json`, `condition-570762.json`, `condition-r51.json` und `hb.json` im Ordner `~/validator` liegen.
 
 ___
 
@@ -520,7 +530,7 @@ Der MII FHIR Validator startet intern den HL7-Validator (`validator_cli.jar`) im
 | `-tx <url>` | Terminologieserver | `TX_SERVER` |
 | `-profile <url>` | Gegen dieses Profil prüfen | Query-Parameter `profiles` |
 
-Der Rückgabewert (Exit-Code) des Aufrufs zeigt, ob die Validierung erfolgreich war (laut MII-PRO-IG):
+Der Rückgabewert (Exit-Code) des Aufrufs zeigt, ob die Validierung erfolgreich war:
 
 | Exit-Code | Bedeutung |
 | --- | --- |
