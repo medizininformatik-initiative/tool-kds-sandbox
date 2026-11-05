@@ -15,4 +15,4 @@ solution-exercise-6/
 
 Die Klassifikationspakete (`data/de.bfarm.icd-10-gm/`, `data/de.bfarm.ops/`, `data/de.bfarm.alpha-id-se/`) sind nicht enthalten. Lade sie wie in [Schritt 1a](../exercises/exercise-6.md#schritt-1a) beschrieben herunter.
 
-Für Weg 1b (MII Ontoserver) gibt es keine eigenen Dateien: Dort wird die Konfiguration aus dem Repository des MII FHIR Validators verwendet.
+Für Schritt 1b (Proxy zum MII Ontoserver) gibt es keine eigenen Dateien: Dort wird die Konfiguration aus dem Repository des MII FHIR Validators verwendet.

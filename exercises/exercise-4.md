@@ -8,7 +8,7 @@ ___
 
 **Nächste Schritte:**  
 
-- Prüfe, ob die UKSH-Musterdaten aus Übung 3 im FHIR-Server liegen
+- Prüfe, ob die Musterdaten aus Übung 3 im FHIR-Server liegen
 - Erkunde Patienten, Diagnosen und Laborwerte mit FHIR-Search
 - Verknüpfe Ressourcen über Chaining, `_has`, `_include` und `_revinclude`
 - Entdecke Auffälligkeiten in den Daten
@@ -17,7 +17,7 @@ ___
 
 ## Einführung & Kontext
 
-In [Übung 3 · Musterdaten laden](exercise-3.md) haben wir die **Musterdatenspende des UKSH** bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 8.100 Ressourcen von 271 pseudonymisierten Patienten.
+In [Übung 3 · Musterdaten laden](exercise-3.md) haben wir die **Musterdatenspende** der Standorte UKSH, UKHD und UKW bereinigt und in den lokalen FHIR-Server (Blaze) geladen – rund 9.100 Ressourcen von 275 pseudonymisierten Patienten. Den Großteil davon liefert das UKSH.
 
 In dieser Übung stellst du **strukturierte Abfragen** auf diese KDS-Daten: Du suchst nach Diagnosen (ICD-10-GM), Laborwerten (LOINC), Prozeduren (OPS), verknüpfst Ressourcen miteinander und stößt dabei auf typische Eigenheiten echter DIZ-Daten.
 
@@ -50,7 +50,7 @@ ___
 
 ## 🛠️ 0. Vorbereitung: Datenbestand prüfen
 
-> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` (aus [Übung 2 · FHIR-Server starten](exercise-2.md#container-definieren-und-starten)) und die bereinigten UKSH-Daten sind per `PUT` hochgeladen ([Übung 3 · Musterdaten laden](exercise-3.md)).
+> ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` (aus [Übung 2 · FHIR-Server starten](exercise-2.md#container-definieren-und-starten)) und die bereinigten Daten aller drei Standorte sind per `PUT` hochgeladen ([Übung 3 · Musterdaten laden](exercise-3.md)).
 
 Zähle die Ressourcen pro Typ – `_summary=count` liefert nur die Anzahl, keine Ressourcen:
 
@@ -60,21 +60,19 @@ for type in Patient Encounter Condition Observation Procedure DiagnosticReport S
 done
 ```
 
-✅ **Erwartetes Ergebnis** nur UKSH geladen (in Klammern: UKSH, UKHD und UKW geladen):
+✅ **Erwartetes Ergebnis:**
 
 ```text
-Patient: 271 (275)
-Encounter: 1170 (1329)
-Condition: 425 (482)
-Observation: 3480 (3636)
-Procedure: 180 (205)
-DiagnosticReport: 1276 (1277)
-ServiceRequest: 1276 (1276)
-Consent: 5 (84)
+Patient: 275
+Encounter: 1329
+Condition: 482
+Observation: 3636
+Procedure: 205
+DiagnosticReport: 1277
+ServiceRequest: 1276
+Consent: 84
 ```
 
-> 💡 **Hinweis:** Die Zahlen in Klammern gelten, wenn du in [Übung 3 · Musterdaten laden](exercise-3.md) zusätzlich UKHD (+3 Patienten) und UKW (+1 Patient) hochgeladen hast. Die Abfragen funktionieren in beiden Fällen.
->
 > 💡 Deine Testressourcen aus [Übung 2 · FHIR-Server starten](exercise-2.md) liegen ebenfalls noch im Server und erhöhen einzelne Zahlen leicht: je hochgeladenem Beispiel-Patienten +1 bei `Patient`, die HbA1c-Observation +1 bei `Observation` und bei den Laborwerten.
 
 ___
@@ -118,11 +116,11 @@ curl -s "http://localhost:8080/fhir/Patient?_count=1" | jq '.entry[0].resource'
 ```bash
 # Weibliche Patienten
 curl -s "http://localhost:8080/fhir/Patient?gender=female&_summary=count" | jq '.total'
-# → 75 (78)
+# → 78
 
 # Vor 1950 geboren
 curl -s "http://localhost:8080/fhir/Patient?birthdate=lt1950&_summary=count" | jq '.total'
-# → 23 (23)
+# → 23
 ```
 
 ### Abfrage 2.3: Blättern durch Ergebnisse (Pagination)
@@ -143,11 +141,11 @@ ___
 
 ## 💻 3. Diagnosen (ICD-10-GM)
 
-Alle Diagnosen der UKSH-Daten sind mit **ICD-10-GM** kodiert (`http://fhir.de/CodeSystem/bfarm/icd-10-gm`).
+Alle Diagnosen der Musterdaten sind mit **ICD-10-GM** kodiert (`http://fhir.de/CodeSystem/bfarm/icd-10-gm`).
 
 ### Abfrage 3.1: Häufigste Diagnosen
 
-Zum Auswerten holen wir alle 425 Diagnosen auf einer Seite und zählen die Codes mit `jq`:
+Zum Auswerten holen wir alle 482 Diagnosen auf einer Seite und zählen die Codes mit `jq`:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Condition?_count=500" \
@@ -160,10 +158,10 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 | --------- | ------ | --------- |
 | `Z11` | 27 | Spezielle Verfahren zur Untersuchung auf infektiöse und parasitäre Krankheiten |
 | `C20` | 23 | Bösartige Neubildung des Rektums |
-| `R51` | 21 (22) | Kopfschmerz |
+| `R51` | 22 | Kopfschmerz |
 | `I45.2` | 19 | Bifaszikulärer Block |
 | `R11` | 15 | Übelkeit und Erbrechen |
-| `U99.0` | 13 (15) | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
+| `U99.0` | 15 | Spezielle Verfahren zur Untersuchung auf SARS-CoV-2 |
 
 🔍 **Genau hinschauen:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen – zum Beispiel an einem Terminologieserver, wie du ihn in [Übung 5 · Codes prüfen](exercise-5.md) nutzt.
 
@@ -174,7 +172,7 @@ curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfa
   | jq '{diagnosen: .total, patienten: ([.entry[].resource.subject.reference] | unique | length)}'
 ```
 
-✅ **Erwartetes Ergebnis:** `21` Diagnosen bei nur `4` Patienten.
+✅ **Erwartetes Ergebnis:** `22` Diagnosen bei nur `5` Patienten.
 
 💡 **Warum mehr Diagnosen als Patienten?** Eine Diagnose wird pro Fall (`Encounter`) dokumentiert. Wer mehrfach stationär behandelt wird, hat die gleiche Diagnose mehrfach.
 
@@ -182,11 +180,11 @@ ___
 
 ## 💻 4. Laborwerte (LOINC)
 
-Die UKSH-Daten enthalten 1.888 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Übung 1 · Profil erstellen](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
+Die Musterdaten enthalten 2.040 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Übung 1 · Profil erstellen](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
 
 ### Abfrage 4.1: Hämoglobin – LOINC vs. lokaler Code
 
-Jeder Laborwert trägt einen **lokalen Laborcode** des UKSH und – wenn vorhanden – zusätzlich einen **LOINC-Code**:
+Die Laborwerte des UKSH tragen einen **lokalen Laborcode** und – wenn vorhanden – zusätzlich einen **LOINC-Code**. UKHD und UKW kodieren ihre Laborwerte nur mit LOINC:
 
 ```bash
 # Hämoglobin über LOINC
@@ -201,12 +199,12 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/fhir/C
 ```bash
 # Wie viele Laborwerte haben überhaupt einen LOINC-Code?
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_summary=count" | jq '.total'
-# → 1888 (2040)
+# → 2040
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count" | jq '.total'
 # → 819
 ```
 
-🔍 **Genau hinschauen:** 819 von 1.888 Laborwerten (über 40 %) haben **keinen LOINC-Code**, sondern nur einen lokalen Code. Eine standortübergreifende Abfrage per LOINC findet diese Werte nicht. Das Mapping lokaler Codes auf LOINC ist eine zentrale Aufgabe im DIZ.
+🔍 **Genau hinschauen:** 819 von 2.040 Laborwerten (rund 40 %) haben **keinen LOINC-Code**, sondern nur einen lokalen Code. Eine standortübergreifende Abfrage per LOINC findet diese Werte nicht. Das Mapping lokaler Codes auf LOINC ist eine zentrale Aufgabe im DIZ.
 
 ### Abfrage 4.2: Auffällige Werte finden – Hyperkaliämie
 
@@ -266,9 +264,9 @@ curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfa
 
 ```bash
 curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=AMB&_summary=count" | jq '.total'
-# → 137 (144)
+# → 144
 curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_summary=count" | jq '.total'
-# → 288 (315)
+# → 315
 ```
 
 ### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
@@ -280,7 +278,7 @@ curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://f
   | jq '[.entry[].resource | {id, gender, birthDate}]'
 ```
 
-✅ **Erwartetes Ergebnis:** 4 Patienten (2 männlich, 2 weiblich).
+✅ **Erwartetes Ergebnis:** 5 Patienten (3 männlich, 2 weiblich).
 
 `_has` lässt sich mit anderen Parametern kombinieren – z. B. Patienten mit **Pflegegrad 3** (OPS `9-984.8`):
 
@@ -354,10 +352,10 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&va
 
 # Vitalstatus-Observations mit "L" (lebend)
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&value-concept=https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus|L&_summary=count" | jq '.total'
-# → 1578 (1582)
+# → 1582
 ```
 
-❗ **Auffälligkeit:** Laut `Patient.deceased` sind 259 von 271 Patienten verstorben, aber nur eine einzige Observation meldet den Vitalstatus „tot“. Ist das ein Widerspruch?
+❗ **Auffälligkeit:** Laut `Patient.deceased` sind 259 von 275 Patienten verstorben, aber nur eine einzige Observation meldet den Vitalstatus „tot“. Ist das ein Widerspruch?
 
 💡 **Nicht zwingend, denn beide Angaben haben einen anderen Zeitbezug:**
 
@@ -501,7 +499,7 @@ ___
 
 - Die Patienten sind pseudonymisiert: keine Namen, gekürzte Geburtsdaten.
 - Diagnosen und Laborwerte tragen oft nur Codes ohne Klartext.
-- Über 40 % der Laborwerte haben nur einen lokalen Code und keinen LOINC-Code.
+- Rund 40 % der Laborwerte haben nur einen lokalen Code und keinen LOINC-Code.
 - Die Daten enthalten Widersprüche und ungültige Codes.
 
 ### Ausblick

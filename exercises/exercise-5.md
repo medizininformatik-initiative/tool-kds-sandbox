@@ -91,26 +91,29 @@ for type in Condition Procedure Observation Encounter; do
 done
 ```
 
-✅ **Erwartetes Ergebnis** (nur UKSH geladen, gekürzt):
+✅ **Erwartetes Ergebnis** (gekürzt; kleine Abweichungen durch deine Testressourcen aus Übung 2 sind normal):
 
 ```text
 == Condition
-425	http://fhir.de/CodeSystem/bfarm/icd-10-gm
+482	http://fhir.de/CodeSystem/bfarm/icd-10-gm
+...
 == Procedure
-180	http://fhir.de/CodeSystem/bfarm/ops
-180	http://snomed.info/sct
+203	http://fhir.de/CodeSystem/bfarm/ops
+203	http://snomed.info/sct
 4	https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_ICD_SEITENLOKALISATION
+...
 == Observation
-4797	http://unitsofmeasure.org
-4555	http://loinc.org
-3480	http://terminology.hl7.org/CodeSystem/observation-category
+4951	http://unitsofmeasure.org
+4867	http://loinc.org
+3638	http://terminology.hl7.org/CodeSystem/observation-category
+...
 1888	http://medic.uksh.de/fhir/CodeSystem/Laborparameter
 ...
-1579	https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus
+1583	https://www.medizininformatik-initiative.de/fhir/core/modul-person/CodeSystem/Vitalstatus
 ...
 == Encounter
-1170	http://fhir.de/CodeSystem/Kontaktebene
-1170	http://terminology.hl7.org/CodeSystem/v3-ActCode
+1329	http://fhir.de/CodeSystem/Kontaktebene
+1329	http://terminology.hl7.org/CodeSystem/v3-ActCode
 ...
 ```
 
@@ -291,7 +294,7 @@ done < codes.txt
 
 ### 🔍 Ein Fehler in den Daten
 
-Hast du in [Übung 3 · Musterdaten laden](exercise-3.md) auch UKHD und UKW geladen? Dann prüfe die Rolle der Diagnosen im Encounter:
+Mit den Daten aller drei Standorte aus [Übung 3 · Musterdaten laden](exercise-3.md) kannst du die Rolle der Diagnosen im Encounter prüfen:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Encounter?_count=4000" \

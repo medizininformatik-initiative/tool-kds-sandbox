@@ -128,12 +128,18 @@ ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Berichte speichern und auswerten
 
-> ⚠️ **Voraussetzung:** Der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) läuft auf Port 8082, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json`, `condition-r51.json` und `hb.json`.
+> ⚠️ **Voraussetzung:** Blaze und der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) laufen, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json` und `condition-r51.json`.
 
-Speichere zuerst die Berichte als Dateien. So musst du nicht bei jeder Auswertung neu validieren:
+Hole dir zusätzlich einen Laborwert aus den Musterdaten:
 
 ```bash
 cd ~/validator
+curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&_count=1" | jq '.entry[0].resource' > hb.json
+```
+
+Speichere dann die Berichte aller vier Ressourcen als Dateien. So musst du nicht bei jeder Auswertung neu validieren:
+
+```bash
 for f in hba1c condition-570762 condition-r51 hb; do
   curl -s -X POST http://localhost:8082/validateResource \
     -H "Content-Type: application/fhir+json" \
@@ -217,7 +223,7 @@ https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDe
 
 - `570762` ist kein ICD-10-GM-Code. Der Terminologieserver kennt ihn nicht, der Validator meldet einen ungültigen Code. Das ist ein **Datenfehler** in der Quelle.
 - Meldungen zu `meta.profile` betreffen alle Musterdaten: Die Ressourcen nennen Profilversionen von 2024/2025, der Validator ist mit den Paketen von 2026 konfiguriert. Das ist ein **Versionsthema**, kein Fehler in den einzelnen Ressourcen.
-- Der Laborwert ist mit LOINC kodiert. Ist LOINC auf deinem Terminologieserver nicht geladen (z. B. beim eigenen FHIRsmith aus [Übung 6, Schritt 1a](exercise-6.md#schritt-1a)), kann der Code nicht geprüft werden. Das ist eine **Grenze des Setups**. Kennt der Server LOINC, sollte hier keine Meldung zum Code erscheinen.
+- Der Laborwert ist mit LOINC kodiert. Ist LOINC auf deinem Terminologieserver nicht geladen (z. B. beim eigenen FHIRsmith aus [Übung 6, Schritt 1a](exercise-6.md#schritt-1a)), kann der Code nicht geprüft werden. Das ist eine **Grenze des Setups**. Kennt der Server LOINC, sollte hier keine Meldung zum Code erscheinen. Der Laborwert trägt außerdem einen lokalen Laborcode des UKSH (`http://medic.uksh.de/fhir/CodeSystem/Laborparameter`). Den kennt kein externer Terminologieserver, ein Datenfehler ist das nicht.
 
 <!-- TODO beim Test: Lösung mit den tatsächlichen Meldungstexten abgleichen -->
 

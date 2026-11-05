@@ -13,6 +13,7 @@ ___
 - Entdecke das "Referenzielle Integrität"-Problem
 - Bereinige die Daten automatisch
 - Lade die Daten in den FHIR-Server und überprüfe den Upload
+- Lade danach auch die Daten der Standorte UKHD und UKW
 
 In den vorherigen Übungen haben wir gelernt, eigene FHIR-Profile und Instanzen zu definieren (Übung 1) und diese per `curl` in einen FHIR-Server hochzuladen (Übung 2).
 
@@ -233,7 +234,9 @@ curl -s "http://localhost:8080/fhir/Condition?subject=Patient/<PID>" | jq '.entr
 
 ___
 
-## 🔄 8. Optional: Andere Bundles vorbereiten (UKHD, UKW)
+## 🔄 8. Weitere Standorte laden (UKHD, UKW)
+
+Lade jetzt auch die Daten der beiden anderen Standorte. Sie sind kleiner, bringen aber andere Besonderheiten mit, z. B. ältere Profilversionen. Die folgenden Übungen nutzen die Daten aller drei Standorte.
 
 ### Vergleichstabelle
 

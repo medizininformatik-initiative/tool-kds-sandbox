@@ -3,7 +3,8 @@
 # check_codesystems.sh - Prüft je Codesystem einen Code aus Blaze am Terminologieserver
 # Usage: ./check_codesystems.sh [Terminologieserver-URL]
 #   Übung 5: ./check_codesystems.sh https://tx.fhir.org/r4   (Standard)
-#   Übung 6: ./check_codesystems.sh http://localhost:8081/fhir
+#   Übung 6: ./check_codesystems.sh http://localhost:8081/fhir   (eigener FHIRsmith)
+#            ./check_codesystems.sh http://localhost:8083/fhir   (MII Ontoserver über den Proxy)
 # Ausgabe je Zeile: Ergebnis (true/false), Codesystem, geprüfter Code
 
 TX="${1:-https://tx.fhir.org/r4}"

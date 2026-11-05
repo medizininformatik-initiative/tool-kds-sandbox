@@ -16,7 +16,7 @@ ___
 | 🔵 | [1 · Profil erstellen](exercises/exercise-1.md) | Profil und Beispielressource in FSH schreiben und kompilieren, Implementation Guide bauen | `sushi`, Firely Terminal, Java + IG Publisher | Groß · ca. 20 Befehlsblöcke, IG-Build ca. 10 min | ✅ |
 | 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 7 Befehlsblöcke | ✅ |
 | 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
-| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den UKSH-Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
+| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 15 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | FHIRsmith, MII FHIR Validator, Docker Compose, `curl`, `jq` | Groß · ca. 20 Befehlsblöcke, erster Start Terminologieserver ca. 15 min, Validator ca. 5 min | ✅ |
 | 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 6 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
@@ -67,7 +67,7 @@ Für die Übungen brauchst du:
   - Java (ab 11, empfohlen 17 oder 21) und Jekyll für den IG Publisher ([Übung 1 · Profil erstellen](exercises/exercise-1.md))
   - Docker und Docker Compose für FHIR-Server, Terminologieserver und Validator (ab [Übung 2 · FHIR-Server starten](exercises/exercise-2.md))
   - `git`, `curl`, `jq` und `unzip` für Daten und Abfragen
-- **Dienste:** Blaze (`8080`), optional FHIRsmith (`8081`) und MII FHIR Validator (`8082`) als Docker-Container – gesammelt auf der Seite [Dienste](exercises/services.md)
+- **Dienste:** Blaze (`8080`), FHIRsmith (`8081`) und MII FHIR Validator (`8082`) als Docker-Container – gesammelt auf der Seite [Dienste](exercises/services.md)
 
 👉 [Zur Checkliste](exercises/prerequisites.md)
 
@@ -123,7 +123,7 @@ ___
 > Voraussetzung: Blaze mit Musterdaten ([Übung 3 · Musterdaten laden](exercises/exercise-3.md)), Grundlagen der Terminologie-Operationen ([Übung 5 · Codes prüfen](exercises/exercise-5.md)).
 
 - Strukturelle Validierung und Profil-Validierung unterscheiden, Validatoren im MII-Kontext einordnen
-- Terminologieserver mit deutschen Klassifikationen bereitstellen: eigener FHIRsmith (ICD-10-GM, OPS, Alpha-ID-SE) oder MII Ontoserver
+- Eigenen Terminologieserver mit deutschen Klassifikationen starten (FHIRsmith: ICD-10-GM, OPS, Alpha-ID-SE) und – mit Client-Zertifikat – den zentralen MII Ontoserver ausprobieren
 - MII FHIR Validator per Docker Compose starten und mit diesem Terminologieserver verbinden
 - Eigene HbA1c-Observation gegen das MII-Laborprofil und einzelne Musterdaten aus Blaze validieren
 - Erkennen, wann der Validator ein Profil gar nicht prüft (unbekannte Profilversion), und die Prüfung gegen ein Profil erzwingen

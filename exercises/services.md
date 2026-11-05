@@ -25,8 +25,9 @@ ___
 | Dienst | Aufgabe | Port | Ordner | Arbeitsspeicher | Eingeführt in |
 | --- | --- | --- | --- | --- | --- |
 | **Blaze** | FHIR-Server mit den Musterdaten | `8080` | z. B. `~/blaze` | bis 2 GB | [Übung 2 · FHIR-Server starten](exercise-2.md) |
-| **FHIRsmith** (optional) | Eigener Terminologieserver (ICD-10-GM, OPS, Alpha-ID-SE …) | `8081` | `~/terminology-server` | bis 4 GB | [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-1a) |
+| **FHIRsmith** | Eigener Terminologieserver (ICD-10-GM, OPS, Alpha-ID-SE …) | `8081` | `~/terminology-server` | bis 4 GB | [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-1a) |
 | **MII FHIR Validator** | Prüft Ressourcen gegen die KDS-Profile | `8082` | `~/validator` | bis 4 GB | [Übung 6 · Ressourcen validieren](exercise-6.md) |
+| **Proxy zum MII Ontoserver** (optional, mit Client-Zertifikat) | Hängt dein Zertifikat an Anfragen an den MII Ontoserver | `8083` | `~/mii-fhir-validator` | gering | [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-1b) |
 
 So arbeiten die Dienste zusammen:
 
@@ -83,8 +84,6 @@ ___
 
 ## <a id="fhirsmith"></a>💻 FHIRsmith (Terminologieserver)
 
-Nur nötig, wenn du in [Übung 6, Schritt 1](exercise-6.md#schritt-1) den eigenen Terminologieserver wählst. Nutzt du den MII Ontoserver oder tx.fhir.org, entfällt dieser Dienst.
-
 FHIRsmith braucht neben der `docker-compose.yml` noch den Datenordner mit den heruntergeladenen Klassifikationen sowie `library.yml` und `config.json`. Diese legst du in [Übung 6, Schritt 1a](exercise-6.md#schritt-1a) an.
 
 Datei `~/terminology-server/docker-compose.yml`:
@@ -102,7 +101,7 @@ services:
       - "./data:/app/data"
 ```
 
-Starten und prüfen (der erste Start dauert ca. 15 Minuten):
+Starten und prüfen. FHIRsmith liest bei **jedem** Start alle Terminologien neu ein und antwortet erst danach (erster Start ca. 15 Minuten, jeder weitere ca. 5 Minuten):
 
 ```bash
 cd ~/terminology-server
@@ -114,7 +113,7 @@ ___
 
 ## <a id="validator"></a>💻 MII FHIR Validator
 
-Eingeführt in [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-2). Der Validator braucht einen erreichbaren Terminologieserver (eigener FHIRsmith auf Port 8081, MII Ontoserver oder tx.fhir.org). Trage dessen Adresse bei `TX_SERVER` ein.
+Eingeführt in [Übung 6 · Ressourcen validieren](exercise-6.md#schritt-2). Der Validator braucht deinen FHIRsmith auf Port 8081 (Adresse bei `TX_SERVER`).
 
 Datei `~/validator/docker-compose.yml`:
 
@@ -125,9 +124,8 @@ services:
     environment:
       # Arbeitsspeicher für den Validator (Standard des Images: 16 GB)
       JAVA_OPTS: "-Xmx4g"
-      # Terminologieserver aus Schritt 1:
-      #   A: eigener FHIRsmith auf deinem Rechner: "http://host.docker.internal:8081/fhir"
-      #   C: tx.fhir.org:                          "https://tx.fhir.org/r4"
+      # Terminologieserver: dein FHIRsmith aus Schritt 1a
+      # (Notlösung ohne eigenen Server: "https://tx.fhir.org/r4")
       TX_SERVER: "http://host.docker.internal:8081/fhir"
       # Nur die KDS-Pakete laden, die wir für die Musterdaten brauchen
       IG_PARAMS: >-

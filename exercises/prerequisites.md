@@ -55,7 +55,7 @@ Ab [Übung 2 · FHIR-Server starten](exercise-2.md) startest du bis zu drei Dien
 | Dienst | Port | Ab Übung |
 | --- | --- | --- |
 | FHIR-Server **Blaze** | `8080` | [Übung 2 · FHIR-Server starten](exercise-2.md) |
-| Terminologieserver **FHIRsmith** (optional) | `8081` | [Übung 6 · Ressourcen validieren](exercise-6.md) |
+| Terminologieserver **FHIRsmith** | `8081` | [Übung 6 · Ressourcen validieren](exercise-6.md) |
 | **MII FHIR Validator** | `8082` | [Übung 6 · Ressourcen validieren](exercise-6.md) |
 
 Die Übungen leiten dich Schritt für Schritt durch das Aufsetzen. Alle `docker-compose.yml`-Dateien, Start- und Prüfbefehle findest du zusätzlich gesammelt auf der Seite **[Dienste](services.md)**.
