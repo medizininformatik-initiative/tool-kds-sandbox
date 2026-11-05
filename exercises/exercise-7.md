@@ -130,11 +130,15 @@ ___
 
 > ⚠️ **Voraussetzung:** Blaze und der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) laufen, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json` und `condition-r51.json`.
 
-Hole dir zusätzlich einen Laborwert aus den Musterdaten:
+Hole dir zusätzlich einen Hämoglobin-Wert des UKSH. Die Abfrage verlangt beide Codes, den LOINC-Code und den Hauscode des UKSH:
 
 ```bash
 cd ~/validator
-curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&_count=1" | jq '.entry[0].resource' > hb.json
+curl -s -G "http://localhost:8080/fhir/Observation" \
+  --data-urlencode "code=http://loinc.org|718-7" \
+  --data-urlencode "code=http://medic.uksh.de/fhir/CodeSystem/Laborparameter|LAB_hbe" \
+  --data-urlencode "_count=1" \
+  | jq '.entry[0].resource' > hb.json
 ```
 
 Speichere dann die Berichte aller vier Ressourcen als Dateien. So musst du nicht bei jeder Auswertung neu validieren:
@@ -161,17 +165,26 @@ done
 ### 1.2 Nur die Fehler anzeigen
 
 ```bash
-jq '[.issue[] | select(.severity == "error" or .severity == "fatal") | {code, text: (.details.text // .diagnostics), ort: (.expression // .location)[0]}]' bericht-condition-570762.json
+jq -r '.issue[] | select(.severity == "error" or .severity == "fatal") | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"' bericht-condition-570762.json
 ```
 
 ### 1.3 Gleiche Meldungen zusammenfassen
 
-Bei vielen Ressourcen wiederholen sich Meldungen. Gruppiert nach Text siehst du, welche Probleme am häufigsten vorkommen:
+Bei vielen Ressourcen wiederholen sich Meldungen. Gruppiert nach Text siehst du, welche Probleme am häufigsten vorkommen. `jq -s` liest dazu alle Berichte auf einmal ein:
 
 ```bash
 cat bericht-*.json \
-  | jq -s '[.[].issue[] | (.details.text // .diagnostics)] | group_by(.) | map({anzahl: length, meldung: .[0]}) | sort_by(-.anzahl)'
+  | jq -r -s '[.[].issue[].details.text] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
 ```
+
+Bei vier Berichten ist das noch übersichtlich. Aussagekräftig wird es bei vielen: In [Übung 6, Schritt 4.4](exercise-6.md#schritt-4-4) hast du 57 Diagnosen validiert, ihre Berichte liegen in `~/validator/diagnosen/`:
+
+```bash
+cat diagnosen/bericht-*.json \
+  | jq -r -s '[.[].issue[].details.text] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
+```
+
+<!-- TODO beim Test: erwartete Ausgabe eintragen (vermutlich je 57× dom-6 und Profilversion 2024.0.0, 2× die Fehler zu `Z11 U99.0!`) -->
 
 ___
 
@@ -215,14 +228,15 @@ https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDe
 ### 🛠️ Aufgabe: Berichte einordnen
 
 - Welche Meldung in `bericht-condition-570762.json` ist ein echter **Datenfehler**?
-- Welche Meldungen tauchen in **allen** Berichten der Musterdaten auf? Zu welcher Gruppe gehören sie?
+- Welche Meldungen tauchen in **mehreren** Berichten auf? Zu welcher Gruppe gehören sie?
 - Was meldet der Validator zum Laborwert in `bericht-hb.json`, und warum?
 
 <details>
 <summary>Lösung</summary>
 
 - `570762` ist kein ICD-10-GM-Code. Der Terminologieserver kennt ihn nicht, der Validator meldet einen ungültigen Code. Das ist ein **Datenfehler** in der Quelle.
-- Meldungen zu `meta.profile` betreffen alle Musterdaten: Die Ressourcen nennen Profilversionen von 2024/2025, der Validator ist mit den Paketen von 2026 konfiguriert. Das ist ein **Versionsthema**, kein Fehler in den einzelnen Ressourcen.
+- `dom-6` steht in allen Berichten. Das ist eine **bekannte Meldung** (Tabelle A), kein Datenfehler.
+- „Profile reference … has not been checked“ steht in den Berichten zu `condition-r51` (`Diagnose|2024.0.0`) und `hb` (`ObservationLab|2025.0.2`): Diese Profilversionen hat der Validator nicht geladen. Das ist ein **Versionsthema**, kein Fehler in den Ressourcen. Bei `hba1c` gilt dieselbe Meldung deinem eigenen Studienprofil, das der Validator gar nicht kennt: eine **Grenze des Setups**. Die Diagnose `570762` nennt `Diagnose|2025.0.0`, die der Validator kennt, deshalb fehlt die Meldung dort.
 - Der Laborwert ist mit LOINC kodiert. Ist LOINC auf deinem Terminologieserver nicht geladen (z. B. beim eigenen FHIRsmith aus [Übung 6, Schritt 1a](exercise-6.md#schritt-1a)), kann der Code nicht geprüft werden. Das ist eine **Grenze des Setups**. Kennt der Server LOINC, sollte hier keine Meldung zum Code erscheinen. Der Laborwert trägt außerdem einen lokalen Laborcode des UKSH (`http://medic.uksh.de/fhir/CodeSystem/Laborparameter`). Den kennt kein externer Terminologieserver, ein Datenfehler ist das nicht.
 
 <!-- TODO beim Test: Lösung mit den tatsächlichen Meldungstexten abgleichen -->

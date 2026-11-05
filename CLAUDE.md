@@ -86,7 +86,7 @@ UKHD und UKW werden seit 2026-11-05 als regulärer Teil von Übung 3 (Abschnitt 
 | Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; 2026-11-05 auf „alle drei Standorte geladen“ umgestellt (Werte ohne Testressourcen aus Übung 2); Patient-ID in 5.4 wählen die Lernenden selbst |
 | Übung 5 | ✅ Getestet | 2026-11-04 neu aufgebaut und getestet: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze, Download-Links der Codesysteme, Aufgabe zur Diagnose-Rolle (Profil über `meta.profile`/Simplifier, `$expand`) |
 | Übung 6 | 🟡 Teilweise getestet | 2026-11-04 mit FHIRsmith komplett durchgespielt (Schritt 1a/1c, 2–4). 2026-11-05 Schritt 1 umgebaut (1a FHIRsmith starten → 1b Ontoserver über Proxy ausprobieren → 1c FHIRsmith prüfen); 1b noch nicht im neuen Ablauf getestet, siehe Offene Punkte |
-| Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; holt `hb.json` (Laborwert) seit 2026-11-05 selbst (früher Übung 6, 4.3); Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
+| Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; holt `hb.json` (UKSH-Hb mit LOINC und Hauscode) seit 2026-11-05 selbst (früher Übung 6, 4.3); 1.3 gruppiert zusätzlich die 57 Diagnose-Berichte aus Übung 6, 4.4; Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
 
 ## Entscheidung: Terminologieserver (2026-11-04)
 

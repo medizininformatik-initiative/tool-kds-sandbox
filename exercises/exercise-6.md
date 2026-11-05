@@ -605,7 +605,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 
 ✅ **Erwartetes Ergebnis:** `result: true`
 
-### 4.4 Wie gut sind die Diagnosen der Musterdaten?
+### <a id="schritt-4-4"></a>4.4 Wie gut sind die Diagnosen der Musterdaten?
 
 In 4.2 hast du gesehen: Nennt eine Diagnose eine Profilversion, die der Validator nicht kennt, prüft er sie nur gegen den FHIR-Basisstandard. Wie viele Diagnosen betrifft das, und was zeigt sich, wenn du sie gegen das aktuelle KDS-Profil prüfst?
 
