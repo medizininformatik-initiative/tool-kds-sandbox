@@ -286,6 +286,8 @@ ___
 
 Damit hast du den Weg von FHIR-Daten im DIZ einmal komplett durchlaufen: Du hast ein Profil modelliert ([1 · Profil erstellen](exercise-1.md)), Daten in einen FHIR-Server geladen und abgefragt ([2 · FHIR-Server starten](exercise-2.md), [3 · Musterdaten laden](exercise-3.md), [4 · Daten abfragen](exercise-4.md)), Codes an Terminologieservern geprüft ([5 · Codes prüfen](exercise-5.md)) und Ressourcen gegen die Profile des Kerndatensatzes validiert und die Ergebnisse eingeordnet ([6 · Ressourcen validieren](exercise-6.md), diese Übung).
 
+> 💡 **Feedback willkommen:** War etwas unklar, hat ein Befehl nicht wie beschrieben funktioniert, oder hast du Ideen für weitere Übungen? Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
+
 ___
 ___
 [Voraussetzungen](prerequisites.md) • [Dienste](services.md) • [1 · Profil erstellen](exercise-1.md) • [2 · FHIR-Server starten](exercise-2.md) • [3 · Musterdaten laden](exercise-3.md) • [4 · Daten abfragen](exercise-4.md) • [5 · Codes prüfen](exercise-5.md) • [6 · Ressourcen validieren](exercise-6.md) • **7 · Berichte auswerten**
