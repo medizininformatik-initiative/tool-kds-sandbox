@@ -164,7 +164,6 @@ cd solution-exercise-1/ExampleIG && ./_build.sh    # IG Publisher (lädt publish
 ## Git
 
 - Arbeit auf `develop`; `main` nur für Releases – **nie** direkt auf `main` committen oder pushen.
-- Parallel-Repo `mii-kds-sandbox_setup-repo` (DevContainer/Codespace-Setup) wird später integriert.
 
 ## Referenzen
 
