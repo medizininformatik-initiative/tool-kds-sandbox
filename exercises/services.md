@@ -58,7 +58,7 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: "-Xmx2g"
     ports:
-    - "8080:8080"
+    - "127.0.0.1:8080:8080"
     volumes:
     - "blaze-data:/app/data"
     healthcheck:
@@ -139,7 +139,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8082:8080"
+      - "127.0.0.1:8082:8080"
     volumes:
       - fhir-package-cache:/root/.fhir/packages
       - tx-cache:/tmp/tx-cache

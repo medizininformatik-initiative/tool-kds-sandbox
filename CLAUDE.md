@@ -2,7 +2,7 @@
 
 Projektkontext, Status und Regeln für die Arbeit an diesem Repository. Diese Datei ist die einzige Quelle dafür – bei Statusänderungen hier mitpflegen.
 
-> **Stand:** 2026-11-04
+> **Stand:** 2026-11-05
 
 ## Projekt
 
@@ -21,6 +21,8 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 
 `solution-exercise-5/check_codesystems.sh` fasst die beiden Befehle aus Übung 5, Schritt 5 zusammen (Terminologieserver als Parameter, Standard tx.fhir.org); wird in Übung 6, Schritt 1a wiederverwendet. Bei Änderungen an Schritt 5 mitziehen.
 
+`solution-exercise-2/blaze/docker-compose.yml` ist eine Kopie des Compose-Blocks aus Übung 2 – bei Änderungen mitziehen.
+
 `solution-exercise-6/` enthält die Konfigurationsdateien aus Übung 6 (`terminology-server/`, `validator/`) als Kopie der Code-Blöcke – bei Änderungen in `exercises/exercise-6.md` mitziehen.
 
 `solution-exercise-1/` und `solution-exercise-2/` enthalten dasselbe `ExampleIG/`-Projekt – Änderungen an beiden Stellen nachziehen. Bewusste Ausnahmen (Übungen bauen aufeinander auf): `Organization-beispiel-labor.fsh` und `* id = "example-patient"` in `patient.fsh` gibt es nur in `solution-exercise-2/`.
@@ -29,7 +31,7 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 
 - Laufzeitumgebung der Lernenden: Linux oder WSL2, Werkzeuge `sushi` (npm `fsh-sushi`), Java + IG Publisher, `docker compose`, `curl`, `jq`. Keine weiteren Abhängigkeiten einführen.
 - Pfade in den Übungen: `~/tool-kds-sandbox`, `~/musterdatenspende-diz`; keine nutzerspezifischen Absolutpfade.
-- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Übung 6, optional) `8081`, MII FHIR Validator (Übung 6) `8082`; der Ontoserver-Proxy aus Übung 6, Schritt 1b liegt auf `8083`. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben. GWDG-Testserver: `ens3` hat MTU 1450 → Docker per `/etc/docker/daemon.json` auf MTU 1450 stellen, sonst brechen Downloads aus Containern ab (`ECONNRESET`). Nicht in die Übungen aufnehmen (betrifft Lernende auf `localhost` normalerweise nicht).
+- Ports der Lernenden (alles `localhost`): Blaze `8080`, FHIRsmith (Übung 6, optional) `8081`, MII FHIR Validator (Übung 6) `8082`; der Ontoserver-Proxy aus Übung 6, Schritt 1b liegt auf `8083`. Blaze und Validator sind auf `127.0.0.1` gebunden (Entscheidung 2026-11-05: Dienste mit Daten bzw. Schreibzugriff nicht ins Netz; FHIRsmith bleibt ohne Bindung, damit der Validator ihn über `host.docker.internal` erreicht). 2026-11-05 auf dem GWDG-Server getestet: Blaze und Validator laufen mit `127.0.0.1`, Validator antwortet (Patient-Test → `dom-6`-Warnung). Auf einem externen Testserver Blaze/Validator daher per SSH-Tunnel ansprechen oder lokal die Bindung entfernen. Das Setup des Autors weicht teils ab (externer Server statt `localhost`) – Übungen trotzdem für `localhost` schreiben und bei Bedarf einen Hinweis für abweichende Adressen geben. GWDG-Testserver: `ens3` hat MTU 1450 → Docker per `/etc/docker/daemon.json` auf MTU 1450 stellen, sonst brechen Downloads aus Containern ab (`ECONNRESET`). Nicht in die Übungen aufnehmen (betrifft Lernende auf `localhost` normalerweise nicht).
 - FHIR-Server ist **Blaze** (`samply/blaze`, `http://localhost:8080/fhir`, gestartet per `docker compose up -d` aus Übung 2). Blaze erzwingt referenzielle Integrität und lässt sich nicht abschalten – das prägt Übung 3.
 - Terminologieserver: Übung 5 nutzt **tx.fhir.org**, Übung 6 einen eigenen **FHIRsmith** oder den **MII Ontoserver**. Alle Terminologie-Befehle nutzen die Shell-Variable `TX`. Siehe [Entscheidung: Terminologieserver](#entscheidung-terminologieserver-2026-11-04).
 - Validator ist der **MII FHIR Validator** (Übung 6, Image `ghcr.io/medizininformatik-initiative/mii-fhir-validator:0.0.1-alpha.9`, `POST /validateResource`) mit `TX_SERVER` = Terminologieserver aus Übung 6, Schritt 1. Das Standard-Setup des Validators (Blaze-Terminologie mit SNOMED-CT-Releasedateien, 16 GB RAM) wird bewusst nicht verwendet.
@@ -41,6 +43,7 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 | --- | --- |
 | **Musterdatenspende statt MII-Testdaten** | Enthält echte DIZ-Ausprägungen (UKHD, UKSH, UKW), zeigt Heterogenität. Testdaten sind nur technisch/strukturell. |
 | **Blaze statt HAPI** | Leichtgewichtig, Docker, kein Java-Build nötig. Aber: referenzielle Integrität lässt sich nicht abschalten. |
+| **Blaze-Image `samply/blaze:main` (ungepinnt)** | Bewusst (2026-11-05): Lernende sollen keine veralteten Versionen installieren. Nicht auf ein Release pinnen. |
 | **„Remove“ statt „Repair“ (`clean_bundle.sh`)** | Ressourcen mit nicht auflösbaren Referenzen werden iterativ entfernt. Das frühere `repair-bundle.sh` (Dummy-Ressourcen) wurde verworfen: zu komplex, Folgefehler. |
 | **PUT statt POST (`convert_to_put.sh`)** | `merge-bundles.sh` erzeugt POST → Blaze vergibt neue IDs, Referenzen brechen. PUT auf `resourceType/id` erhält die IDs. |
 | **`transaction` statt `batch` (`prepare_upload.sh`)** | UKW enthält zirkuläre Referenzen (Condition ↔ Encounter); im `batch` scheitert die Integritätsprüfung pro Eintrag mit HTTP 409. |
@@ -105,7 +108,6 @@ Test-Setup des Autors: Blaze und FHIRsmith auf einem eigenen Testserver statt `l
 
 ### Inhaltlich offen
 
-- **Übung 2:** Blaze-Image steht auf `samply/blaze:main` (ungepinnt) – auf ein Release festlegen (Stand 2026-11: `1.13.0`).
 - **Übung 3:** Umstrukturierung & Präsentation (laut Commit `8f54a4d` offen).
 - **Übung 4, Abfrage 6.1:** Alle Patienten haben nur `deceasedBoolean`, kein `deceasedDateTime` – der Widerspruchs-Check ergibt deshalb strukturell immer 0.
 - **Ideen für weitere Übungen** (aus der gestrichenen Übung 8; nur mit eigenem praktischen Lernziel aufnehmen): Pseudonymisierung von FHIR-Ressourcen (z. B. FHIR Pseudonymizer), Auswertung mit Skripten externer Forschender (R/Python), Datenausleitung mit TORCH und DIMP/DUP, Consent-Prüfung bei der Ausleitung, `CapabilityStatement` eines Servers lesen.

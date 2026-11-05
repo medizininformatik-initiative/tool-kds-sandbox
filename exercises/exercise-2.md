@@ -57,14 +57,14 @@ Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer
 > 💡 Alle Dienste der Übungen mit Ports und `docker-compose.yml` findest du gesammelt auf der Seite [Dienste](services.md).
 
 
-```bash
+```yaml
 services:
   blaze:
     image: "samply/blaze:main"
     environment:
       JAVA_TOOL_OPTIONS: "-Xmx2g"
     ports:
-    - "8080:8080"
+    - "127.0.0.1:8080:8080"
     volumes:
     - "blaze-data:/app/data"
     healthcheck:
@@ -76,6 +76,8 @@ services:
 volumes:
   blaze-data:
 ```
+
+> 💡 `127.0.0.1:` vor dem Port bedeutet: Blaze ist nur von deinem eigenen Rechner aus erreichbar, nicht von anderen Rechnern im Netzwerk.
 
 - Im Ordner mit der Docker-Compose Datei lässt sich der Dienst danach wie folgt starten und der erfolgreiche Start prüfen:
 
@@ -96,7 +98,7 @@ curl -v http://localhost:8080/fhir/metadata
 
 ```text
 IMAGE                STATUS         PORTS
-samply/blaze:1.9.0   Up (healthy)   0.0.0.0:8080->8080/tcp
+samply/blaze:main    Up (healthy)   127.0.0.1:8080->8080/tcp
 ```
 
 - Sollte der Dienst anders als erwartet verhalten, lassen sich die Docker-Logs einsehen:

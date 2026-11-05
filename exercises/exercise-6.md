@@ -104,7 +104,7 @@ Der Validator gibt jede Code-Prüfung an **einen** Terminologieserver weiter. W�
 | **Aufwand** | Pakete herunterladen, Konfiguration anlegen, Start ca. 15 Minuten | Zugang beantragen, Client-Zertifikat einrichten | Keiner |
 | **Voraussetzung** | Docker, bis 4 GB Arbeitsspeicher | Client-Zertifikat (nur Personen und Einrichtungen in Deutschland) | Internetzugang |
 | **Einschränkung** | LOINC- und SNOMED-Codes können nicht geprüft werden | Nur für Entwicklung, keine Personendaten, keine Massenvalidierung | Diagnosen und Prozeduren können nicht geprüft werden |
-| **Weiter mit** | [Schritt 1a](#schritt-1a) | [Schritt 1b](#schritt-1b) | [Schritt 2](#schritt-2): Dort legst du den Validator an und stellst ihn auf tx.fhir.org ein |
+| **Weiter mit** | [Schritt 1a](#schritt-1a) | [Schritt 1b](#schritt-1b) | [Schritt 2](#schritt-2) |
 
 > 💡 **Warum LOINC und SNOMED CT nicht im eigenen Server?** Beide lassen sich in FHIRsmith laden, ein Importer muss sie aber erst in eine Datenbankdatei umwandeln. Das dauert jeweils mehrere Stunden. Für die Übung verzichten wir darauf; im DIZ macht man das einmalig pro Version. Mehr dazu in der [Vertiefung](#vertiefung).
 
@@ -298,7 +298,7 @@ cp .env.default .env
 sed -i 's/^COMPOSE_PROFILES=blaze/COMPOSE_PROFILES=ontoserver/; s/^JAVA_OPTS=.*/JAVA_OPTS="-Xmx6g"/' .env
 
 # Ports anpassen: Validator 8082, Proxy 8083
-sed -i 's/"8080:8080"/"8082:8080"/; s/"8081:80"/"8083:80"/' docker-compose.yml
+sed -i 's/"8080:8080"/"127.0.0.1:8082:8080"/; s/"8081:80"/"8083:80"/' docker-compose.yml
 
 docker compose up -d
 docker compose logs -f validator-ontoserver
@@ -364,7 +364,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8082:8080"
+      - "127.0.0.1:8082:8080"
     volumes:
       - fhir-package-cache:/root/.fhir/packages
       - tx-cache:/tmp/tx-cache
@@ -376,7 +376,7 @@ volumes:
 
 🔍 **Genau hinschauen:**
 
-- `ports: "8082:8080"`: Im Container lauscht der Validator auf Port 8080. Da Blaze diesen Port auf deinem Rechner schon belegt, machen wir ihn unter **8082** erreichbar.
+- `ports: "127.0.0.1:8082:8080"`: Im Container lauscht der Validator auf Port 8080. Da Blaze diesen Port auf deinem Rechner schon belegt, machen wir ihn unter **8082** erreichbar. `127.0.0.1:` beschränkt den Zugriff wie bei Blaze auf deinen eigenen Rechner.
 - `TX_SERVER`: Die Adresse deines Terminologieservers aus Schritt 1. Für den eigenen FHIRsmith steht hier `host.docker.internal:8081`: Aus Sicht des Containers ist `localhost` der Container selbst, `host.docker.internal` zeigt dagegen auf deinen Rechner. Die Zeile `extra_hosts` macht diesen Namen auch unter Linux bekannt.
 - `IG_PARAMS`: Welche Implementation Guides der Validator lädt. Lässt du die Variable weg, lädt er alle 17 MII-Module. Das braucht aber deutlich mehr Arbeitsspeicher und Startzeit.
 
