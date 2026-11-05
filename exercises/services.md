@@ -16,6 +16,7 @@ ___
 - [Blaze (FHIR-Server)](#blaze)
 - [FHIRsmith (Terminologieserver)](#fhirsmith)
 - [MII FHIR Validator](#validator)
+- [Proxy zum MII Ontoserver (optional)](#ontoserver-proxy)
 - [Alle Dienste prüfen, stoppen und aufräumen](#befehle)
 
 ___
@@ -157,6 +158,20 @@ echo '{"resourceType": "Patient"}' \
       -H "Content-Type: application/fhir+json" \
       --data @- \
   | jq '.issue[].severity'
+```
+
+___
+
+## <a id="ontoserver-proxy"></a>💻 Proxy zum MII Ontoserver (optional)
+
+Nur mit Client-Zertifikat der SU-TermServ. Repository klonen und Zertifikat umwandeln: [Übung 6, Schritt 1b](exercise-6.md#schritt-1b).
+
+Starten und prüfen:
+
+```bash
+cd ~/mii-fhir-validator
+docker compose up -d nginx
+curl -s http://localhost:8083/fhir/metadata | jq '.software.name'
 ```
 
 ___

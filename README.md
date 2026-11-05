@@ -4,7 +4,7 @@ Eine praxisnahe Schulungsumgebung zum **MII-Kerndatensatz (KDS)** und zu **HL7 F
 
 In sieben aufeinander aufbauenden Übungen werden verschiedene Stationen auf dem Weg von Daten im MII-Kontext angeschnitten: von der Spezifikation eines FHIR-Profils über das Starten eines FHIR-Servers, die Kommunikation mit ihm sowie das Laden und Abfragen realitätsnaher Musterdaten bis hin zur Nutzung von Terminologiediensten, zur Validierung von FHIR-Ressourcen und zum Verstehen von Validierungsberichten.
 
-> Alles läuft lokal auf deinem Rechner mit Open-Source-Werkzeugen. Nur in [Übung 5 · Codes prüfen](exercises/exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org.
+> Alles läuft lokal auf deinem Rechner mit Open-Source-Werkzeugen. Nur in [Übung 5 · Codes prüfen](exercises/exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org und in [Übung 6 · Ressourcen validieren](exercises/exercise-6.md) – optional, mit Client-Zertifikat – den MII Ontoserver.
 
 ___
 
@@ -126,7 +126,7 @@ ___
 - Eigenen Terminologieserver mit deutschen Klassifikationen starten (FHIRsmith: ICD-10-GM, OPS, Alpha-ID-SE) und – mit Client-Zertifikat – den zentralen MII Ontoserver ausprobieren
 - MII FHIR Validator per Docker Compose starten und mit diesem Terminologieserver verbinden
 - Eigene HbA1c-Observation gegen das MII-Laborprofil und einzelne Musterdaten aus Blaze validieren
-- Erkennen, wann der Validator ein Profil gar nicht prüft (unbekannte Profilversion), und die Prüfung gegen ein Profil erzwingen
+- Erkennen, wann der Validator ein Profil gar nicht prüft (unbekannte Profilversion), die Prüfung gegen ein Profil erzwingen und so versteckte Datenfehler in den Musterdaten finden
 - Ausblick: Validierung über die Kommandozeile (`validator_cli.jar`)
 
 ## 🟤 [7 · Berichte auswerten](exercises/exercise-7.md)
