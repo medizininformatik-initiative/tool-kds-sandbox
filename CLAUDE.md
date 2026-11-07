@@ -2,7 +2,7 @@
 
 Projektkontext, Status und Regeln für die Arbeit an diesem Repository. Diese Datei ist die einzige Quelle dafür – bei Statusänderungen hier mitpflegen. Die Datei ist öffentlich: keine Server-Details, Zugangsdaten oder Testprotokolle aufnehmen (die liegen in `local_notes/`).
 
-> **Stand:** 2026-11-05
+> **Stand:** 2026-11-07
 
 ## Projekt
 
@@ -86,7 +86,7 @@ UKHD und UKW werden seit 2026-11-05 als regulärer Teil von Übung 3 (Abschnitt 
 | Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; 2026-11-05 auf „alle drei Standorte geladen“ umgestellt (Werte ohne Testressourcen aus Übung 2); Patient-ID in 5.4 wählen die Lernenden selbst |
 | Übung 5 | ✅ Getestet | 2026-11-04 neu aufgebaut und getestet: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze, Download-Links der Codesysteme, Aufgabe zur Diagnose-Rolle (Profil über `meta.profile`/Simplifier, `$expand`) |
 | Übung 6 | 🟡 Teilweise getestet | 2026-11-04 mit FHIRsmith komplett durchgespielt (Schritt 1a/1c, 2–4). 2026-11-05 Schritt 1 umgebaut (1a FHIRsmith starten → 1b Ontoserver über Proxy ausprobieren → 1c FHIRsmith prüfen); 1b noch nicht im neuen Ablauf getestet, siehe Offene Punkte |
-| Übung 7 | 🟡 Test ausstehend | Arbeitet mit den Berichten aus Übung 6; holt `hb.json` (UKSH-Hb mit LOINC und Hauscode) seit 2026-11-05 selbst (früher Übung 6, 4.3); 1.3 gruppiert zusätzlich die 57 Diagnose-Berichte aus Übung 6, 4.4; Skript `solution-exercise-7/validate.sh`; 2026-11-04 Abschnitt „Versionen von Codesystemen und Profilen“ und Abschluss (aus gestrichener Übung 8) |
+| Übung 7 | ✅ Getestet | 2026-11-07 getestet und Schritt 1 umgebaut: Überblick (1.1) → Fehler lesen (1.2) → an der Stelle aus `expression` nachsehen (1.3) → 57 Diagnose-Berichte aus Übung 6, 4.4 zählen und gruppieren (1.4, Texte auf 200 Zeichen gekürzt), jeweils mit „Was du gerade gesehen hast“; Lösung der Einordnungsaufgabe an echte Meldungen angepasst; `validate.sh` getestet (Exit-Codes 0/1/2); Quick-Checkliste überarbeitet |
 
 ## Entscheidung: Terminologieserver (2026-11-04)
 
@@ -102,7 +102,6 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 ### Beim Test der Übungen 6 und 7
 
 - **Übung 6, Schritt 1b:** im aktuellen Ablauf (nur `docker compose up -d nginx` mit kopierter `.env`) und Browser-Zugang noch einmal durchspielen. Nicht auf nicht-öffentliche Repositories verweisen.
-- **Übung 7:** `<!-- TODO beim Test -->`-Stellen und die Lösung der Einordnungsaufgabe mit echten Meldungstexten abgleichen; `validate.sh` gegen echten Validator testen.
 
 ### Erkenntnisse aus den Tests (für die Pflege der Übungen)
 
@@ -113,6 +112,8 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 - Übung 6, 4.4: 57 von 482 Diagnosen nennen `Diagnose|2024.0.0` (alle aus UKHD/UKW); mit erzwungenem `profile` haben `Diagnosis-010` und `Diagnosis-026` (UKW, Code `Z11 U99.0!`) je 2 Fehler, die übrigen 55 keine.
 - Beispiel aus Übung 1 nutzte ein nicht existierendes MII-CodeSystem für `QuelleKlinischesBezugsdatum` → auf SNOMED CT 399445004 umgestellt.
 - Prozedur- und andere Modulprofile sind im Validator bewusst nicht geladen.
+- Unbekannte Profile versucht der Validator über die Canonical-URL nachzuladen und hängt die Antwort (HTML von Simplifier) an „Profile reference … has not been checked“ an. Bei 57 Anfragen kam teils „Too many requests“ → dieselbe Meldung mit zwei Texten (29×/28×). Deshalb gruppiert Übung 7, 1.4 nach `details.text[0:200]`.
+- Übung 7, Hb (`LAB_hbe`/`718-7`): gemeldet wird nur das unbekannte UKSH-Codesystem, zum LOINC-Code im selben `code` gibt es keine Meldung (beim HbA1c schon). Ursache unklar, in der Übung bewusst nicht erklärt.
 
 ### Inhaltlich offen
 
@@ -121,6 +122,7 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 - **Ideen für weitere Übungen** (aus der gestrichenen Übung 8; nur mit eigenem praktischen Lernziel aufnehmen): Pseudonymisierung von FHIR-Ressourcen (z. B. FHIR Pseudonymizer), Auswertung mit Skripten externer Forschender (R/Python), Datenausleitung mit TORCH und DIMP/DUP, Consent-Prüfung bei der Ausleitung, `CapabilityStatement` eines Servers lesen.
 - **Musterdatenspende:** `merge-bundles.sh`-Bug ggf. dort als Issue melden.
 - **Allgemein:** Abschnitte „Nächste Schritte“ (Anfang) und „Ausblick“ (Ende) in jeder Übung vereinheitlichen. Die Übungen 3–7 nutzen Emojis außerhalb der Palette (z. B. 🚫 🧹 📤 🔄 📊 🎯 🔧 🔢 📜) – Bereinigung nur nach Absprache.
+- **Überarbeitung nach dem Merge (auf `develop`):** Alle Übungen an die menschliche Herangehensweise anpassen – erst Überblick (z. B. über einen Code), dann betroffene Ressource(n) finden, dann einzelne Felder ansehen und prüfen – statt komplexer `jq`-Abfragen und Filter. Statt Lernfragen, deren Antwort im Output steht, erklären, was der Output bedeutet und wie man technisch drankommt („Was du gerade gesehen hast“). Übung 7, Schritt 2 (Aufgabe „Berichte einordnen“) dabei mit ansehen.
 - **Beim Merge nach `main`:** Alle Übungen komplett neu durchtesten (Zahlen, Ausgaben, Dateinamen) und Beschreibungen an die Repo-Struktur angleichen. Wird erst dann gemeinsam entschieden – vorher nichts vorwegnehmen.
 
 ## Konventionen für Übungsdateien

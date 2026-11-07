@@ -9,7 +9,7 @@ ___
 **Nächste Schritte:**
 
 - Verstehe den Aufbau eines Validierungsberichts (`OperationOutcome`)
-- Filtere und zähle die Meldungen deiner Berichte aus [Übung 6 · Ressourcen validieren](exercise-6.md) mit `jq`
+- Werte deine Berichte aus [Übung 6 · Ressourcen validieren](exercise-6.md) mit `jq` aus: vom Überblick bis zur gemeldeten Stelle in der Ressource
 - Ordne Meldungen ein: Datenfehler, Versionsthema oder Grenze des Setups?
 - Lerne, was ein Validator **nicht** findet
 
@@ -128,9 +128,18 @@ ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Berichte speichern und auswerten
 
-> ⚠️ **Voraussetzung:** Blaze und der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) laufen, und in `~/validator` liegen die Dateien `hba1c.json`, `condition-570762.json` und `condition-r51.json`.
+> ⚠️ **Voraussetzung:** Blaze und der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) laufen. In `~/validator` liegen diese Dateien aus Übung 6:
+>
+> | Datei | Inhalt | Erstellt in |
+> | --- | --- | --- |
+> | `hba1c.json` | Deine HbA1c-Observation aus Übung 1 | [Übung 6, Schritt 3](exercise-6.md#schritt-3) |
+> | `condition-570762.json` | Diagnose mit dem ungültigen Code `570762` | [Übung 6, Schritt 4.1](exercise-6.md#schritt-4) |
+> | `condition-r51.json` | Diagnose `R51` mit der Profilversion `Diagnose\|2024.0.0` | [Übung 6, Schritt 4.2](exercise-6.md#schritt-4) |
+> | `diagnosen/` | Die 57 Diagnosen mit `Diagnose\|2024.0.0` und ihre Berichte | [Übung 6, Schritt 4.4](exercise-6.md#schritt-4-4) |
+>
+> Fehlt eine Datei, führe den jeweiligen Schritt aus Übung 6 noch einmal aus.
 
-Hole dir zusätzlich einen Hämoglobin-Wert des UKSH. Die Abfrage verlangt beide Codes, den LOINC-Code und den Hauscode des UKSH:
+Neu in dieser Übung holst du dir einen Hämoglobin-Wert des UKSH (`hb.json`). Die Abfrage verlangt beide Codes, den LOINC-Code und den Hauscode des UKSH:
 
 ```bash
 cd ~/validator
@@ -152,7 +161,9 @@ done
 ls bericht-*.json
 ```
 
-### 1.1 Meldungen je Schwere zählen
+### 1.1 Überblick: Meldungen je Schwere
+
+Fang mit einem Überblick an: Wie viele Meldungen welcher Schwere enthält jeder Bericht?
 
 ```bash
 for f in bericht-*.json; do
@@ -160,31 +171,95 @@ for f in bericht-*.json; do
 done
 ```
 
-<!-- TODO beim Test: erwartete Ausgabe eintragen -->
+✅ **Erwartetes Ergebnis:**
 
-### 1.2 Nur die Fehler anzeigen
+```text
+bericht-condition-570762.json: {"error":2,"warning":2}
+bericht-condition-r51.json: {"information":1,"warning":2}
+bericht-hba1c.json: {"error":2,"warning":9}
+bericht-hb.json: {"information":1,"warning":6}
+```
+
+🧩 **Was du gerade gesehen hast:** Eine Zeile pro Bericht reicht, um zu wissen, wo du hinschauen musst. Fehler haben nur `condition-570762` und `hba1c`. Die beiden anderen Berichte sind fehlerfrei. Ob dabei wirklich gegen ein KDS-Profil geprüft wurde, verrät die Zählung allerdings nicht (siehe [Übung 6, Schritt 4.2](exercise-6.md#schritt-4) und Schritt 2 unten). Bei vielen Berichten gehst du genauso vor: erst zählen, dann gezielt lesen.
+
+### 1.2 Die Fehler eines Berichts lesen
 
 ```bash
 jq -r '.issue[] | select(.severity == "error" or .severity == "fatal") | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"' bericht-condition-570762.json
 ```
 
-### 1.3 Gleiche Meldungen zusammenfassen
+✅ **Erwartetes Ergebnis** (die zweite Meldung ist gekürzt):
 
-Bei vielen Ressourcen wiederholen sich Meldungen. Gruppiert nach Text siehst du, welche Probleme am häufigsten vorkommen. `jq -s` liest dazu alle Berichte auf einmal ein:
+```text
+error – Condition.code.coding[0].code
+  Unknown code '570762' in the CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' version '2025'
 
-```bash
-cat bericht-*.json \
-  | jq -r -s '[.[].issue[].details.text] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
+error – Condition.code.coding[0]
+  The code provided (http://fhir.de/CodeSystem/bfarm/icd-10-gm#570762) was not found in the value set 'MII VS Diagnose ICD-10-GM' (…), and a code from this value set is required: …
 ```
 
-Bei vier Berichten ist das noch übersichtlich. Aussagekräftig wird es bei vielen: In [Übung 6, Schritt 4.4](exercise-6.md#schritt-4-4) hast du 57 Diagnosen validiert, ihre Berichte liegen in `~/validator/diagnosen/`:
+### 1.3 An der gemeldeten Stelle nachsehen
+
+Jede Meldung sagt dir in `expression`, **wo** in der Ressource das Problem liegt. Der FHIRPath-Ausdruck `Condition.code.coding[0]` entspricht in `jq` dem Pfad `.code.coding[0]`: Ressourcentyp weglassen, mit einem Punkt beginnen.
+
+```bash
+jq '.code.coding[0]' condition-570762.json
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```json
+{
+  "system": "http://fhir.de/CodeSystem/bfarm/icd-10-gm",
+  "version": "2025",
+  "code": "570762"
+}
+```
+
+System und Version passen zur Meldung (`icd-10-gm`, Version `2025`), nur der Code selbst existiert nicht.
+
+🧩 **Was du gerade gesehen hast:** Der Validator sagt dir, **was** nicht stimmt, und mit `expression`, **wo**. Damit kommst du ohne Suchen direkt an das betroffene Feld. Das klappt mit den meisten Meldungen, z. B. `Observation.meta.profile[0]` → `jq '.meta.profile[0]'`. So prüfst du im Alltag eine Meldung nach, bevor du sie an die Datenquelle weitergibst.
+
+### 1.4 Viele Berichte auf einmal
+
+In [Übung 6, Schritt 4.4](exercise-6.md#schritt-4-4) hast du 57 Diagnosen validiert, ihre Berichte liegen in `~/validator/diagnosen/`. 57 Berichte einzeln zu lesen, ist mühsam. Bequemer geht es mit `jq -s`: Es liest alle Berichte auf einmal ein, und du bekommst wieder zuerst einen Überblick:
 
 ```bash
 cat diagnosen/bericht-*.json \
-  | jq -r -s '[.[].issue[].details.text] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
+  | jq -c -s '[.[].issue[].severity] | group_by(.) | map({(.[0]): length}) | add'
 ```
 
-<!-- TODO beim Test: erwartete Ausgabe eintragen (vermutlich je 57× dom-6 und Profilversion 2024.0.0, 2× die Fehler zu `Z11 U99.0!`) -->
+✅ **Erwartetes Ergebnis:**
+
+```text
+{"error":4,"information":57,"warning":116}
+```
+
+Welche Meldungen stecken dahinter? Der nächste Befehl fasst gleiche Meldungen zusammen und zählt sie. `[0:200]` kürzt jeden Text auf 200 Zeichen, damit lange Meldungen in eine Zeile passen:
+
+```bash
+cat diagnosen/bericht-*.json \
+  | jq -r -s '[.[].issue[].details.text[0:200]] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```text
+57×  A definition could not be found for Canonical URL 'https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDefinition/Diagnose|2024.0.0'
+57×  Constraint failed: dom-6: 'A resource should have narrative for robust management' (defined in http://hl7.org/fhir/StructureDefinition/DomainResource) (Best Practice Recommendation)
+57×  Profile reference 'https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDefinition/Diagnose|2024.0.0' has not been checked because it could not be found, and fetching it resul
+2×  Constraint failed: icd-regex: 'In code sind nur gültige ICD-10-Codes ohne Zusätze erlaubt' (defined in http://fhir.de/StructureDefinition/CodingICD10GM)
+2×  The code provided (http://fhir.de/CodeSystem/bfarm/icd-10-gm#Z11 U99.0!) was not found in the value set 'MII VS Diagnose ICD-10-GM' (https://www.medizininformatik-initiative.de/fhir/core/modul-diagnos
+2×  Unknown code 'Z11 U99.0!' in the CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' version '2021'
+```
+
+🧩 **Was du gerade gesehen hast:**
+
+- Aus 177 Meldungen werden sechs Zeilen. Drei Meldungen stehen in **allen** 57 Berichten: zweimal die unbekannte Profilversion `Diagnose|2024.0.0`, dazu `dom-6`. Sie haben eine gemeinsame Ursache, die den ganzen Bestand betrifft. Das ist ein Thema für die Konfiguration oder die Lieferung, nicht für einzelne Diagnosen.
+- Drei Meldungen stehen nur **zweimal** da. Das sind die beiden Diagnosen mit dem Code `Z11 U99.0!` aus Übung 6, 4.4: je zwei Fehler und die Warnung `icd-regex`.
+- Häufige Meldungen zeigen also systematische Themen (Version, Setup, eine Regel in der ETL-Strecke), seltene meist einzelne fehlerhafte Datensätze. Welche Berichte betroffen sind, findest du mit `grep -l` wie in Übung 6, 4.4, und an der Stelle nachsehen kannst du wie in 1.3.
+
+> 🔍 **Warum kürzen?** Kennt der Validator ein Profil nicht, versucht er, es über seine Canonical-URL aus dem Netz zu laden. Bei den MII-Profilen landet er auf einer Webseite und hängt deren Inhalt an die Meldung an. Bei 57 Anfragen kurz hintereinander antwortete die Seite im Test teils mit „Too many requests“. Dieselbe Meldung hatte deshalb zwei verschiedene Texte, ungekürzt hätte `jq` sie getrennt gezählt.
 
 ___
 
@@ -237,9 +312,8 @@ https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDe
 - `570762` ist kein ICD-10-GM-Code. Der Terminologieserver kennt ihn nicht, der Validator meldet einen ungültigen Code. Das ist ein **Datenfehler** in der Quelle.
 - `dom-6` steht in allen Berichten. Das ist eine **bekannte Meldung** (Tabelle A), kein Datenfehler.
 - „Profile reference … has not been checked“ steht in den Berichten zu `condition-r51` (`Diagnose|2024.0.0`) und `hb` (`ObservationLab|2025.0.2`): Diese Profilversionen hat der Validator nicht geladen. Das ist ein **Versionsthema**, kein Fehler in den Ressourcen. Bei `hba1c` gilt dieselbe Meldung deinem eigenen Studienprofil, das der Validator gar nicht kennt: eine **Grenze des Setups**. Die Diagnose `570762` nennt `Diagnose|2025.0.0`, die der Validator kennt, deshalb fehlt die Meldung dort.
-- Der Laborwert ist mit LOINC kodiert. Ist LOINC auf deinem Terminologieserver nicht geladen (z. B. beim eigenen FHIRsmith aus [Übung 6, Schritt 1a](exercise-6.md#schritt-1a)), kann der Code nicht geprüft werden. Das ist eine **Grenze des Setups**. Kennt der Server LOINC, sollte hier keine Meldung zum Code erscheinen. Der Laborwert trägt außerdem einen lokalen Laborcode des UKSH (`http://medic.uksh.de/fhir/CodeSystem/Laborparameter`). Den kennt kein externer Terminologieserver, ein Datenfehler ist das nicht.
-
-<!-- TODO beim Test: Lösung mit den tatsächlichen Meldungstexten abgleichen -->
+- Zum Code des Laborwerts meldet der Validator: `A definition for CodeSystem 'http://medic.uksh.de/fhir/CodeSystem/Laborparameter' could not be found, so the code cannot be validated`. Das ist der Hauscode des UKSH. Ein lokales Codesystem kennt ein externer Terminologieserver in der Regel nicht, der Code wurde also nicht geprüft. Falsch ist er deshalb nicht: eine **Grenze des Setups**. Zur Kategorie meldet er, dass LOINC fehlt, sie aber trotzdem gültig ist (`another coding is in the value set`).
+- Beim Laborwert erscheint außerdem `None of the codings provided are in the value set 'IdentifierType'` (wie bei `hba1c`). Das MII-Laborprofil würde `OBI` erlauben. Weil der Validator `ObservationLab|2025.0.2` nicht kennt, prüft er nur gegen den FHIR-Basisstandard, und der kennt `OBI` nicht: eine Folge des **Versionsthemas**. `all observations should have a performer` ist wie `dom-6` eine Best-Practice-Empfehlung.
 
 </details>
 
@@ -267,12 +341,21 @@ ___
 
 ## <a id="schritt-3"></a>💻 Schritt 3: Validierung automatisieren
 
-Im DIZ-Alltag validiert man nicht von Hand, sondern per Skript, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
+Im DIZ-Alltag validiert man meist per Skript statt von Hand, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
 
 ```bash
 bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-r51.json
 bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-570762.json
 echo "Exit-Code: $?"
+```
+
+✅ **Erwartetes Ergebnis** (Pfade gekürzt, die Fehlerliste dazwischen ausgelassen):
+
+```text
+✅ …/validator/condition-r51.json: 0 Fehler, 2 Warnungen
+❌ …/validator/condition-570762.json: 2 Fehler, 2 Warnungen
+[ … die beiden Fehler aus 1.2 mit code, text und ort … ]
+Exit-Code: 1
 ```
 
 > 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://mein-server:8082 bash validate.sh datei.json`.
@@ -283,18 +366,22 @@ ___
 
 | Aufgabe | Befehl |
 | --- | --- |
-| Meldungen je Schwere zählen | `jq '[.issue[].severity] \| group_by(.) \| map({(.[0]): length}) \| add' bericht.json` |
-| Nur Fehler anzeigen | `jq '[.issue[] \| select(.severity == "error")]' bericht.json` |
-| Meldungen gruppieren | `jq -s '[.[].issue[] \| .details.text] \| group_by(.) \| map({anzahl: length, meldung: .[0]})'` |
+| Meldungen je Schwere zählen | `jq -c '[.issue[].severity] \| group_by(.) \| map({(.[0]): length}) \| add' bericht.json` |
+| Nur Fehler anzeigen | `jq '.issue[] \| select(.severity == "error" or .severity == "fatal")' bericht.json` |
+| An der gemeldeten Stelle nachsehen | Pfad aus `expression`, z. B. `jq '.code.coding[0]' ressource.json` |
+| Viele Berichte: Meldungen zusammenfassen | `cat bericht-*.json \| jq -r -s '[.[].issue[].details.text[0:200]] \| group_by(.) \| sort_by(-length) \| .[] \| "\(length)×  \(.[0])"'` |
 | Datei per Skript prüfen | `bash solution-exercise-7/validate.sh datei.json` |
 
 ### Quick-Checkliste
 
-- [ ] `error` = 0? Wenn nein: Ursache einordnen und beheben
-- [ ] Warnungen gelesen? Akzeptabel oder Handlungsbedarf?
-- [ ] Profil- und Codesystem-Versionen der Daten passen zur Konfiguration des Validators?
-- [ ] Fachliche Plausibilität separat geprüft?
-- [ ] Bericht abgelegt (Nachvollziehbarkeit)?
+- [ ] Überblick verschafft: Meldungen je Schwere gezählt, bevor du einzelne Berichte liest?
+- [ ] Profil wirklich geprüft? Steht „Profile reference … has not been checked“ im Bericht, wurde nur gegen den FHIR-Basisstandard geprüft. Version klären oder mit `profile` prüfen.
+- [ ] Jeden `error` an der Stelle aus `expression` in der Ressource nachgesehen?
+- [ ] Bei vielen Berichten: Häufige Meldungen als mögliches systematisches Thema geprüft, seltene als mögliche Einzelfälle?
+- [ ] Meldungen eingeordnet: Datenfehler, Versionsthema, Grenze des Setups oder bekannte Meldung?
+- [ ] „… could not be found, so the code cannot be validated“ heißt **nicht geprüft**, nicht gültig. Ist das für deinen Zweck ausreichend?
+- [ ] Fachliche Plausibilität (Code, Einheit, Wert) separat geprüft?
+- [ ] Berichte abgelegt (Nachvollziehbarkeit)?
 
 **Abschluss:**
 
