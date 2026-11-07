@@ -13,11 +13,10 @@ MII-Kerndatensatz-(KDS-)Schulungsumgebung für neue Mitarbeitende der DIZe (Proj
 ## Struktur
 
 - `exercises/prerequisites.md`, `exercises/exercise-1.md` … `exercise-7.md` – die Übungen; jede baut auf der vorherigen auf (FSH/SUSHI → Blaze-Upload → Musterdaten laden → Query → Terminologie-Operationen → Terminologieserver + Validator → Ergebnisse interpretieren). Jede Übung hat ein eigenes Lernziel mit praktischem Anteil; reine Ausblick-/Theorie-Übungen gibt es bewusst nicht (die frühere Übung 8 „Ausblick“ wurde 2026-11-04 gestrichen, relevante Inhalte stecken in Übung 5–7).
-- `solution-exercise-N/` – Musterlösung zur jeweiligen Übung (auf `develop` als Ordner). Die Übungstexte beschreiben den Zielzustand auf `main`, wo die Lösungen in Solution-Branches (`solution_exercise-N`) liegen sollen. Diese Hinweise nicht an den develop-Stand anpassen.
+- `solution-exercise-N/` – Musterlösung zur jeweiligen Übung als Ordner, auf `develop` und `main` gleich. Die Übungen 3, 5, 6 und 7 rufen Skripte daraus direkt auf. Solution-Branches gibt es nicht (Entscheidung 2026-11-07).
 - `exercises/services.md` – Nachschlageseite aller Dienste (Ports, `docker-compose.yml`, Start/Prüfen). Die Compose-Blöcke dort sind **Kopien** aus den Übungen 2, 5 und 6 – bei Änderungen an einer Übung hier nachziehen (und umgekehrt). Steht in der Breadcrumb direkt hinter Voraussetzungen.
 - `README.md` – Kurzübersicht aller Übungen; Überschriften/Farbemojis müssen zu den Übungstiteln passen.
 - `local_notes/` – per `.gitignore` ausgeschlossen, nicht committen.
-- `exercises/figures/` – keine Binärdateien ohne Absprache.
 
 `solution-exercise-5/check_codesystems.sh` fasst die beiden Befehle aus Übung 5, Schritt 5 zusammen (Terminologieserver als Parameter, Standard tx.fhir.org); wird in Übung 6, Schritt 1c für den Vergleich FHIRsmith/Ontoserver wiederverwendet. Bei Änderungen an Schritt 5 mitziehen.
 
@@ -85,7 +84,7 @@ UKHD und UKW werden seit 2026-11-05 als regulärer Teil von Übung 3 (Abschnitt 
 | Übung 3 | ✅ Getestet | Upload aller drei Standorte; Upload-Ausgabe auf Status-Zählung umgestellt |
 | Übung 4 | ✅ Getestet | Zahlen 2026-11-02 korrigiert; 2026-11-05 auf „alle drei Standorte geladen“ umgestellt (Werte ohne Testressourcen aus Übung 2); Patient-ID in 5.4 wählen die Lernenden selbst |
 | Übung 5 | ✅ Getestet | 2026-11-04 neu aufgebaut und getestet: Terminologie-Operationen an tx.fhir.org mit Codes aus Blaze, Download-Links der Codesysteme, Aufgabe zur Diagnose-Rolle (Profil über `meta.profile`/Simplifier, `$expand`) |
-| Übung 6 | 🟡 Teilweise getestet | 2026-11-04 mit FHIRsmith komplett durchgespielt (Schritt 1a/1c, 2–4). 2026-11-05 Schritt 1 umgebaut (1a FHIRsmith starten → 1b Ontoserver über Proxy ausprobieren → 1c FHIRsmith prüfen); 1b noch nicht im neuen Ablauf getestet, siehe Offene Punkte |
+| Übung 6 | ✅ Getestet | 2026-11-04 mit FHIRsmith komplett durchgespielt (Schritt 1a/1c, 2–4). 2026-11-05 Schritt 1 umgebaut (1a FHIRsmith starten → 1b Ontoserver über Proxy ausprobieren → 1c FHIRsmith prüfen); 1b im neuen Ablauf mit Nutzerzertifikat getestet |
 | Übung 7 | ✅ Getestet | 2026-11-07 getestet und Schritt 1 umgebaut: Überblick (1.1) → Fehler lesen (1.2) → an der Stelle aus `expression` nachsehen (1.3) → 57 Diagnose-Berichte aus Übung 6, 4.4 zählen und gruppieren (1.4, Texte auf 200 Zeichen gekürzt), jeweils mit „Was du gerade gesehen hast“; Lösung der Einordnungsaufgabe an echte Meldungen angepasst; `validate.sh` getestet (Exit-Codes 0/1/2); Quick-Checkliste überarbeitet |
 
 ## Entscheidung: Terminologieserver (2026-11-04)
@@ -98,10 +97,6 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 - Die Musterdatenspende ist öffentlich; bei `$validate-code` gehen nur Codes an tx.fhir.org. Trotzdem in Übung 5 auf „nie echte Patientendaten an öffentliche Server“ hinweisen.
 
 ## Offene Punkte
-
-### Beim Test der Übungen 6 und 7
-
-- **Übung 6, Schritt 1b:** im aktuellen Ablauf (nur `docker compose up -d nginx` mit kopierter `.env`) und Browser-Zugang noch einmal durchspielen. Nicht auf nicht-öffentliche Repositories verweisen.
 
 ### Erkenntnisse aus den Tests (für die Pflege der Übungen)
 
@@ -123,7 +118,6 @@ Es gibt **keinen zentralen Schulungsserver**. Ziel bleibt: Lernende sollen nicht
 - **Musterdatenspende:** `merge-bundles.sh`-Bug ggf. dort als Issue melden.
 - **Allgemein:** Abschnitte „Nächste Schritte“ (Anfang) und „Ausblick“ (Ende) in jeder Übung vereinheitlichen. Die Übungen 3–7 nutzen Emojis außerhalb der Palette (z. B. 🚫 🧹 📤 🔄 📊 🎯 🔧 🔢 📜) – Bereinigung nur nach Absprache.
 - **Überarbeitung nach dem Merge (auf `develop`):** Alle Übungen an die menschliche Herangehensweise anpassen – erst Überblick (z. B. über einen Code), dann betroffene Ressource(n) finden, dann einzelne Felder ansehen und prüfen – statt komplexer `jq`-Abfragen und Filter. Statt Lernfragen, deren Antwort im Output steht, erklären, was der Output bedeutet und wie man technisch drankommt („Was du gerade gesehen hast“). Übung 7, Schritt 2 (Aufgabe „Berichte einordnen“) dabei mit ansehen.
-- **Beim Merge nach `main`:** Alle Übungen komplett neu durchtesten (Zahlen, Ausgaben, Dateinamen) und Beschreibungen an die Repo-Struktur angleichen. Wird erst dann gemeinsam entschieden – vorher nichts vorwegnehmen.
 
 ## Konventionen für Übungsdateien
 
@@ -166,6 +160,7 @@ cd solution-exercise-1/ExampleIG && ./_build.sh    # IG Publisher (lädt publish
 ## Git
 
 - Arbeit auf `develop`; `main` nur für Releases – **nie** direkt auf `main` committen oder pushen.
+- Release: Pull Request `develop` → `main` als Merge-Commit (kein Squash/Rebase), damit beide Branches dieselbe Historie behalten. `main` übernimmt den Stand von `develop` vollständig (erster Merge 2026-11-07).
 
 ## Referenzen
 

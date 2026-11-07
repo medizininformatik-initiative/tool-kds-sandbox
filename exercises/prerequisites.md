@@ -66,7 +66,7 @@ ___
 
 Bearbeite die Übungen am besten selbstständig in deinem lokalen `main`-Branch.
 
-Die Musterlösungen der einzelnen Übungen (z. B. FSH-Dateien, Skripte) stehen dir jeweils im passenden Solution-Branch zur Verfügung (`solution_exercise-1`, `solution_exercise-2` usw.).
+Die Musterlösungen der einzelnen Übungen (z. B. FSH-Dateien, Skripte) liegen im Repository in den Ordnern `solution-exercise-1`, `solution-exercise-2` usw. Einige Übungen rufen Skripte aus diesen Ordnern direkt auf.
 
 ___
 ___
