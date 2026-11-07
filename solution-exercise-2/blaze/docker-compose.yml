@@ -1,0 +1,17 @@
+services:
+  blaze:
+    image: "samply/blaze:main"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx2g"
+    ports:
+    - "127.0.0.1:8080:8080"
+    volumes:
+    - "blaze-data:/app/data"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+volumes:
+  blaze-data:
