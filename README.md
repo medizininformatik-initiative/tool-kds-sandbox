@@ -15,11 +15,11 @@ ___
 | ⚪ | [Voraussetzungen](exercises/prerequisites.md) | Dich orientieren & Entwicklungsumgebung vorbereiten | – | Checkliste | ✅ |
 | 🔵 | [1 · Profil erstellen](exercises/exercise-1.md) | Profil und Beispielressource in FSH schreiben und kompilieren, Implementation Guide bauen | `sushi`, Firely Terminal, Java + IG Publisher | Groß · ca. 20 Befehlsblöcke, IG-Build ca. 10 min | ✅ |
 | 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 8 Befehlsblöcke | ✅ |
-| 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
-| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 22 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
-| 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 15 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
+| 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 18 Befehlsblöcke | ✅ |
+| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 30 Befehlsblöcke | ✅ |
+| 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 18 Befehlsblöcke | ✅ |
 | 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | FHIRsmith, MII FHIR Validator, Docker Compose, `curl`, `jq` | Groß · ca. 24 Befehlsblöcke, erster Start Terminologieserver ca. 15 min, Validator ca. 5 min | ✅ |
-| 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 8 Befehlsblöcke, 1 Aufgabe mit Lösung | ✅ |
+| 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 9 Befehlsblöcke | ✅ |
 
 **Stand:** ✅ erprobt · 🚧 in Arbeit (Inhalte können sich noch ändern)
 
@@ -103,8 +103,9 @@ ___
 
 > Voraussetzung: Musterdaten aus [Übung 3 · Musterdaten laden](exercises/exercise-3.md) sind im Server geladen.
 
-- Pseudonymisierte Patienten erkunden, nach Geschlecht und Alter filtern, durch Ergebnisseiten blättern
-- Diagnosen (ICD-10-GM) und Laborwerte (LOINC und lokale Codes) suchen, auffällige Werte wie eine Hyperkaliämie finden
+- Vorgehen wie bei unbekannten Daten: erst Überblick, dann auffällige Stelle und betroffene Ressourcen finden, dann nachsehen
+- Patienten der drei Standorte erkunden, nach Geschlecht und Alter filtern, durch Ergebnisseiten blättern
+- Diagnosen (ICD-10-GM) und Laborwerte (LOINC und lokale Codes) suchen, auffällige Werte wie hohe Kaliumwerte im Verlauf und im Befund einordnen
 - Ressourcen verknüpfen: Chaining, `_has`, `_include` (Befund mit Einzelwerten) und `_revinclude` (Patientenakte)
 - Widersprüche und ungültige Codes in den Daten entdecken
 - Ausblick auf skriptbasierte Auswertung mit Python (fhir-pyrate) und R (fhircrackr) sowie auf TORCH

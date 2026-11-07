@@ -223,7 +223,7 @@ Beim Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Terminologi
 
 `localhost:3000` ist die Adresse im Container. Von deinem Rechner aus erreichst du den Server unter `http://localhost:8081`. Mit `Strg+C` beendest du die Log-Anzeige; der Server läuft weiter.
 
-> 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Findest du ICD-10-GM, OPS und Alpha-ID-SE?
+> 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Dort stehen auch die drei Ordner aus Schritt 1 (`de.bfarm.icd-10-gm`, `de.bfarm.ops`, `de.bfarm.alpha-id-se`). Fehlt einer, prüfe den Pfad unter `folder:` in der `library.yml`.
 
 Während FHIRsmith einliest: Hast du ein Client-Zertifikat für den MII Ontoserver, mach mit [Schritt 1b](#schritt-1b) weiter. Ohne Zertifikat überspringst du 1b und machst mit [Schritt 1c](#schritt-1c) weiter, sobald FHIRsmith bereit ist.
 
@@ -416,7 +416,7 @@ FHIR Validator HTTP Service started on  0.0.0.0/0.0.0.0:8080
 
 Mit `Strg+C` beendest du die Log-Anzeige; der Validator läuft weiter.
 
-> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Findest du die fünf Pakete aus `IG_PARAMS`?
+> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Dort sollten die fünf Pakete aus `IG_PARAMS` auftauchen. Wenn der Validator später ein Profil nicht kennt, ist diese Liste eine gute Stelle zum Nachsehen.
 
 Prüfe, ob der Validator antwortet, indem du eine minimale Patient-Ressource validierst:
 
@@ -465,8 +465,6 @@ curl -s -X POST http://localhost:8082/validateResource \
   | jq -r '.issue[] | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"'
 ```
 
-🔍 **Genau hinschauen:** Was meldet der Validator zu deinem Studienprofil? Kennt er es überhaupt?
-
 ✅ **Erwartetes Ergebnis:** 2 Fehler und 9 Warnungen. Sortiert nach Ursache:
 
 | Schwere | Meldung (gekürzt) | Ursache |
@@ -478,7 +476,11 @@ curl -s -X POST http://localhost:8082/validateResource \
 | `warning` | `None of the codings provided are in the value set 'IdentifierType'` | `OBI` verlangt der KDS, das allgemeine FHIR-ValueSet kennt es nicht. Kein Problem |
 | `warning` | `dom-6: A resource should have narrative`, `all observations should have a performer` | Best-Practice-Empfehlungen |
 
-Die Warnungen zu LOINC und SNOMED CT heißen: **nicht geprüft**, nicht falsch. Mit einem Terminologieserver, der beide kennt (z. B. dem MII Ontoserver), fallen sie weg.
+🧩 **Was du gerade gesehen hast:**
+
+- Entscheidend ist die erste Meldung: Der Validator kennt dein Studienprofil nicht. Die übrigen Meldungen stammen deshalb nicht aus deinen Regeln aus Übung 1, sondern aus dem FHIR-Basisstandard und der Code-Prüfung am Terminologieserver.
+- Die Warnungen zu LOINC und SNOMED CT heißen: **nicht geprüft**, nicht falsch. Mit einem Terminologieserver, der beide kennt (z. B. dem MII Ontoserver), fallen sie weg.
+- Die elf Meldungen lassen sich wenigen Ursachen zuordnen, wie die Tabelle zeigt. Hilfreich ist es deshalb, einen Bericht nach Ursachen zu gruppieren, statt ihn von oben nach unten zu lesen. Wie das bei vielen Berichten mit `jq` geht, lernst du in [Übung 7 · Berichte auswerten](exercise-7.md).
 
 ### 3.2 Gegen das MII-Laborprofil validieren
 
@@ -498,7 +500,7 @@ curl -s -X POST "http://localhost:8082/validateResource?profile=https://www.medi
 | entfällt | `None of the codings provided are in the value set 'IdentifierType'` | Das MII-Profil erlaubt `OBI` über ein eigenes ValueSet |
 | neu | `ValueSet 'http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips' not found` | Das MII-Profil verweist für `code` auf ein ValueSet, das der Validator nicht geladen hat. Nur eine Empfehlung (`preferred`), daher eine Warnung |
 
-Gegen das MII-Profil gibt es also **keine strukturellen Fehler**: Pflichtfelder, Kategorien, Einheit und Bezugsdatum passen. Übrig bleiben die Platzhalter-URLs aus dem Beispiel und Codes, die dein Terminologieserver nicht prüfen kann.
+🧩 **Was du gerade gesehen hast:** Gegen das MII-Profil gibt es **keine strukturellen Fehler**: Pflichtfelder, Kategorien, Einheit und Bezugsdatum passen. Übrig bleiben die Platzhalter-URLs aus dem Beispiel und Codes, die dein Terminologieserver nicht prüfen kann. Mit `profile` bestimmst du also selbst, wogegen geprüft wird, unabhängig davon, was in `meta.profile` steht.
 
 > 💡 Neuere Versionen des Validators nennen die Parameter `profiles` und `displayOption` statt `profile` und `checkDisplay`. Meldet er `Unable to process param`, probiere die andere Schreibweise.
 
@@ -530,7 +532,7 @@ curl -s -X POST http://localhost:8082/validateResource \
 | `warning` | `Constraint failed: icd-regex: 'In code sind nur gültige ICD-10-Codes ohne Zusätze erlaubt'` | Der Code hat nicht einmal das Format eines ICD-10-Codes |
 | `warning` | `dom-6: A resource should have narrative` | Best-Practice-Empfehlung |
 
-Hier findet der Validator einen **echten Datenfehler**: Der Code ist kein ICD-10-GM-Code.
+🧩 **Was du gerade gesehen hast:** Hier findet der Validator einen **echten Datenfehler**: Der Code ist kein ICD-10-GM-Code. In [Übung 4, Abfrage 3.3](exercise-4.md) bist du über ein einfaches Muster auf denselben Code gestoßen. Der Validator bestätigt das jetzt am Terminologieserver und am KDS-Profil.
 
 ### 4.2 Eine gültige Diagnose zum Vergleich
 

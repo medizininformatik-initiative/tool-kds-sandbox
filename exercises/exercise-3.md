@@ -86,36 +86,110 @@ Die Antwort sollte ungefähr so aussehen:
 }
 ```
 
-> ✅ Wir haben nun gesehen, dass der Server die Daten **nicht** annehmen kann, weil Referenzen zwischen den Ressourcen nicht aufgelöst werden können.
+Der Server nimmt das Bundle **nicht** an: Eine Referenz lässt sich nicht auflösen. Woran das liegt, untersuchst du im nächsten Schritt.
 
 ---
 
 ## 🔍 4. Fehler-Diagnose: Referenzielle Integrität prüfen
 
+Blaze meldet nur **eine** Referenz, die er nicht auflösen kann. Bevor du etwas änderst, siehst du dir diese eine Stelle an und verschaffst dir dann einen Überblick über alle.
+
+### 4.1 Die gemeldete Stelle ansehen
+
+Steht die Location aus der Fehlermeldung im Bundle?
+
+```bash
+jq '.entry[].resource | select(.id == "LMED1-LINAS1") | {resourceType, id, name, partOf}' transaction-bundle.json
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```json
+{
+  "resourceType": "Location",
+  "id": "LMED1-LINAS1",
+  "name": "Interdisziplinäre Notaufnahme Lübeck",
+  "partOf": {
+    "reference": "Location/LMED1"
+  }
+}
+```
+
+Die Location ist also da. Warum findet Blaze sie trotzdem nicht? Sieh dir an, wie das Bundle die Ressourcen anlegen will:
+
+```bash
+jq '.entry[0].request' transaction-bundle.json
+# → { "method": "POST", "url": "Patient" }
+```
+
+🧩 **Was du gerade gesehen hast:**
+
+- Bei `POST` vergibt der Server **neue** IDs und übernimmt die `id` aus der Ressource nicht. Die Location heißt in Blaze danach nicht mehr `LMED1-LINAS1`, und jede Referenz `Location/LMED1-LINAS1` zeigt ins Leere. Das behebst du in [Schritt 5C](#schritt-c-bundle-anpassen--post--put-umwandeln) mit `PUT`.
+- Die Location selbst verweist mit `partOf` auf ihre übergeordnete Einheit `Location/LMED1`. Ob es die gibt, zeigt die nächste Prüfung.
+
+### 4.2 Überblick: Welche Referenzen zeigen ins Leere?
+
+Das Skript `unresolved-references.sh` aus dem Musterdatenspende-Repo sammelt alle Referenzen im Bundle und gibt die aus, zu denen es **keine** Ressource im Bundle gibt:
+
 ```bash
 bash bin/unresolved-references.sh transaction-bundle.json
 ```
 
-Die Ausgabe ist eine Liste der fehlenden IDs, z. B.:
+Die Ausgabe ist eine lange Liste, z. B.:
 
 ```json
 [
-  "Location/LMED1-LINAS1",
-  "Location/LMED1",
   "Encounter/PV-1e5148db8b6ad2187d474ef16b4cb67c39b539bdf4c1c32714973385",
+  "Encounter/PV-2df78028016f97660cb1815305934272752a1014a4bb9815994a8e76",
+  ...
+  "Location/LMED1",
   ...
 ]
 ```
 
-💡 **Erklärung:**  
+Zähle sie nach Ressourcentyp. `jq -r '.[]'` gibt jede Referenz als eine Zeile aus, `cut -d/ -f1` behält nur den Teil vor dem `/`:
 
-- Die `Encounter` Ressourcen verweisen auf `Location`, aber diese sind im Bundle nicht enthalten.
+```bash
+bash bin/unresolved-references.sh transaction-bundle.json | jq -r '.[]' | cut -d/ -f1 | sort | uniq -c
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```text
+     10 Encounter
+     34 Location
+```
+
+### 4.3 Wer verweist auf die fehlenden Ressourcen?
+
+`Location/LMED1` steht in der Liste, die übergeordnete Einheit der Notaufnahme fehlt also im Bundle. Und wer verweist auf die Notaufnahme? `jq -c` gibt jede Ressource als **eine Zeile** aus, `grep` sucht darin wie in einer Textdatei:
+
+```bash
+jq -c '.entry[].resource' transaction-bundle.json \
+  | grep '"Location/LMED1-LINAS1"' \
+  | jq -r '"\(.resourceType)/\(.id)"'
+```
+
+✅ **Erwartetes Ergebnis** (8 Zeilen, IDs gekürzt):
+
+```text
+Encounter/PV-AK-6ef660fcf49b1bf7d16b3c93…
+Encounter/PV-VK-4e2f02c9a84e8482fc4137a4…
+...
+```
+
+🧩 **Was du gerade gesehen hast:**
+
+- Die Referenzen bilden eine Kette: **Encounter** → Station (`Location/LMED1-LINAS1`, im Bundle) → Abteilung (`Location/LMED1`, **fehlt**). Fehlt das letzte Glied, entfernt die Bereinigung in Schritt 5 die ganze Kette: erst die Station, dann die Encounter, die auf sie verweisen.
+- Die Encounter-IDs beginnen mit `PV-AK-` und `PV-VK-`: Abteilungs- und Versorgungsstellenkontakte. In den UKSH-Daten verweisen nur diese Kontaktebenen auf Locations.
+- Die 10 fehlenden Encounter aus 4.2 betreffen dagegen u. a. Diagnosen, Laborwerte und Befunde, die auf einen Fall verweisen, der nicht im Bundle steht.
+- Das Muster `jq -c … | grep … | jq -r` begegnet dir in den folgenden Übungen wieder: Es findet zu einem auffälligen Wert die Ressourcen, in denen er vorkommt.
 
 ___
 
 ## 🧹 5. Lösung: Daten bereinigen (`clean_bundle.sh`)
 
-> Für unsere Anwendungsfall, dass Ausprobieren und Lernen des Umgang mit FHIR-Daten, können wir nun entweder kaputte Referenzen reparieren, indem wir beispielsweise Dummy-Ressourcen ergänzen oder aber wir löschen die betreffenden Ressourcen, die fehlende Referenzen enthalten. **Ziel** ein *referenziell integeres* Bundle.
+> Für unseren Anwendungsfall, das Ausprobieren und Lernen des Umgangs mit FHIR-Daten, können wir nun entweder kaputte Referenzen reparieren, indem wir beispielsweise Dummy-Ressourcen ergänzen, oder wir löschen die betreffenden Ressourcen, die fehlende Referenzen enthalten. **Ziel:** ein *referenziell integres* Bundle.
 
 ### Schritt A: Das Bereinigungsskript nutzen
 
@@ -149,6 +223,34 @@ Removed by resource type:
   ServiceRequest: 7
 ===================================
 ```
+
+🧩 **Was du gerade gesehen hast:**
+
+- **Location 63:** alle Locations des Bundles. Jede verweist mit `partOf` auf eine der 34 fehlenden übergeordneten Einheiten.
+- **Encounter 219:** alle Encounter, die auf eine Location verweisen. 73 davon verweisen direkt auf eine fehlende Location, die übrigen 146 auf eine Station, die das Skript zuvor entfernt hat. Deshalb arbeitet das Skript **iterativ**, bis keine offene Referenz mehr übrig ist.
+- **Condition, Observation, DiagnosticReport, ServiceRequest:** Ressourcen, die auf einen der 10 fehlenden Encounter verweisen.
+
+Was das Entfernen kostet, zeigt ein Vergleich der Kontaktebenen vorher und nachher:
+
+```bash
+for f in transaction-bundle.json transaction-bundle_cleaned.json; do
+  echo "== $f"
+  jq -r '.entry[].resource | select(.resourceType == "Encounter") | .type[0].coding[0].code' $f | sort | uniq -c
+done
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```text
+== transaction-bundle.json
+    109 abteilungskontakt
+   1170 einrichtungskontakt
+    110 versorgungsstellenkontakt
+== transaction-bundle_cleaned.json
+   1170 einrichtungskontakt
+```
+
+🧩 **Was du gerade gesehen hast:** Nach der Bereinigung gibt es nur noch Einrichtungskontakte. Welche Abteilung oder Station einen Fall betreut hat, steht nicht mehr in den Daten. Für die Übungen ist das in Ordnung. Im DIZ-Alltag könnte man stattdessen die fehlenden Locations beim Standort nachfordern.
 
 ### Schritt B: Verifikation
 
@@ -213,10 +315,14 @@ ___
 ```bash
 # Patienten
 curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
+# → 271 (zzgl. deiner Testpatienten aus Übung 2)
 
 # Observationen
 curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
+# → 3481 (3.480 aus dem Bundle und deine HbA1c-Observation aus Übung 2)
 ```
+
+Die Zahlen passen zum bereinigten Bundle. Zum Vergleich kannst du die Ressourcen im Bundle auch selbst zählen: `jq -r '.entry[].resource.resourceType' transaction-bundle_cleaned_put.json | sort | uniq -c`.
 
 ### Schritt B: Einzelne Ressource abfragen
 
@@ -266,8 +372,8 @@ curl -X POST http://localhost:8080/fhir \
   -H "Content-Type: application/fhir+json" \
   --data @transaction-bundle_cleaned_put.json \
   | jq '[.entry[].response.status] | group_by(.) | map({(.[0]): length}) | add'
-```
 # → { "201": 823 }
+```
 
 ### Upload-Vorbereitung für UKW-Musterdatensatz (+1 Patient)
 (Nur ein `searchset` gegeben, prepare_upload.sh übernimmt daher die Erstellung eines `transaction`-Bundles)

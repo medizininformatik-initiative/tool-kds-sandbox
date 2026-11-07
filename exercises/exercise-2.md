@@ -88,11 +88,11 @@ docker compose up -d
 # Status prüfen (Container Status "Up" und "(healthy)")
 docker ps
 
-# Verbindung testen (Gibt das CapabilityStatement zurück)
-curl -v http://localhost:8080/fhir/metadata
+# Verbindung testen: Software und FHIR-Version aus dem CapabilityStatement
+curl -s http://localhost:8080/fhir/metadata | jq '{software, fhirVersion}'
 ```
 
-- Optional: Installation von `jq` bspw. via `sudo apt  install jq -y`, um mit `curl -v http://localhost:8080/fhir/metadata | jq` eine einfacher menschenlesbare Darstellung zu erhalten.
+> 💡 `/fhir/metadata` liefert das vollständige `CapabilityStatement` des Servers, ein sehr langes JSON-Dokument. Für den Test reicht ein Blick auf zwei Felder: `jq '{software, fhirVersion}'` zeigt nur diese. So gehst du in den Übungen auch mit anderen großen Antworten vor: erst die Felder ansehen, die du gerade brauchst. Fehlt `jq` noch, installiere es mit `sudo apt install jq -y`.
 
 - Die Anzeige der laufenden Container sollte den Blaze-FHIR-Server wie folgt auflisten:
 
@@ -215,11 +215,10 @@ curl -X PUT http://localhost:8080/fhir/Observation/Example-Studie-HbA1c-01 \
   -d @fsh-generated/resources/Observation-Example-Studie-HbA1c-01.json | jq
 ```
 
-<h3>💡 Merkregel für FHIR-Server:</h3>
-
-    > POST: Der Server generiert eine zufällige ID (z. B. /fhir/Patient/DHYSYTWMKTNZRTNP).
-
-    > PUT: Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. /fhir/Patient/<EIGENE_ID>).
+> 💡 **Merkregel für FHIR-Server:**
+>
+> - **POST:** Der Server generiert eine zufällige ID (z. B. `/fhir/Patient/DHYSYTWMKTNZRTNP`).
+> - **PUT:** Du bestimmst die ID selbst, indem du sie an die URL anhängst (z. B. `/fhir/Patient/<EIGENE_ID>`).
 
 #### Ressourcen abfragen
 
@@ -229,44 +228,81 @@ curl -X PUT http://localhost:8080/fhir/Observation/Example-Studie-HbA1c-01 \
 
 - Um zu überprüfen, welche Patienten aktuell auf dem Server existieren, nutzen wir einen standardmäßigen GET-Request auf den Ressourcen-Endpunkt:
 
-```Bash
-curl -X GET "http://localhost:8080/fhir/Patient" | jq
+```bash
+curl -s "http://localhost:8080/fhir/Patient" | jq
 ```
 
-<h3> 💡 Merkregel für FHIR-Server:</h3>
+Die Antwort ist lang, obwohl nur wenige Patienten im Server liegen. Sieh dir deshalb zuerst den Rahmen an und dann die einzelnen Treffer, je Patient eine Zeile:
 
-    > FHIR-Server antworten bei Suchabfragen immer mit eine Container-Ressource vom Typ Bundle (mit dem Attribut `type`: `searchset`).
+```bash
+# Art der Antwort und Anzahl der Treffer
+curl -s "http://localhost:8080/fhir/Patient" | jq '{resourceType, type, total}'
 
-    > Das Feld `total` verrät dir sofort die Anzahl der gefundenen Ressourcen.
+# Je Treffer: ID und Name
+curl -s "http://localhost:8080/fhir/Patient" | jq -r '.entry[].resource | "\(.id)  \(.name[0].given[0]) \(.name[0].family)"'
+```
 
-    > Die eigentlichen Patientendaten liegen verschachtelt im Array "entry".
+✅ **Erwartetes Ergebnis** (die erste ID ist zufällig und weicht bei dir ab):
+
+```text
+{
+  "resourceType": "Bundle",
+  "type": "searchset",
+  "total": 2
+}
+DIKTKJOAOLNYT3Y7  James Pond
+example-patient  James Pond
+```
+
+🧩 **Was du gerade gesehen hast:**
+
+- FHIR-Server antworten auf eine Suche immer mit einem `Bundle` vom Typ `searchset`. `total` ist die Anzahl der Treffer, die Ressourcen selbst liegen in `entry`.
+- James Pond steht **zweimal** im Server: einmal aus dem `POST` mit zufälliger ID, einmal aus dem `PUT` mit der ID `example-patient`. Ein einfacher `POST` legt bei jedem Aufruf eine neue Ressource an, auch wenn der Inhalt gleich ist. Mit `PUT` passiert das nicht, ein zweiter Aufruf aktualisiert dieselbe Ressource. Auch in [Übung 3 · Musterdaten laden](exercise-3.md) laden wir die Daten per `PUT`, dort vor allem, damit die IDs erhalten bleiben.
+- Hast du den `POST` mehrfach ausgeführt, siehst du entsprechend mehr Patienten. Überzählige löschst du wie unten unter [Ressourcen löschen](#ressourcen-löschen-fhir-delete) beschrieben.
 
 ##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
 
 - FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Du kannst die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
 
+Die Ausgabe ist bei allen drei Suchen gleich aufgebaut: zuerst die Anzahl der Treffer, dann je Treffer eine Zeile mit ID, Code und Messwert.
+
 1. Suche nach einem spezifischen LOINC-Code  
 Möchtest du alle Laborwerte abfragen, die den in unserer Studie fixierten HbA1c-Code aufweisen, filterst du über den Parameter code. Das Trennzeichen | separiert dabei das Codesystem (LOINC) vom eigentlichen Code:
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?code=http://loinc.org|4548-4" | jq
+    ```bash
+    curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|4548-4" \
+      | jq -r '.total, (.entry[]?.resource | "\(.id)  \(.code.coding[0].code)  \(.valueQuantity.value) \(.valueQuantity.unit)")'
     ```
 
-2. Verknüpfte Suche nach dem Patienten (Chaining / Reference Search)  
+2. Suche über eine Referenz (Reference Search)  
 Du kannst gezielt alle Laborwerte abfragen, die exakt zu unserem zuvor angelegten Patienten gehören, indem du über die Patienten-Referenz filterst:
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient" | jq
+    ```bash
+    curl -s "http://localhost:8080/fhir/Observation?subject=Patient/example-patient" \
+      | jq -r '.total, (.entry[]?.resource | "\(.id)  \(.code.coding[0].code)  \(.valueQuantity.value) \(.valueQuantity.unit)")'
     ```
 
 3. Kombination mehrerer Parameter (AND-Suche)  
-FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombinieren. Die folgende Abfrage sucht nach Observations, die sowohl zum Patienten `example-patient` gehören als auch den Status `final` besitzt und der zugehörige Messwert `>40` ist:
+FHIR-Search-Parameter lassen sich mittels eines Kaufmanns-Und (&) beliebig kombinieren. Die folgende Abfrage sucht nach Observations, die sowohl zum Patienten `example-patient` gehören als auch den Status `final` besitzen und deren Messwert `>40` ist. Die zweite Abfrage sucht einen Messwert `<40`:
 
-    ```Bash
-    curl -X GET "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final&value-quantity=gt40" | jq
+    ```bash
+    curl -s "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final&value-quantity=gt40" \
+      | jq -r '.total, (.entry[]?.resource | "\(.id)  \(.code.coding[0].code)  \(.valueQuantity.value) \(.valueQuantity.unit)")'
+
+    curl -s "http://localhost:8080/fhir/Observation?subject=Patient/example-patient&status=final&value-quantity=lt40" \
+      | jq -r '.total'
     ```
 
-    Eine Suche nach einem Messwert `<40` mit `value-quantity=lt40` würde in unserem Fall, falls keine weiteren Ressourcen hochgeladen wurden eine leeres Antwortbundle zurückliefern.
+✅ **Erwartetes Ergebnis:** Die ersten drei Suchen finden dieselbe Observation, die letzte keine:
+
+```text
+1
+Example-Studie-HbA1c-01  4548-4  42.5 mmol/mol
+...
+0
+```
+
+🧩 **Was du gerade gesehen hast:** Alle drei Suchen finden dieselbe Observation. Bei der dritten Suche werden die Parameter mit UND verknüpft: Die Observation muss alle drei Bedingungen erfüllen, und das tut sie (`42.5 > 40`). Bei `lt40` passt keine Observation, `total` ist `0`. Deshalb steht im `jq`-Filter `.entry[]?`: Das `?` verhindert eine Fehlermeldung, falls die Antwort keine Einträge enthält.
 
 ##### Ressourcen löschen (FHIR-Delete)
 

@@ -377,6 +377,79 @@ Die Rückmeldung von `SUSHI` sollte nun wie folgt aussehen (Wortwitz des Compile
 ╚═════════════════════════════════════════════════════════════════╝
 ```
 
+##### 🔍 Ergebnis ansehen: Was hat SUSHI erzeugt?
+
+Verschaffe dir zuerst einen Überblick über die erzeugten Dateien:
+
+```bash
+ls fsh-generated/resources/
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```text
+ImplementationGuide-fhir.example.json     Patient-PatientExample.json         StructureDefinition-pr-studie-hba1c.json
+Observation-Example-Studie-HbA1c-01.json  StructureDefinition-MyPatient.json
+```
+
+Der Dateiname setzt sich aus Ressourcentyp und ID zusammen. Sieh dir die Felder deiner Beispiel-Instanz an, die das Profil festlegt:
+
+```bash
+jq '{resourceType, id, profil: .meta.profile, code: .code.coding[0], wert: .valueQuantity}' \
+  fsh-generated/resources/Observation-Example-Studie-HbA1c-01.json
+```
+
+Und im Profil selbst: Welche Elemente hat es gegenüber dem Elternprofil verändert? Jedes Element im `differential` hat eine `id` mit seinem Pfad:
+
+```bash
+jq -r '.differential.element[].id' fsh-generated/resources/StructureDefinition-pr-studie-hba1c.json
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```text
+Observation.code.coding
+Observation.code.coding.version
+Observation.value[x]
+Observation.value[x]:valueQuantity
+Observation.value[x]:valueQuantity.unit
+Observation.value[x]:valueQuantity.code
+```
+Wo sind Code und Anzeigetext geblieben? Sieh dir die beiden Elemente zu `code` genauer an:
+
+```bash
+jq '.differential.element[] | select(.id | startswith("Observation.code"))' \
+  fsh-generated/resources/StructureDefinition-pr-studie-hba1c.json
+```
+
+✅ **Erwartetes Ergebnis:**
+
+```json
+{
+  "id": "Observation.code.coding",
+  "path": "Observation.code.coding",
+  "min": 1,
+  "max": "1",
+  "patternCoding": {
+    "code": "4548-4",
+    "system": "http://loinc.org",
+    "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+  }
+}
+{
+  "id": "Observation.code.coding.version",
+  "path": "Observation.code.coding.version",
+  "patternString": "2.82.0"
+}
+```
+
+🧩 **Was du gerade gesehen hast:**
+
+- Aus jeder `Instance` wird eine Ressource, aus jedem `Profile` eine `StructureDefinition`. In der Instanz stehen genau die Werte aus deiner FSH-Datei, `meta.profile` verweist auf dein Studienprofil.
+- Das `differential` des Profils enthält nur sechs Elemente: den Code (`code.coding`) und den Messwert (`value[x]:valueQuantity`) mit den Teilen, die du in `PR_Studie_HbA1c.fsh` festgelegt hast. Alles andere erbt das Profil von `MII_PR_Labor_Laboruntersuchung`. Das ist der Unterschied zwischen Differential und Snapshot aus dem Abschnitt oben.
+- Nicht jede Zeile aus der FSH-Datei wird zu einem eigenen Element. SUSHI fasst System, Code und Anzeigetext zu einem `patternCoding` zusammen. Zu `valueQuantity.value` und `valueQuantity.system` steht kein eigenes Element im Differential, obwohl die FSH-Datei Regeln dafür enthält.
+- Die Festlegung steht auf `Observation.code.coding` selbst, nicht auf einem Slice `coding:loinc`, und zwar mit `max: "1"`. Dein Profil erlaubt damit genau **ein** Coding, nämlich LOINC `4548-4`. Einen zusätzlichen Hauscode, wie ihn das UKSH bei seinen Laborwerten mitliefert ([Übung 4 · Daten abfragen](exercise-4.md)), ließe es nicht zu. Ob eine FSH-Regel so wirkt wie gedacht, siehst du deshalb am besten im erzeugten Profil.
+
 ## 🏁 Generierte Ressourcen menschenlesbar anzeigen 🏁
 
 **Hintergrund:** FHIR-Ressourcen und Implementation Guides (IGs) liegen im Quellcode als reine JSON-, XML- oder FSH-Dateien vor. Für das menschliche Auge – und insbesondere für die spätere Abstimmung mit medizinischem Fachpersonal oder Entwicklern – sind diese Textwüsten schwer lesbar.
