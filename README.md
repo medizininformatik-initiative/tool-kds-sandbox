@@ -14,12 +14,12 @@ ___
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | ⚪ | [Voraussetzungen](exercises/prerequisites.md) | Dich orientieren & Entwicklungsumgebung vorbereiten | – | Checkliste | ✅ |
 | 🔵 | [1 · Profil erstellen](exercises/exercise-1.md) | Profil und Beispielressource in FSH schreiben und kompilieren, Implementation Guide bauen | `sushi`, Firely Terminal, Java + IG Publisher | Groß · ca. 20 Befehlsblöcke, IG-Build ca. 10 min | ✅ |
-| 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 7 Befehlsblöcke | ✅ |
+| 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 8 Befehlsblöcke | ✅ |
 | 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 13 Befehlsblöcke | ✅ |
-| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 20 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
+| 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 22 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
 | 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 15 Befehlsblöcke, 2 Aufgaben mit Lösung | ✅ |
-| 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | FHIRsmith, MII FHIR Validator, Docker Compose, `curl`, `jq` | Groß · ca. 20 Befehlsblöcke, erster Start Terminologieserver ca. 15 min, Validator ca. 5 min | ✅ |
-| 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 6 Befehlsblöcke, 1 Aufgabe mit Lösung | 🚧 |
+| 🟣 | [6 · Ressourcen validieren](exercises/exercise-6.md) | Validator mit eigenem Terminologieserver starten, eigene Ressource und Musterdaten gegen KDS-Profile validieren | FHIRsmith, MII FHIR Validator, Docker Compose, `curl`, `jq` | Groß · ca. 24 Befehlsblöcke, erster Start Terminologieserver ca. 15 min, Validator ca. 5 min | ✅ |
+| 🟤 | [7 · Berichte auswerten](exercises/exercise-7.md) | Validierungsberichte lesen, filtern und Meldungen einordnen | `jq`, Bash-Skript | Mittel · ca. 8 Befehlsblöcke, 1 Aufgabe mit Lösung | ✅ |
 
 **Stand:** ✅ erprobt · 🚧 in Arbeit (Inhalte können sich noch ändern)
 
