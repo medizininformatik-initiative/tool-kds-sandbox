@@ -34,8 +34,10 @@ ___
 ___
 
 ## <a id="hintergrund"></a>📖 Hintergrund: Terminologien und Terminologieserver
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ### Codesysteme im DIZ
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Codesystem | Herausgeber | Typische Verwendung im KDS | Beschaffung | Download / Bezug |
 | --- | --- | --- | --- | --- |
@@ -52,6 +54,7 @@ ___
 > ⚠️ **Versionen:** Codesysteme ändern sich regelmäßig, die ICD-10-GM z. B. jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 fehlen oder anders heißen. Ein Terminologieserver kann mehrere Versionen parallel vorhalten.
 
 ### Was kann ein Terminologieserver?
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Alle FHIR-Terminologieserver bieten dieselben Standard-Operationen an:
 
@@ -63,6 +66,7 @@ Alle FHIR-Terminologieserver bieten dieselben Standard-Operationen an:
 | `$translate` | Wie lautet der Code in einem anderen System? | Mapping über eine ConceptMap |
 
 ### Terminologieserver im Überblick
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | | tx.fhir.org | MII Ontoserver | Eigener FHIRsmith |
 | --- | --- | --- | --- |
@@ -77,6 +81,7 @@ Alle FHIR-Terminologieserver bieten dieselben Standard-Operationen an:
 ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Welche Codesysteme stecken in den Daten?
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 > ⚠️ **Voraussetzung:** Blaze läuft auf `http://localhost:8080` und enthält die Musterdaten aus [Übung 3 · Musterdaten laden](exercise-3.md).
 
@@ -131,6 +136,7 @@ Einzelne Zeilen sehen nicht wie ein Codesystem aus: `…/ValueSet/KBV_VS_SFHIR_I
 ___
 
 ## <a id="schritt-2"></a>💻 Schritt 2: Code nachschlagen mit `$lookup`
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Lege die Adresse des Terminologieservers in einer Variable ab. So kannst du später mit denselben Befehlen einen anderen Server ansprechen:
 
@@ -174,6 +180,7 @@ curl -s -G "$TX/CodeSystem/\$lookup" \
 ___
 
 ## <a id="schritt-3"></a>💻 Schritt 3: Code prüfen mit `$validate-code`
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Ein gültiger Code:
 
@@ -215,6 +222,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 ___
 
 ## <a id="schritt-4"></a>💻 Schritt 4: Codes suchen mit `$expand`
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 `$expand` listet die Codes eines ValueSets auf. Ein ValueSet aus der FHIR-Spezifikation, das du aus `Patient.gender` kennst:
 
@@ -241,6 +249,7 @@ curl -s -G "$TX/ValueSet/\$expand" \
 ___
 
 ## <a id="schritt-5"></a>🛠️ Schritt 5: Codes aus Blaze automatisch prüfen
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Jetzt verbindest du beide Server: Du nimmst aus Blaze **je Codesystem einen Code** und prüfst ihn an tx.fhir.org.
 
@@ -327,6 +336,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 Für die Validierung deutscher KDS-Daten reicht tx.fhir.org allein also nicht aus. Wie du einen Terminologieserver mit diesen Inhalten bekommst, siehst du in [Übung 6 · Ressourcen validieren](exercise-6.md).
 
 ### 🔍 Ein Fehler in den Daten
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 In Schritt 1 ist dir bei Encounter das „Codesystem“ `http://hl7.org/fhir/ValueSet/diagnosis-role` aufgefallen. Es steht in `Encounter.diagnosis.use`, der Rolle einer Diagnose im Fall. Sieh dir zuerst an, welche Systeme und Codes dort vorkommen:
 
@@ -381,6 +391,7 @@ curl -s "http://localhost:8080/fhir/Encounter/Encounter-8163579" | jq '.diagnosi
 🧩 **Was du gerade gesehen hast:** An den ID-Mustern aus [Übung 4, Abfrage 2.1](exercise-4.md) erkennst du die Standorte: `Encounter-…` ist das UKW, `…-e` das UKHD. Die UKW-Encounter tragen in `system` die URL eines **ValueSets**, die UKHD-Encounter die eines **CodeSystems**. Welche Variante richtig ist, klärst du jetzt Schritt für Schritt.
 
 ### 💻 Welche Variante ist richtig?
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 So findest du heraus, welche der beiden URLs in `system` gehört:
 
@@ -438,6 +449,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 ___
 
 ## <a id="grenzen"></a>🔍 Was tx.fhir.org nicht kann
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 tx.fhir.org ist für internationale Terminologien gemacht. Für die Kerndatensatz-Daten eines deutschen DIZ fehlt ihm Wesentliches:
 
@@ -450,6 +462,7 @@ Ein Validator, der KDS-Daten prüfen soll, braucht deshalb einen Terminologieser
 ___
 
 ## <a id="zusammenfassung"></a>🏁 Zusammenfassung und Ausblick
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Schritt | Befehl |
 | --- | --- |
@@ -458,13 +471,16 @@ ___
 | Code prüfen | `curl -s -G "$TX/CodeSystem/\$validate-code" --data-urlencode "url=…" --data-urlencode "code=…"` |
 | Codes eines ValueSets auflisten | `curl -s -G "$TX/ValueSet/\$expand" --data-urlencode "url=…" --data-urlencode "filter=…"` |
 
-**Was du mitnehmen sollst:**
+**Was du mitnehmen kannst:**
 
 - Jeder Code gehört zu einem Codesystem. Ohne das richtige `system` ist ein Code wertlos. Ohne Angabe der verwendeten `version` ist die Überprüfbarkeit zumindest fragwürdig.
 - Ein Terminologieserver kann nur prüfen, was er kennt. „Codesystem unbekannt“ ist etwas anderes als „Code ungültig“.
-- Welche Inhalte ein Terminologieserver hat, entscheidet darüber, wofür er genutzt werden kann.
+- Welche Inhalte ein Terminologieserver hat, entscheidet darüber, was man mit ihm prüfen kann.
 
-**Ausblick:**
+___
+
+### Ausblick
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 - [Übung 6 · Ressourcen validieren](exercise-6.md): Terminologieserver mit zusätzlichen (deutschen) Klassifikationen einrichten und Ressourcen mit dem MII FHIR Validator gegen die KDS-Profile prüfen
 - [Übung 7 · Berichte auswerten](exercise-7.md): Meldungen des Terminologieservers in Validierungsberichten verstehen, Versionen von Codesystemen und Profilen einordnen

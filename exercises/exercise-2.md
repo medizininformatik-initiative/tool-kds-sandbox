@@ -8,7 +8,7 @@ ___
 
 **Nächste Schritte:**
 
-- Prüfe, dass Blaze auf `http://localhost:8080` läuft (`docker compose ps`)
+- Prüfe, dass Blaze auf `http://localhost:8080` läuft (`docker ps`)
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
@@ -92,7 +92,7 @@ docker ps
 curl -s http://localhost:8080/fhir/metadata | jq '{software, fhirVersion}'
 ```
 
-> 💡 `/fhir/metadata` liefert das vollständige `CapabilityStatement` des Servers, ein sehr langes JSON-Dokument. Für den Test reicht ein Blick auf zwei Felder: `jq '{software, fhirVersion}'` zeigt nur diese. So gehst du in den Übungen auch mit anderen großen Antworten vor: erst die Felder ansehen, die du gerade brauchst. Fehlt `jq` noch, installiere es mit `sudo apt install jq -y`.
+> 💡 `/fhir/metadata` liefert das vollständige `CapabilityStatement` des Servers, ein sehr langes JSON-Dokument. Für den Test reicht ein Blick auf zwei Felder: `jq '{software, fhirVersion}'` zeigt nur diese.
 
 - Die Anzeige der laufenden Container sollte den Blaze-FHIR-Server wie folgt auflisten:
 
@@ -314,6 +314,8 @@ curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>" | jq
 
 - 💡 Hintergrundwissen (Soft Delete):  
 Ein FHIR-Server löscht Daten **in der Regel** nicht physisch aus der Datenbank, um die historische Integrität (z. B. für bestehende Verknüpfungen) zu wahren. Stattdessen wird die Ressource als gelöscht markiert und taucht in Suchen nicht mehr auf. Über `/history` kann auf alte Versionen zugegriffen werden. Beim Löschen muss die referenzielle Integrität berücksichtigt werden. Physisches Löschen ist je nach verwendetem FHIR-Server und Settings via `$purge`-Operation möglich.
+
+___
 
 ### Ausblick
 

@@ -315,14 +315,12 @@ ___
 ```bash
 # Patienten
 curl -s "http://localhost:8080/fhir/Patient?_summary=count" | jq '.total'
-# → 271 (zzgl. deiner Testpatienten aus Übung 2)
+# → mind. 271 (zzgl. deiner Testpatienten aus Übung 2)
 
 # Observationen
 curl -s "http://localhost:8080/fhir/Observation?_summary=count" | jq '.total'
-# → 3481 (3.480 aus dem Bundle und deine HbA1c-Observation aus Übung 2)
+# → mind. 3481 (aus dem Bundle und deine HbA1c-Observation aus Übung 2)
 ```
-
-Die Zahlen passen zum bereinigten Bundle. Zum Vergleich kannst du die Ressourcen im Bundle auch selbst zählen: `jq -r '.entry[].resource.resourceType' transaction-bundle_cleaned_put.json | sort | uniq -c`.
 
 ### Schritt B: Einzelne Ressource abfragen
 
@@ -352,7 +350,7 @@ Lade jetzt auch die Daten der beiden anderen Standorte. Sie sind kleiner, bringe
 | **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
 | **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
 
-### Upload-Vorbereitung für UKHD-Musterdatensatz (+3 Patienten)
+### Upload-Vorbereitung für UKHD-Musterdatensatz
 (analog zu UKSH)
 
 ```bash
@@ -375,8 +373,8 @@ curl -X POST http://localhost:8080/fhir \
 # → { "201": 823 }
 ```
 
-### Upload-Vorbereitung für UKW-Musterdatensatz (+1 Patient)
-(Nur ein `searchset` gegeben, prepare_upload.sh übernimmt daher die Erstellung eines `transaction`-Bundles)
+### Upload-Vorbereitung für UKW-Musterdatensatz
+(gegeben ist ein `searchset`, prepare_upload.sh übernimmt die Erstellung eines `transaction`-Bundles)
 
 ```bash
 # 1. Bereinigen (wie bei UKSH)
@@ -421,7 +419,7 @@ ___
 
 ___
 
-## 🚀 Ausblick: Nächste Schritte
+### Ausblick
 
 - **Übung 4:** Query von KDS-Daten (Strukturierte Abfragen, Chaining, AND-Suche)
 - **Übung 5:** Terminologien prüfen mit FHIR-Operationen (Codes aus den Musterdaten am Terminologieserver prüfen)

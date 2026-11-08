@@ -27,8 +27,6 @@ Dabei gehst du so vor, wie man sich unbekannten Daten nähern kann:
 2. **Stelle finden:** Was fällt auf? Welche Ressourcen sind betroffen? (IDs anzeigen lassen)
 3. **Nachsehen:** Die betroffene Ressource oder das Feld ansehen und einordnen.
 
-Für den Überblick nutzen wir immer wieder dasselbe Muster: `jq -r` gibt einen Wert pro Zeile aus, `sort | uniq -c` zählt gleiche Zeilen. Nach jeder Abfrage erklärt dir **🧩 Was du gerade gesehen hast**, was das Ergebnis zeigt und was es für den Umgang mit den Daten bedeutet.
-
 > 💡 **Warum FHIR-Search?**  
 > FHIR-Search dient als standardisierte API-Schnittstelle zu FHIR-Datenrepositorien. Dadurch wird ein standortübergreifend einheitlicher Zugriff auf die im DIZ integrierten Daten möglich.
 
@@ -68,7 +66,7 @@ for type in Patient Encounter Condition Observation Procedure DiagnosticReport S
 done
 ```
 
-✅ **Erwartetes Ergebnis:**
+✅ **Erwartetes Mindest-Ergebnis:**
 
 ```text
 Patient: 275
@@ -80,8 +78,6 @@ DiagnosticReport: 1277
 ServiceRequest: 1276
 Consent: 84
 ```
-
-> 💡 Deine Testressourcen aus [Übung 2 · FHIR-Server starten](exercise-2.md) liegen ebenfalls noch im Server und erhöhen einzelne Zahlen leicht: je hochgeladenem Beispiel-Patienten +1 bei `Patient`, die HbA1c-Observation +1 bei `Observation` und bei den Laborwerten.
 
 ___
 
@@ -105,7 +101,7 @@ Eine FHIR-Suche hat immer die Form `GET [Basis-URL]/[Ressourcentyp]?[Parameter]=
 
 > 💡 **Merke:** Mehrere Parameter werden mit **UND** verknüpft. Mehrere Werte im selben Parameter, durch Komma getrennt, bedeuten **ODER**: `code=R51,R11`.
 >
-> ⚠️ **Server-Unterschiede:** Nicht jeder FHIR-Server unterstützt jeden Parameter. Blaze kann z. B. mit `_sort` nur nach `_id` und `_lastUpdated` sortieren. Was ein Server kann, steht in seinem `CapabilityStatement` (`/fhir/metadata`).
+> ⚠️ **Server-Unterschiede:** Nicht jeder FHIR-Server unterstützt jeden Parameter. Was ein Server kann, steht in seinem `CapabilityStatement` (`/fhir/metadata`).
 
 ___
 
@@ -145,8 +141,8 @@ curl -s "http://localhost:8080/fhir/Patient/0001736293" | jq 'del(.meta)'
 ✅ **Erwartetes Ergebnis** (gekürzt):
 
 ```text
-UKSH: identifier mit System …/sid/pseudonym, "gender": "female", "birthDate": "2000-12", "deceasedBoolean": true
-UKHD: identifier vom Typ MR mit System urn:oid:…, "birthDate": "1979-06-03", "gender": "female",
+UKSH-Identifier: Patient-Ressource mit Identifier nach System …/sid/pseudonym, "gender": "female", "birthDate": "2000-12", "deceasedBoolean": true
+UKHD-Identifier: Patient-Ressource mit Identifier vom Typ MR mit System urn:oid:…, "birthDate": "1979-06-03", "gender": "female",
       address mit "valueCode": "MASKED", "deceasedBoolean": false
 ```
 
@@ -154,18 +150,18 @@ UKHD: identifier vom Typ MR mit System urn:oid:…, "birthDate": "1979-06-03", "
 
 - Die UKSH-Patienten sind **pseudonymisiert**: Statt eines Namens gibt es nur ein Pseudonym, das Geburtsdatum ist auf Jahr und Monat gekürzt.
 - Der UKHD-Patient trägt einen `identifier` vom Typ `MR` (Patientennummer) mit einem OID-System und ein vollständiges Geburtsdatum. Die Adresse ist vorhanden, ihr Inhalt aber per `data-absent-reason` als `MASKED` ausgeblendet.
-- Die beiden Standorte setzen Pseudonymisierung und Datensparsamkeit also unterschiedlich um. Bevor du Daten mehrerer Standorte gemeinsam auswertest, lohnt sich deshalb ein Blick auf je eine Ressource pro Standort. Die ID-Muster aus der Tabelle helfen dir, die richtige zu finden.
+- Die beiden Standorte setzen Pseudonymisierung und Datensparsamkeit also unterschiedlich um. Bevor du Daten mehrerer Standorte gemeinsam auswertest, lohnt sich deshalb ein vergleichender Blick auf den Datenbestand.
 
 ### Abfrage 2.2: Patienten nach Geschlecht und Alter
 
-Auch hier zuerst der Überblick über alle Werte:
+Auch hier zuerst der Überblick über alle Werte (hier als Abfrage von 300 Patienten und zählen in der Rückgabe des Servers):
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_count=300" \
   | jq -r '.entry[].resource.gender' | sort | uniq -c
 ```
 
-✅ **Erwartetes Ergebnis** (deine Testpatienten aus Übung 2 erhöhen `null`):
+✅ **Erwartetes Ergebnis**:
 
 ```text
      78 female
@@ -196,13 +192,13 @@ curl -s "http://localhost:8080/fhir/Patient?_count=300" \
   | jq -r '.entry[].resource | select(.gender == null) | .id' | grep '^PID' | head -3
 ```
 
-✅ **Erwartetes Ergebnis:** `25 PID`, dazu Zeilen für deine Testpatienten aus Übung 2 (z. B. `DIK…`, `exa`). Die IDs beginnen mit `PID-0507e0bc…`, `PID-0bb96ecc…`, `PID-1229b355…`. Rufst du einen davon wie in 2.1 ab, fehlt das Element `gender` einfach:
+✅ **Erwartetes Ergebnis:** Mind. 25 IDs beginnend mit `PID`, dazu Zeilen für deine Testpatienten aus Übung 2 (z. B. `exa`). Die IDs beginnen mit `PID-0507e0bc…`, `PID-0bb96ecc…`, `PID-1229b355…`. Rufst du einen davon wie in 2.1 ab, fehlt das Element `gender` einfach:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient/PID-0507e0bcc3212f8c64727a6f586c9a689a733099d858855256cab915" | jq 'del(.meta)'
 ```
 
-🧩 **Was du gerade gesehen hast:** Der Überblick zeigt auch, was **fehlt**. Eine Suche wie `gender=female` oder `gender=male` findet diese 25 Patienten nicht. Zählst du Frauen und Männer zusammen, kommst du deshalb nicht auf alle Patienten. Solche Lücken fallen dir am ehesten auf, wenn du vorher alle Werte ansiehst.
+🧩 **Was du gerade gesehen hast:** Der Überblick zeigt auch, was **fehlt**. Eine Suche wie `gender=female` oder `gender=male` findet diese 25 Patienten nicht. Zählst du Frauen und Männer zusammen, kommst du deshalb nicht auf alle Patienten.
 
 ### Abfrage 2.3: Blättern durch Ergebnisse (Pagination)
 
@@ -215,11 +211,11 @@ curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq -r '.total, .entry[].
 # Die Links des Bundles: first (erste Seite), self (diese Anfrage) und next (nächste Seite)
 curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq -r '.link[] | "\(.relation)  \(.url)"'
 
-# Nächste Seite abrufen: den "next"-Link in Anführungszeichen einsetzen
+# Nächste Seite abrufen: den "next"-Link aus der Ausgabe auf die vorherige Anfrage im folgenden Befehl ersetzen
 curl -s "<next-URL>" | jq -r '.entry[].resource.id[0:20]'
 ```
 
-> 💡 **Merke:** `total` ist die Gesamtanzahl der Treffer, `entry` enthält nur die Ressourcen der aktuellen Seite. Für die Überblicke in dieser Übung holen wir deshalb mit `_count` alle Treffer auf eine Seite.
+> 💡 **Merke:** `total` ist die Gesamtanzahl der Treffer, `entry` enthält nur die Ressourcen der aktuellen Seite. Für die Überblicke in dieser Übung holen wir deshalb mit einer geeigneten Wahl des Werts für `_count` alle Treffer auf eine Seite.
 
 ___
 
@@ -260,23 +256,25 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 
 🧩 **Was du gerade gesehen hast:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen, zum Beispiel an einem Terminologieserver, wie du ihn in [Übung 5 · Codes prüfen](exercise-5.md) nutzt.
 
+> 💡 Das Zählen erledigt hier `jq` auf deinem Rechner, nicht der Server. Die FHIR-Suche kann Ressourcen filtern, aber nicht gruppieren oder pro Wert zählen. Soll der Server solche Auswertungen selbst liefern, brauchst du **[CQL](https://cql.hl7.org/)** (Clinical Quality Language): Die Logik steht in einer `Library`, eine `Measure` legt fest, wonach gezählt wird, und `$evaluate-measure` liefert das Ergebnis als `MeasureReport`. Bspw. der Blaze FHIR-Server unterstützt das ([CQL-Abfragen in Blaze](https://blaze-server.org/cql-queries.html)).
+
 ### Abfrage 3.2: Kopfschmerz-Diagnosen (R51) genauer ansehen
 
 `R51` steht 22-mal in den Daten. Von wie vielen Patienten stammen diese Diagnosen?
 
 ```bash
 curl -s "http://localhost:8080/fhir/Condition?code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51&_count=50" \
-  | jq -r '.entry[].resource.subject.reference[0:20]' | sort | uniq -c
+  | jq -r '.entry[].resource.subject.reference' | sort | uniq -c
 ```
 
 ✅ **Erwartetes Ergebnis:**
 
 ```text
       1 Patient/0002690836
-      1 Patient/PID-4f1c98e0
-      7 Patient/PID-5c07503c
-      6 Patient/PID-732cc339
-      7 Patient/PID-e5d803e4
+      1 Patient/PID-4f1c98e0[...]
+      7 Patient/PID-5c07503c[...]
+      6 Patient/PID-732cc339[...]
+      7 Patient/PID-e5d803e4[...]
 ```
 
 22 Diagnosen verteilen sich auf nur 5 Patienten, drei davon haben sie sechs- oder siebenmal. Sieh dir die Diagnosen eines dieser Patienten an: wann sie dokumentiert wurden und zu welchem Fall (`encounter`) sie gehören:
@@ -291,19 +289,19 @@ curl -s -G "http://localhost:8080/fhir/Condition" \
 ✅ **Erwartetes Ergebnis:**
 
 ```text
-2024-01-18T10:13  Encounter/PV-aa045b62a  CON-a727b252d6aa
-2024-02-12T13:52  Encounter/PV-561c40aa3  CON-ff189f4ce89f
-2024-02-12T13:56  Encounter/PV-561c40aa3  CON-33c6903dd496
-2024-02-12T13:56  Encounter/PV-561c40aa3  CON-50173814fec9
-2024-02-12T13:56  Encounter/PV-561c40aa3  CON-59f90548f316
-2024-02-12T13:56  Encounter/PV-561c40aa3  CON-76231e6563c6
-2024-02-23T12:04  Encounter/PV-ac641aa86  CON-b81e2a51f78e
+2024-01-18T10:13  Encounter/PV-aa045b62a[...]  CON-a727b252d6aa[...]
+2024-02-12T13:52  Encounter/PV-561c40aa3[...]  CON-ff189f4ce89f[...]
+2024-02-12T13:56  Encounter/PV-561c40aa3[...]  CON-33c6903dd496[...]
+2024-02-12T13:56  Encounter/PV-561c40aa3[...]  CON-50173814fec9[...]
+2024-02-12T13:56  Encounter/PV-561c40aa3[...]  CON-59f90548f316[...]
+2024-02-12T13:56  Encounter/PV-561c40aa3[...]  CON-76231e6563c6[...]
+2024-02-23T12:04  Encounter/PV-ac641aa86[...]  CON-b81e2a51f78e[...]
 ```
 
 🧩 **Was du gerade gesehen hast:**
 
 - Fünf der sieben Diagnosen gehören zum **selben Fall** und wurden innerhalb von vier Minuten dokumentiert. Jede ist eine eigene `Condition` mit eigener ID.
-- Für die Auswertung heißt das: Die Anzahl der Condition-Ressourcen ist nicht die Anzahl der Erkrankten oder der Fälle. Willst du wissen, wie viele Patienten oder Fälle eine Diagnose haben, zählst du die verschiedenen `subject`- bzw. `encounter`-Referenzen, z. B. mit `sort -u | wc -l` statt `uniq -c`.
+- Für die Auswertung heißt das: Die Anzahl der Condition-Ressourcen ist nicht die Anzahl der Erkrankten oder der Fälle.
 - Ob die Mehrfachdokumentation im Klinikum so entsteht oder erst bei der Umwandlung nach FHIR, siehst du den Daten nicht an. Das wäre eine Frage an den Standort.
 
 ### Abfrage 3.3: Ungewöhnliche Codes finden
@@ -333,41 +331,47 @@ curl -s -G "http://localhost:8080/fhir/Condition" --data-urlencode "code=Z11 U99
   | jq -r '.entry[].resource | "\(.id)  \(.subject.reference[0:20])"'
 ```
 
-✅ **Erwartetes Ergebnis:** eine UKSH-Diagnose mit `570762` (`CON-6c7f7081…`, `Patient/PID-b3726941`) und die beiden UKW-Diagnosen `Diagnosis-010` und `Diagnosis-026` (`Patient/Patient-54211`). Mit der ID siehst du dir die Ressource selbst an, z. B. `curl -s "http://localhost:8080/fhir/Condition/Diagnosis-010" | jq '.code'`.
+✅ **Erwartetes Ergebnis:** eine UKSH-Diagnose mit `570762` (`CON-6c7f7081…`, `Patient/PID-b3726941`) und die beiden UKW-Diagnosen `Diagnosis-010` und `Diagnosis-026` (`Patient/Patient-54211`). Mit der ID siehst du dir die Ressource selbst an:
+
+```bash
+curl -s "http://localhost:8080/fhir/Condition/Diagnosis-010" | jq '.code'
+```
 
 🧩 **Was du gerade gesehen hast:**
 
-- `570762` ist **kein ICD-10-GM-Code**, er hat auch nicht dessen Form.
+- Es ist der Code `570762` hinterlegt. Dieser ist **kein ICD-10-GM-Code**, dafür hat er nicht die richtige Form.
 - `Z11 U99.0!` sind **zwei** Codes in **einem** Feld. In einem `Coding` darf aber nur ein Code stehen.
-- Unter 482 Diagnosen fallen solche Einzelfälle in der Liste aus 3.1 nicht auf. Mit einem einfachen Muster findest du sie schnell. Ob ein Code mit der richtigen Form auch existiert, prüft das Muster aber nicht. Das prüfen ein Terminologieserver ([Übung 5 · Codes prüfen](exercise-5.md)) und der Validator ([Übung 6 · Ressourcen validieren](exercise-6.md)). Dort begegnen dir beide Diagnosen wieder.
+- Unter 482 Diagnosen fallen solche Einzelfälle in der Liste aus 3.1 nicht auf. Mit einem einfachen Muster findest du sie, auch ohne aufwändigere Validierung, schnell. Ob ein Code mit der richtigen Form auch existiert, prüft das Muster aber nicht. Das prüfen ein Terminologieserver ([Übung 5 · Codes prüfen](exercise-5.md)) und der Validator ([Übung 6 · Ressourcen validieren](exercise-6.md)). Dort begegnen dir beide Diagnosen wieder.
 
 ___
 
 ## 💻 4. Laborwerte (LOINC)
 
-Die Musterdaten enthalten 2.040 Laborwerte im KDS-Profil `ObservationLab`. Anders als das HbA1c-Beispiel aus [Übung 1 · Profil erstellen](exercise-1.md) sind hier z. B. Hämoglobin, Kalium und Natrium enthalten.
+Die Musterdaten enthalten 2.040 Laborwerte im KDS-Profil `ObservationLab`. Wir hatten dazu aus [Übung 1 · Profil erstellen](exercise-1.md) das HbA1c-Beispiel. Durch die Musterdaten liegen uns nun unter anderem z. B. auch Angaben zu Hämoglobin, Kalium und Natrium vor.
 
 ### Abfrage 4.1: Überblick – von wem stammen die Laborwerte?
 
 ```bash
 curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_count=2100" \
-  | jq -r '.entry[].resource.subject.reference[0:20]' | sort | uniq -c | sort -rn
+  | jq -r '.entry[].resource.subject.reference' | sort | uniq -c | sort -rn
 ```
 
-✅ **Erwartetes Ergebnis** (deine HbA1c-Observation aus Übung 2 kommt als `Patient/example-pati` dazu):
+✅ **Erwartetes Ergebnis** (deine HbA1c-Observation aus Übung 2 kommt als `Patient/example-patient` dazu):
 
 ```text
-   1720 Patient/PID-6f82e92c
-    159 Patient/PID-62849a39
-    151 Patient/Patient-5421
-      7 Patient/PID-6aa49928
-      2 Patient/PID-32bfa61f
+   1720 Patient/PID-6f82e92c1857529e36717bdf6aefedd54da8d1b82ab9e8532fecb1d6
+    159 Patient/PID-62849a39033ea35eb90174f6d272553979d88999c88525833d4c455d
+    151 Patient/Patient-54211
+      7 Patient/PID-6aa4992801998f580de917b3fd829b93520162e194531790620c0efe
+      2 Patient/example-patient
+      2 Patient/PID-32bfa61f37f53387a76f69162ea85f0c920eb3b998240f979e696e04
       1 Patient/0002690836
 ```
 
-🧩 **Was du gerade gesehen hast:** Laborwerte gibt es nur für 6 der 275 Patienten, und fast alle (84 %) stammen von einer einzigen Person. Eine Statistik über „die Laborwerte“ der Musterdaten beschreibt also im Wesentlichen einen Patienten. Ein Blick auf die Verteilung vor einer Auswertung zeigt solche Schieflagen.
+🧩 **Was du gerade gesehen hast:** Laborwerte gibt es nur für 6 der Muster-Patienten, und fast alle (> 80 %) stammen von einer einzigen Person. Eine Statistik über „die Laborwerte“ der Musterdaten beschreibt also im Wesentlichen einen Patienten. Vor einer Auswertung kann ein Blick auf die Verteilung der Referenzen solche Schieflagen aufzeigen.
 
 ### Abfrage 4.2: Hämoglobin – LOINC und lokale Codes
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Die Laborwerte des UKSH tragen einen **lokalen Laborcode** und, wenn vorhanden, zusätzlich einen **LOINC-Code**. Welche Codes stehen bei den Hämoglobin-Werten (LOINC `718-7`)?
 
@@ -426,6 +430,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/Codeys
 - Nach dem Platzhalter kannst du gezielt suchen, sobald du ihn im Überblick entdeckt hast: `Observation?code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count` ergibt `819`.
 
 ### Abfrage 4.3: Auffällige Werte finden – Kalium
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Kalium (`6298-4`) über 5 mmol/L. Die Ausgabe zeigt je Wert eine Zeile mit Datum, Wert, Bewertung (`H` = hoch) und ID. `sort` sortiert nach Datum, denn Blaze kann mit `_sort` nicht nach Datum sortieren (siehe Abschnitt 1):
 
@@ -474,6 +479,7 @@ curl -s -G "http://localhost:8080/fhir/Observation" \
 🧩 **Was du gerade gesehen hast:** Die hohen Werte stehen jeweils zwischen normalen Werten, die wenige Minuten vorher oder nachher gemessen wurden. Ein einzelner Wert mit `H` ist deshalb noch kein Befund. Der Filter findet Kandidaten, der Verlauf hilft, sie einzuordnen. Den Befund, zu dem der höchste Wert (8.8) gehört, siehst du dir in [Abfrage 5.3](#abfrage-53-_include--befund-mit-allen-einzelwerten) an.
 
 ### 💻 Dasselbe für Hämoglobin und Natrium
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Mit demselben Muster findest du Hämoglobin-Werte unter 10 g/dL und Natrium-Werte (`2951-2`) unter 135 mmol/L. Statt der ID zeigt die letzte Spalte diesmal den Patienten:
 
@@ -502,8 +508,10 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|2951-2&val
 ___
 
 ## 💻 5. Ressourcen verknüpfen
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ### Abfrage 5.1: Chaining – über eine Referenz hinweg filtern
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 „Alle R51-Diagnosen bei **Frauen**“ – das Geschlecht steht nicht in der Condition, sondern im verknüpften Patient:
 
@@ -526,6 +534,7 @@ curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_sum
 🧩 **Was du gerade gesehen hast:** Zusammen sind das 459 von 482 Diagnosen. Die übrigen 23 haben gar keinen `encounter`, sie stammen vom UKHD. Eine Chaining-Suche findet nur Ressourcen, bei denen die Referenz auch gesetzt ist.
 
 ### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 „Welche **Patienten** haben eine R51-Diagnose?“ – hier wird umgekehrt gesucht: Patienten, auf die eine passende Condition verweist:
 
@@ -552,6 +561,7 @@ curl -s "http://localhost:8080/fhir/Patient?_has:Procedure:subject:code=http://f
 ```
 
 ### Abfrage 5.3: `_include` – Befund mit allen Einzelwerten
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 In 4.3 bist du auf einen Kaliumwert von 8.8 mmol/L gestoßen. Ein Laborbefund (`DiagnosticReport`) verweist über `result` auf seine Einzelwerte. Mit `result=` findest du den Befund, der diesen Wert enthält, und mit `_include` kommen alle seine Einzelwerte in derselben Antwort mit:
 
@@ -578,6 +588,7 @@ include  Observation       6298-4   8.8 mmol/l    H
 - Einen auffälligen Wert ordnest du also im Kontext ein: im **Verlauf** (Suche nach Patient und Code, 4.3) und im **Befund** (`_include`). Beides holst du dir mit wenigen Suchanfragen, ohne jede Ressource einzeln abzurufen.
 
 ### Abfrage 5.4: `_revinclude` – die Patientenakte
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage. Nimm dafür einen der Patienten mit R51-Diagnose aus [Abfrage 5.2](#abfrage-52-reverse-chaining-_has--patienten-über-ihre-daten-finden). Die Beispielausgaben unten gehören zur Patientin `PID-e5d803e4…` aus 3.2, mit einer anderen ID siehst du andere Zahlen:
 
@@ -637,10 +648,12 @@ IMP  2024-02-23  2024-02-23
 ___
 
 ## 🔍 6. Auffälligkeiten in den Daten
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Echte Routinedaten sind selten fehlerfrei. Mit FHIR-Search lassen sich Widersprüche aufspüren – und manchmal stellt sich heraus, dass es keine sind.
 
 ### Abfrage 6.1: Verstorben – oder doch nicht?
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Der Vitalstatus wird im KDS doppelt abgebildet: als `deceased[x]` im Patient und als eigene Observation (`67162-8`, Profil *Vitalstatus*) mit den Werten `L` (lebend) und `T` (tot). Wir zählen beide Angaben getrennt:
 
@@ -711,10 +724,12 @@ curl -s -G "http://localhost:8080/fhir/Observation" \
 ___
 
 ## 💻 7. Skriptbasierter Ausblick (Python/R)
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Für wiederkehrende Abfragen und statistische Auswertungen lohnt sich ein Skript. Bibliotheken übernehmen dabei das Blättern durch die Seiten und wandeln die Ressourcen in Tabellen um. Beide Beispiele holen alle Hämoglobin-Werte.
 
 ### 7.1 Python: fhir-pyrate
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ```bash
 pip install fhir-pyrate
@@ -747,6 +762,7 @@ print(df["wert"].describe())
 ```
 
 ### 7.2 R: fhircrackr
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ```r
 # install.packages("fhircrackr")
@@ -784,14 +800,17 @@ summary(df$wert)
 ___
 
 ## 🏁 Zusammenfassung & Merkregeln
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ### Warum FHIR-Search?
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 > ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
 > ✅ **Standortübergreifend** — Dieselbe Abfrage funktioniert an jedem DIZ, sofern die Daten einheitlich kodiert sind  
 > ✅ **Flexibel** — Filter, Verknüpfungen und Seiten lassen sich kombinieren  
 
 ### Wichtigste Parameter im Alltag
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Situation | Parameter | Beispiel |
 | --------- | --------- | -------- |
@@ -806,21 +825,17 @@ ___
 | **Blättern** | `_count` + `next`-Link | `Patient?_count=5` |
 
 ### Was du über die Daten gelernt hast
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 - Die Standorte setzen Pseudonymisierung unterschiedlich um; die ID-Muster verraten, woher eine Ressource stammt.
 - Diagnosen und Laborwerte tragen oft nur Codes ohne Klartext. Dieselbe Diagnose steht teils mehrfach im selben Fall.
 - Laborwerte gibt es nur für wenige Patienten. Rund 40 % der Laborwerte haben statt eines LOINC-Codes nur einen Platzhalter.
 - Die Daten enthalten ungültige Codes. Nicht jede Auffälligkeit ist ein Widerspruch, und manche Prüfung ist mangels befüllter Elemente gar nicht möglich.
 
-### So bist du vorgegangen
-
-| Schritt | Beispiel |
-| --- | --- |
-| **Überblick** | `jq -r '.entry[].resource.code.coding[0].code' \| sort \| uniq -c` |
-| **Stelle finden** | `grep -vE '…'` auf den Überblick, dann Suche mit dem auffälligen Wert und Ausgabe der IDs |
-| **Nachsehen** | Ressource per ID abrufen, Verlauf (`subject` + `code`) oder Kontext (`_include`, `_revinclude`) holen |
+___
 
 ### Ausblick
+<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 - **Übung 5:** Terminologien prüfen mit FHIR-Operationen – Codes nachschlagen und prüfen  
 - **Übung 6:** Terminologieserver einrichten und mit dem FHIR Validator Ressourcen gegen Profile prüfen  

@@ -399,6 +399,8 @@ jq '{resourceType, id, profil: .meta.profile, code: .code.coding[0], wert: .valu
   fsh-generated/resources/Observation-Example-Studie-HbA1c-01.json
 ```
 
+> 💡 `jq` ist ein Kommandozeilenwerkzeug zum Lesen und Filtern von JSON. FHIR-Ressourcen sind oft lange JSON-Dokumente. Der Filter in den einfachen Anführungszeichen wählt aus, was du sehen willst: `{resourceType, id, ...}` baut ein neues Objekt nur aus diesen Feldern, `profil: .meta.profile` holt ein verschachteltes Feld unter einem eigenen Namen. Installiert werden kann es mit `sudo apt install jq -y` (siehe [Voraussetzungen](prerequisites.md)).
+
 Und im Profil selbst: Welche Elemente hat es gegenüber dem Elternprofil verändert? Jedes Element im `differential` hat eine `id` mit seinem Pfad:
 
 ```bash
@@ -415,6 +417,7 @@ Observation.value[x]:valueQuantity
 Observation.value[x]:valueQuantity.unit
 Observation.value[x]:valueQuantity.code
 ```
+
 Wo sind Code und Anzeigetext geblieben? Sieh dir die beiden Elemente zu `code` genauer an:
 
 ```bash
@@ -526,6 +529,8 @@ Wenn du keine lokale `Java`-Umgebung einrichten willst und nur schnell sehen mö
 Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR Profilen und Ressourcen eingerichtet.
 
 Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
+
+___
 
 ### Ausblick
 
