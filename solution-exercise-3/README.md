@@ -6,13 +6,13 @@
 | --- | --- |
 | `clean_bundle.sh` | **Hauptwerkzeug:** Entfernt Ressourcen mit fehlenden Referenzen (automatisierte Bereinigung) |
 | `convert_to_put.sh` | **Hauptwerkzeug:** Wandelt POST → PUT um (damit fixe IDs erhalten bleiben) |
-| `prepare_upload.sh` | **Nur für `searchset`-Bundles (UKW):** Konvertiert `searchset` → `transaction`, fügt `request` Objekte hinzu und benennt doppelte IDs um |
+| `prepare_upload.sh` | **Nur für `searchset`-Bundles (UKW):** Konvertiert `searchset` → `transaction`, fügt `request`-Objekte hinzu und benennt doppelte IDs um |
 
 Jedes Skript hängt ein Suffix an den Namen der Eingabedatei an: `_cleaned`, `_prepared`, `_put`.
 
-## Verwendung (Empfohlener Workflow für Übung 3)
+## Verwendung (empfohlener Workflow für Übung 3)
 
-### Hauptworkflow (UKSH, UKHD – `transaction` bundle aus `merge-bundles.sh`)
+### Hauptworkflow (UKSH, UKHD – `transaction`-Bundle aus `merge-bundles.sh`)
 
 ```bash
 # 1. Daten bereinigen
@@ -29,7 +29,7 @@ curl -X POST http://localhost:8080/fhir \
   --data @transaction-bundle_cleaned_put.json
 ```
 
-### Optional: Für UKW (searchset bundle)
+### Optional: Für UKW (`searchset`-Bundle)
 
 ```bash
 # 1. Daten bereinigen (wie oben)
@@ -67,7 +67,7 @@ Zusätzlich benennt `prepare_upload.sh` doppelte Ressourcen-IDs um (z. B. `Obser
 
 ---
 
-## Beispiel: UKSH Bundle (Hauptübung)
+## Beispiel: UKSH-Bundle (Hauptübung)
 
 ```bash
 # 1. Musterdatenspende klonen
@@ -95,7 +95,7 @@ curl -X POST http://localhost:8080/fhir \
 
 ---
 
-## Beispiel: UKHD Bundle (optional, analog zu UKSH)
+## Beispiel: UKHD-Bundle (optional, analog zu UKSH)
 
 ```bash
 # 1. Entpacken (4 searchset-Dateien) und zusammenführen
@@ -117,7 +117,7 @@ curl -X POST http://localhost:8080/fhir \
 
 ---
 
-## Beispiel: UKW Bundle (optional, searchset → transaction)
+## Beispiel: UKW-Bundle (optional, searchset → transaction)
 
 ```bash
 # 1. Bundle nach /tmp kopieren

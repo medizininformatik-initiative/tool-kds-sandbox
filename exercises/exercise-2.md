@@ -12,9 +12,9 @@ ___
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-In [Übung 1 · Profil erstellen](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir sowohl eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Ein Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+In [Übung 1 · Profil erstellen](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Eine Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
-Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zu aller erst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
+Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zuallererst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
 📋 Übersicht:
 
@@ -52,7 +52,7 @@ sudo docker run hello-world
 
 ### Container definieren und starten
 
-Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zum Samply/Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [Github-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker-Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten lege eine docker-compose.yml an:
+Wenn Docker Compose eingerichtet ist, können wir Docker-Container mittels einer Docker-Compose-Datei starten. Als Referenz verwenden wir hierzu den Blaze-Server. Die [Dokumentation zu Samply Blaze](https://blaze-server.org/deployment.html) ist online verfügbar. Die aktuell verfügbare stable-Version ist im [GitHub-Repository des Blaze-Projekts](https://github.com/samply/blaze) als Release ersichtlich. Docker-Images des [samply/blaze sind auf Docker Hub](https://hub.docker.com/r/samply/blaze/tags) verfügbar. Um den Server zu starten, lege eine docker-compose.yml an:
 
 > 💡 Alle Dienste der Übungen mit Ports und `docker-compose.yml` findest du gesammelt auf der Seite [Dienste](services.md).
 
@@ -79,7 +79,7 @@ volumes:
 
 > 💡 `127.0.0.1:` vor dem Port bedeutet: Blaze ist nur von deinem eigenen Rechner aus erreichbar, nicht von anderen Rechnern im Netzwerk.
 
-- Im Ordner mit der Docker-Compose Datei lässt sich der Dienst danach wie folgt starten und der erfolgreiche Start prüfen:
+- Im Ordner mit der Docker-Compose-Datei lässt sich der Dienst danach wie folgt starten und der erfolgreiche Start prüfen:
 
 ```bash
 # Server starten
@@ -101,7 +101,7 @@ IMAGE                STATUS         PORTS
 samply/blaze:main    Up (healthy)   127.0.0.1:8080->8080/tcp
 ```
 
-- Sollte der Dienst anders als erwartet verhalten, lassen sich die Docker-Logs einsehen:
+- Sollte sich der Dienst anders als erwartet verhalten, lassen sich die Docker-Logs einsehen:
 
 ```bash
 docker compose logs -f -t
@@ -119,7 +119,7 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 
 - Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
-> Voraussetzung: Ressource wurde mittels `sushi .` im Sushi-Projektordner (Bsp.: `tool-kds-sandbox/solution-exercise-2/ExampleIG`)  aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
+> Voraussetzung: Ressource wurde mittels `sushi .` im SUSHI-Projektordner (Bsp.: `tool-kds-sandbox/solution-exercise-2/ExampleIG`) aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
 
 ```bash
 curl -X POST http://localhost:8080/fhir/Patient  \
@@ -260,7 +260,7 @@ example-patient  James Pond
 - James Pond steht **zweimal** im Server: einmal aus dem `POST` mit zufälliger ID, einmal aus dem `PUT` mit der ID `example-patient`. Ein einfacher `POST` legt bei jedem Aufruf eine neue Ressource an, auch wenn der Inhalt gleich ist. Mit `PUT` passiert das nicht, ein zweiter Aufruf aktualisiert dieselbe Ressource. Auch in [Übung 3 · Musterdaten laden](exercise-3.md) laden wir die Daten per `PUT`, dort vor allem, damit die IDs erhalten bleiben.
 - Hast du den `POST` mehrfach ausgeführt, siehst du entsprechend mehr Patienten. Überzählige löschst du wie unten unter [Ressourcen löschen](#ressourcen-löschen-fhir-delete) beschrieben.
 
-##### Gezielte Suche nach Kriterien (FHIR-Search Parameters)
+##### Gezielte Suche nach Kriterien (FHIR-Search-Parameter)
 
 - FHIR erlaubt es, Suchanfragen über standardisierte Parameter präzise einzuschränken. Du kannst die folgenden Such-Szenarien direkt anhand des gestarteten FHIR-Servers testen:
 
@@ -302,11 +302,11 @@ Example-Studie-HbA1c-01  4548-4  42.5 mmol/mol
 0
 ```
 
-🧩 **Was du gerade gesehen hast:** Alle drei Suchen finden dieselbe Observation. Bei der dritten Suche werden die Parameter mit UND verknüpft: Die Observation muss alle drei Bedingungen erfüllen, und das tut sie (`42.5 > 40`). Bei `lt40` passt keine Observation, `total` ist `0`. Deshalb steht im `jq`-Filter `.entry[]?`: Das `?` verhindert eine Fehlermeldung, falls die Antwort keine Einträge enthält.
+🧩 **Was du gerade gesehen hast:** Die ersten drei Suchen finden dieselbe Observation. Bei der dritten Suche werden die Parameter mit UND verknüpft: Die Observation muss alle drei Bedingungen erfüllen, und das tut sie (`42.5 > 40`). Bei `lt40` passt keine Observation, `total` ist `0`. Deshalb steht im `jq`-Filter `.entry[]?`: Das `?` verhindert eine Fehlermeldung, falls die Antwort keine Einträge enthält.
 
 ##### Ressourcen löschen (FHIR-Delete)
 
-- Solltest Du  den Server von einer Ressource bereinigen wollen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
+- Solltest du den Server von einer Ressource bereinigen wollen, kannst du Ressourcen über die HTTP-Methode `DELETE` gezielt entfernen. Hierzu musst du den Ressourcentyp und die exakte ID in der URL angeben:
 
 ```Bash
 curl -X DELETE "http://localhost:8080/fhir/Patient/<RESSOURCEN-ID>" | jq

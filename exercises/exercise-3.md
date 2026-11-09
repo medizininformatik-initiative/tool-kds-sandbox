@@ -10,7 +10,7 @@ ___
 
 - Klone das Musterdatenspende-Repo und entpacke das UKSH-Bundle
 - Baue das Transaction-Bundle und versuche den Upload
-- Entdecke das "Referenzielle Integrität"-Problem
+- Entdecke das Problem der referenziellen Integrität
 - Bereinige die Daten automatisch
 - Lade die Daten in den FHIR-Server und überprüfe den Upload
 - Lade danach auch die Daten der Standorte UKHD und UKW
@@ -26,12 +26,12 @@ ___
 |            | **UKSH** | **UKHD** | **UKW** |
 | :--------- | :------ | :------- | :------- |
 | **Datei(en)** | `UKSH/UKSH-2025-11-11.zip` | `UKHD/UKHD-2025-12-02.zip` | `UKW/UKW-2025-12-05.json` |
-| **Bundle Type** | Einzelressourcen -> `transaction` | `searchset`-bundle | `searchset` |
-| **Gesamt Ressourcen** | ~8.400 | ~1.400  | ~235 |
+| **Bundle-Typ** | Einzelressourcen -> `transaction` | `searchset`-Bundle | `searchset` |
+| **Ressourcen gesamt** | ~8.400 | ~1.400  | ~235 |
 | **Referenzielle Integrität** | ❌ Nicht gegeben | ❌ Nicht gegeben | ❌ Nicht gegeben |
 
 > 💡 **Womit beginnen?**  
-> Für die UKSH-Daten wird ein `merge-bundles.sh`-Skript mitgeliefert, welches die Ressourcen in ein `transaction` bundle transformiert.  
+> Für die UKSH-Daten wird ein `merge-bundles.sh`-Skript mitgeliefert, welches die Ressourcen in ein `transaction`-Bundle transformiert.  
 > Dieses Bundle kann an den FHIR-Server gesendet werden, um die Ressourcen in den FHIR-Server zu laden.  
 
 ___
@@ -60,11 +60,11 @@ jq '.type' transaction-bundle.json      # → "transaction"
 jq '.entry | length' transaction-bundle.json  # → ~8.400 Einträge
 ```
 
-> ✅ **Ergebnis:** Du hast nun ein `transaction` bundle, welches Blaze verarbeiten kann, um mehrere Transaktionen auf eine Anfrage hin auszuführen.
+> ✅ **Ergebnis:** Du hast nun ein `transaction`-Bundle, welches Blaze verarbeiten kann, um mehrere Transaktionen auf eine Anfrage hin auszuführen.
 
 ___
 
-## 🚫 3. Direct Upload versuchen
+## 🚫 3. Direkten Upload versuchen
 
 Manuellen Upload via `curl` probieren:
 ```bash
@@ -266,7 +266,7 @@ bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/sol
 
 > **Warum?** `merge-bundles.sh` setzt für jeden Eintrag die HTTP-Methode **POST**.  
 > **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID!  
-> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben bei Upload auflösbar.
+> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben beim Upload auflösbar.
 
 ```bash
 bash ./convert_to_put.sh transaction-bundle_cleaned.json
@@ -344,11 +344,11 @@ Lade jetzt auch die Daten der beiden anderen Standorte. Sie sind kleiner, bringe
 
 ### Vergleichstabelle
 
-| Bundle | Type | Skripte    | Warum? |
+| Bundle | Typ | Skripte    | Warum? |
 | :----- | :--- | :---------- | :----- |
-| **UKSH** |  `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
-| **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdaten-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
-| **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKSH** |  `searchset`-Bundles -> `transaction`-Bundle | - musterdatenspende-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKHD** | `searchset`-Bundles -> `transaction`-Bundle | - musterdatenspende-diz/bin/<br>`merge-bundles.sh`<br> - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzeldateien zu `transaction`-Bundle mergen -><br> Referenzen cleanen -> <br> `PUT` als Transaktionsmethode setzen |
+| **UKW**  | `searchset`   | - tool-kds-sandbox/<br>`clean_bundle.sh`<br> - tool-kds-sandbox/<br>`prepare_upload.sh`<br> - tool-kds-sandbox/<br>`convert_to_put.sh` | Einzelnes Searchset cleanen -> <br> Umwandeln in `transaction` und Reparieren von IDs -> <br> `PUT` als Transaktionsmethode setzen |
 
 ### Upload-Vorbereitung für UKHD-Musterdatensatz
 (analog zu UKSH)
@@ -401,11 +401,11 @@ ___
 
 ## 📊 Übersicht: Ergebnisse aller drei Standorte
 
-| Standort | Original | Nach Bereinigung | Removed |
+| Standort | Original | Nach Bereinigung | Entfernt |
 | :--- | :--- | :--- | :--- |
-| **UKSH** | 8,446 | 8,083 | 363 (Encounter, Location, etc.) |
+| **UKSH** | 8.446 | 8.083 | 363 (Encounter, Location, etc.) |
 | **UKW** | 235 | 234 | 1 (`MedicationAdministration`) |
-| **UKHD** | 1,371 | 823 | 548 (`Medication`, `MedicationRequest`) |
+| **UKHD** | 1.371 | 823 | 548 (`Medication`, `MedicationRequest`) |
 
 ___
 

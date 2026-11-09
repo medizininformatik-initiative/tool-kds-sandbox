@@ -8,8 +8,8 @@ ___
 
 **Nächste Schritte:**
 
-- Prüfe die Installation von `sushi` und `fhir` CLI-Tools
-- Erstelle dein eigenes SUSHI-Projekt mittels `SUSHI init`
+- Prüfe die Installation der CLI-Tools `sushi` und `fhir`
+- Erstelle dein eigenes SUSHI-Projekt mittels `sushi init`
 - Experimentiere mit verschiedenen FSH-Definitionen
 
 Grundsätzlich lassen sich FHIR-Profile auf verschiedene Weise spezifizieren. Generell werden Profile in interdisziplinärer Zusammenarbeit von Domänenexpert:innen aus dem medizinischen Bereich und technischen Expert:innen aus dem Datenmanagement und der Modellierung geplant, abgestimmt und umgesetzt.
@@ -27,7 +27,7 @@ In dieser Übung nutzen wir `FHIR Shorthand` (kurz `FSH`, gesprochen "Fish"). Di
 
 ___
 
-## 💻 FSH-Compiler `SUSHI` eingerichtet. (NPM-Installation) 💻
+## 💻 FSH-Compiler `SUSHI` eingerichtet (NPM-Installation) 💻
 
 SUSHI basiert auf Node.js. Für die Installation nutzen wir den Node Package Manager (npm).
 
@@ -49,7 +49,7 @@ Für das Schreiben von FSH-Code wird ein Texteditor mit entsprechender Syntax-Un
 - Visual Studio Code (Empfehlung): Installiere dir hierzu die Extension "FHIR Shorthand" für Syntax-Highlighting, Autocomplete und Fehlererkennung in Echtzeit.
 - Alternative (CLI): nano oder vim direkt im Terminal.
 
-Um FHIR-Package für den Build-Process zu verwalten emfpiehlt sich die Installation des `Firely Terminals`:
+Um FHIR-Packages für den Build-Prozess zu verwalten, empfiehlt sich die Installation des `Firely Terminal`:
 
 - `.NET` & `Firely Terminal` installieren
 
@@ -77,11 +77,11 @@ ___
 
 ### 🛠️ Praktische Übung
 
-Um uns der Spezifikation von Profilen und Ressourcen praktisch anzunähern, initiieren wir nun mit SUSHI ein neues FSH-Projekt und starten den Build-Process mit der erzeugten Beispiel-FSH-Datei.
+Um uns der Spezifikation von Profilen und Ressourcen praktisch anzunähern, initiieren wir nun mit SUSHI ein neues FSH-Projekt und starten den Build-Prozess mit der erzeugten Beispiel-FSH-Datei.
 
 #### Erster Schritt
 
-Wechseln in dein Arbeitsverzeichnis und starten das Projekt-Setup (bspw. mit default Werten) mittels:
+Wechsle in dein Arbeitsverzeichnis und starte das Projekt-Setup (bspw. mit Default-Werten) mittels:
 
 ```bash
 SUSHI init
@@ -115,7 +115,7 @@ Im Projektverzeichnis die bereits existierende Beispieldatei `patient.fsh` build
 sushi
 ```
 
-Im dadurch gestarteten Build-Process löst `SUSHI` Abhängigkeiten auf, lädt notwendige Packages und generiert die FHIR Strukturdefinitionen (JSON). Die generierten Dateien sind im Ordner fsh-generated zu finden. Dies sieht wie folgt aus:
+Im dadurch gestarteten Build-Prozess löst `SUSHI` Abhängigkeiten auf, lädt notwendige Packages und generiert die FHIR-Strukturdefinitionen (JSON). Die generierten Dateien sind im Ordner fsh-generated zu finden. Dies sieht wie folgt aus:
 
 ```bash
 .
@@ -163,11 +163,11 @@ Description: "An example of a patient with a license to krill."
   * family = "Pond"
 ```
 
-Eine Übersicht über die Syntax von `FHIR-Shorthand` ist durch HL7 veröffentlicht:  
+Eine Übersicht über die Syntax von `FHIR Shorthand` ist durch HL7 veröffentlicht:  
 [HL7 FHIR Shorthand Overview](https://hl7.org/fhir/uv/shorthand/overview.html).
 
-Die KDS-Module sind aktuell mit `FHIR-Shorthand` umgesetzt und öffentlich auf GitHub einsehbar:  
-[MII KDS repositories auf GitHub](https://github.com/orgs/medizininformatik-initiative/repositories?q=kerndatensatz).
+Die KDS-Module sind aktuell mit `FHIR Shorthand` umgesetzt und öffentlich auf GitHub einsehbar:  
+[MII-KDS-Repositorys auf GitHub](https://github.com/orgs/medizininformatik-initiative/repositories?q=kerndatensatz).
 
 ___
 
@@ -175,13 +175,13 @@ ___
 
 Wir werden nun ein eigenes Profil definieren, das von einem bestehenden MII-Basisprofil erbt, dieses für den Kontext einer fiktiven klinischen Studie sinnvoll einschränken und abschließend eine passende Beispielressource (Example-Instanz) dazu bauen.
 
-### 📖 Anwendungsfallbeispiel Studie "ZuckerWatch-2026" (Typ-2-Diabetes-Monitoring )
+### 📖 Anwendungsfallbeispiel Studie "ZuckerWatch-2026" (Typ-2-Diabetes-Monitoring)
 
 Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) homogen zu modellieren.
 
 Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehalten, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver gestalten, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
 
-1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
+1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC-Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
 
 2. Einheitliche Metrik: Um Berechnungsfehler in der Auswertung zu vermeiden, darf der Laborwert ausschließlich in der UCUM-Einheit mmol/mol angegeben werden (andere Einheiten wie % werden für diese Studie ausgeschlossen).
 
@@ -212,7 +212,7 @@ dependencies:
 
 ❗ Im Kontext MII KDS sollten die [Namenskonventionen für FHIR-Ressourcen in der MII](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Namenskonventionen-für-FHIR‐Ressourcen-in-der-MII) berücksichtigt werden.
 
-Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_Studie_HbA1c.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must support) um.
+Erstelle eine neue Datei im Ordner `input/fsh/profiles` namens `PR_Studie_HbA1c.fsh`. Definiere dort ein neues Profil, das von `MII_PR_Labor_Laboruntersuchung` erbt, und setze die oben beschriebenen Einschränkungen (Fixierung von LOINC-Code und UCUM-Einheit sowie Kardinalitäten und Must Support) um.
 
 Neues Profil mit entsprechenden Einschränkungen in `.fsh`-Datei definieren:
 
@@ -318,7 +318,7 @@ Unser Ordner sieht damit wie folgt aus:
 3 directories, 3 files
 ```
 
-###### ⚠️ Häufiger Fehler beim folgenden Build-Process - Missing Snapshot
+###### ⚠️ Häufiger Fehler beim folgenden Build-Prozess – Missing Snapshot
 
 **Hintergrund:**
 
@@ -329,7 +329,7 @@ Unser Ordner sieht damit wie folgt aus:
 
 Mit den folgenden Varianten erzwingst du das Herunterladen und Generieren bei fehlenden Snapshots:
 
-Variante 1 - Lokale FHIR-Packages verwalten:
+Variante 1 – Lokale FHIR-Packages verwalten:
 
 ```bash
 # 1. Das von SUSHI installierte Package ohne Snapshots löschen
@@ -345,7 +345,7 @@ fhir inflate --package de.medizininformatikinitiative.kerndatensatz.laborbefund@
 sushi .
 ```
 
-Variante 2 - Package (mit Snapshots) manuell hinterlegen:
+Variante 2 – Package (mit Snapshots) manuell hinterlegen:
 
 Unter `~/.fhir/packages/` das vorhandene Package löschen. Manuell bspw. auf Simplifier das Package (mit Snapshots) herunterladen und in `~/.fhir/packages/` in den zugehörigen Ordner entpacken.
 
@@ -461,7 +461,7 @@ Um Profile, ValueSets und Leitfäden in eine strukturierte, interaktive HTML-Ans
 
 Je nachdem, ob du lokal die vollständige Dokumentation bauen oder nur schnell ein einzelnes Profil prüfen möchtest, stehen dir dafür verschiedene Wege zur Verfügung:
 
-### 💻  Methode 1: Den Publisher mit `Java` ausführen
+### 💻 Methode 1: Den Publisher mit `Java` ausführen
 
 - Lade die aktuellste Version des `FHIR IG Publishers` herunter und platziere sie einfach auch in deinem SUSHI-Projektordner:
 
@@ -490,7 +490,7 @@ java -jar org.hl7.fhir.publisher.jar -ig ig.ini -clean
 
 🔍 Der erzeugte Implementation Guide (IG) kann bspw. über `ExampleIG/output/en/StructureDefinition-pr-studie-hba1c.html` im Browser geöffnet und die definierten Ressourcen in übersichtlicher Darstellung, wie aus Quellen von HL7 oder Simplifier gewohnt, betrachtet und die verschiedenen Ressourcen über Verlinkungen navigiert werden.
 
-Je nach Umfang an zu verarbeitetenden Dateien oder verwendeten Codierungen dauert das IG builden ungefähr 10 Minuten (bei komplexeren Projekten evtl. mehrere Stunden).
+Je nach Umfang an zu verarbeitenden Dateien oder verwendeten Codierungen dauert der IG-Build ungefähr 10 Minuten (bei komplexeren Projekten evtl. mehrere Stunden).
 
 Der `FHIR IG Publisher` basiert auf `Java` und nutzt im Hintergrund den statischen Webseiten-Generator `Jekyll` (basierend auf der Programmiersprache Ruby). Ohne `Jekyll` kann der Publisher die HTML-Seiten nicht final rendern. Solltest du `Java` & `Jekyll` noch nicht installiert haben, hier eine kurze Installationsanleitung:
 
@@ -508,12 +508,12 @@ jekyll -v
 
 ### 🧩 Alternative "Simplifier.net"
 
-Wenn du deine Profile und die IG online verwalten und als HTML darstellen möchtest:
+Wenn du deine Profile und den IG online verwalten und als HTML darstellen möchtest:
 
 - Erstelle einen kostenlosen Account auf Simplifier.net.
 - Erstelle ein neues Projekt und lade deine ImplementationGuide-JSON sowie die dazugehörigen Ressourcen (wie das Profil `StructureDefinition/MyPatient`) hoch.
 
-`Simplifier` generiert automatisch eine Online-Oberfläche, in der du deine IG direkt im Browser als strukturierte HTML-Ansicht betrachten und teilen kannst.
+`Simplifier` generiert automatisch eine Online-Oberfläche, in der du deinen IG direkt im Browser als strukturierte HTML-Ansicht betrachten und teilen kannst.
 
 ### 🧩 Methode 3: Schnelle Vorschau via Online-Tools (FHIR Toolbox || FSH School)
 
@@ -522,13 +522,13 @@ Wenn du keine lokale `Java`-Umgebung einrichten willst und nur schnell sehen mö
 - Schau auf [FHIR Toolbox](https://fhirtoolbox.com/visualizer) vorbei.
 - Schau auf [FSH School / SUSHI Online Compiler](https://fshonline.fshschool.org/#/) vorbei.
 
-❗Die `FHIRToolbox` bietet noch weitere praktische Werkzeuge zum Arbeiten mit FHIR und entwickeln rund um FHIR.
+❗Die `FHIRToolbox` bietet noch weitere praktische Werkzeuge zum Arbeiten mit und Entwickeln rund um FHIR.
 
 ## 🔍 Weiterführende Materialien 🔍
 
-Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR Profilen und Ressourcen eingerichtet.
+Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR-Profilen und Ressourcen eingerichtet.
 
-Falls Du mehr zu `FHIR Shorthand` kennenlernen möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
+Falls du mehr über `FHIR Shorthand` erfahren möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
 
 ___
 

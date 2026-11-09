@@ -138,7 +138,7 @@ ___
 ## <a id="schritt-2"></a>💻 Schritt 2: Code nachschlagen mit `$lookup`
 <!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-Lege die Adresse des Terminologieservers in einer Variable ab. So kannst du später mit denselben Befehlen einen anderen Server ansprechen:
+Lege die Adresse des Terminologieservers in einer Variablen ab. So kannst du später mit denselben Befehlen einen anderen Server ansprechen:
 
 ```bash
 TX=https://tx.fhir.org/r4
@@ -444,7 +444,7 @@ curl -s -G "$TX/CodeSystem/\$validate-code" \
 
 - Die Kette lautet: Ressource → `meta.profile` → Profil → Binding → ValueSet → `$expand` → CodeSystem. Diesen Weg kannst du immer gehen, wenn du wissen willst, welche Codes an einer Stelle erlaubt sind und woher sie kommen.
 - In `Coding.system` gehört immer die URL des **CodeSystems**. Das ValueSet legt nur fest, welche Codes erlaubt sind. Bei den UKW-Encountern steht dort die URL des ValueSets. Das ist ein **Fehler in den Ressourcen**.
-- Die Musterdatenspende ist ein historischer Datenstand; an den Standorten sind solche Fehler inzwischen in der Regel behoben. Gefunden hast du ihn nicht durch eine gezielte Suche, sondern weil eine Zeile im Überblick aus Schritt 1 nicht ins Bild passte.
+- Die Musterdatenspende ist ein historischer Datenstand; an den Standorten sind solche Fehler inzwischen in der Regel behoben. Gefunden hast du diesen Fehler nicht durch eine gezielte Suche, sondern weil eine Zeile im Überblick aus Schritt 1 nicht ins Bild passte.
 
 ___
 

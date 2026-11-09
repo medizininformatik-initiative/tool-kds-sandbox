@@ -33,10 +33,10 @@ Dabei gehst du so vor, wie man sich unbekannten Daten nähern kann:
 > 💡 **Ausblick: TORCH & DIMP/DUP**  
 > Für komplexe Datenanforderungen (z. B. kohortenbasierte Extraktion mit Consent-Check) gibt es im MII-Ökosystem spezialisierte Tools:
 >
-> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH Ausleitungen werden als **CRTDL** (Clinical Resource Transfer Definition Language) definiert und können entweder CQL oder FLARE für die Abfrage der Kohorte im FHIR-Server verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII Consent-Handling.
-> - **DIMP/DUP-Pipeline (aether-orchestriert)**: DUP = Data Usage Project / Forschungsprojekte erfordern eine Vereinheitlichung bei Extraktion sowie De-identifikation, Maskierung und Pseudonymisierung (kurz DIMP) der bereitzustellenden Daten. Die Ausleitung wird bei Verwendung von TORCH mittels aether orchestriert.
+> - **[TORCH](https://github.com/medizininformatik-initiative/torch)**: Ein FHIR®-Extraction-Tool für strukturierte, consent-konforme Datenextraktion. TORCH-Ausleitungen werden als **CRTDL** (Clinical Resource Transfer Definition Language) definiert und können entweder CQL oder FLARE für die Abfrage der Kohorte im FHIR-Server verwenden. Ziel: Batch-Extraktion für Forschungsanfragen inkl. MII-Consent-Handling.
+> - **DIMP/DUP-Pipeline (aether-orchestriert)**: DUP = Data Usage Project / Forschungsprojekte erfordern eine Vereinheitlichung bei Extraktion sowie De-Identifikation, Maskierung und Pseudonymisierung (kurz DIMP) der bereitzustellenden Daten. Die Ausleitung wird bei Verwendung von TORCH mittels aether orchestriert.
 >
-> Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um Projekt-basierte, auditierbare Extraktionsketten.
+> Diese Tools sind **nicht Bestandteil dieser praktischen Übung**, aber es ist wichtig zu wissen, dass sie im DIZ-Alltag für large-scale oder consent-komplexe Datenanfragen eingesetzt werden. TORCH ersetzt nicht FHIR-Search, sondern erweitert es um projektbasierte, auditierbare Extraktionsketten.
 
 ___
 
@@ -116,7 +116,7 @@ curl -s "http://localhost:8080/fhir/Patient?_count=300" \
   | jq -r '.entry[].resource.identifier[0].system' | sort | uniq -c
 ```
 
-✅ **Erwartetes Ergebnis** (dazu eine Zeile `null` für deine Testpatienten aus Übung 2):
+✅ **Erwartetes Ergebnis:**
 
 ```text
     272 https://www.medizininformatik-initiative.de/fhir/sid/pseudonym
@@ -154,14 +154,14 @@ UKHD-Identifier: Patient-Ressource mit Identifier vom Typ MR mit System urn:oid:
 
 ### Abfrage 2.2: Patienten nach Geschlecht und Alter
 
-Auch hier zuerst der Überblick über alle Werte (hier als Abfrage von 300 Patienten und zählen in der Rückgabe des Servers):
+Auch hier zuerst der Überblick über alle Werte (Abfrage von bis zu 300 Patienten, gezählt wird in der Antwort des Servers):
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_count=300" \
   | jq -r '.entry[].resource.gender' | sort | uniq -c
 ```
 
-✅ **Erwartetes Ergebnis**:
+✅ **Erwartetes Ergebnis:**
 
 ```text
      78 female
@@ -211,7 +211,7 @@ curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq -r '.total, .entry[].
 # Die Links des Bundles: first (erste Seite), self (diese Anfrage) und next (nächste Seite)
 curl -s "http://localhost:8080/fhir/Patient?_count=5" | jq -r '.link[] | "\(.relation)  \(.url)"'
 
-# Nächste Seite abrufen: den "next"-Link aus der Ausgabe auf die vorherige Anfrage im folgenden Befehl ersetzen
+# Nächste Seite abrufen: <next-URL> im folgenden Befehl durch den "next"-Link aus der vorherigen Ausgabe ersetzen
 curl -s "<next-URL>" | jq -r '.entry[].resource.id[0:20]'
 ```
 
@@ -256,7 +256,7 @@ curl -s "http://localhost:8080/fhir/Condition?_count=500" \
 
 🧩 **Was du gerade gesehen hast:** Die Diagnosen enthalten nur den Code, **keinen Klartext** (`display`). Die Bedeutung musst du nachschlagen, zum Beispiel an einem Terminologieserver, wie du ihn in [Übung 5 · Codes prüfen](exercise-5.md) nutzt.
 
-> 💡 Das Zählen erledigt hier `jq` auf deinem Rechner, nicht der Server. Die FHIR-Suche kann Ressourcen filtern, aber nicht gruppieren oder pro Wert zählen. Soll der Server solche Auswertungen selbst liefern, brauchst du **[CQL](https://cql.hl7.org/)** (Clinical Quality Language): Die Logik steht in einer `Library`, eine `Measure` legt fest, wonach gezählt wird, und `$evaluate-measure` liefert das Ergebnis als `MeasureReport`. Bspw. der Blaze FHIR-Server unterstützt das ([CQL-Abfragen in Blaze](https://blaze-server.org/cql-queries.html)).
+> 💡 Das Zählen erledigt hier `jq` auf deinem Rechner, nicht der Server. Die FHIR-Suche kann Ressourcen filtern, aber nicht gruppieren oder pro Wert zählen. Soll der Server solche Auswertungen selbst liefern, brauchst du **[CQL](https://cql.hl7.org/)** (Clinical Quality Language): Die Logik steht in einer `Library`, eine `Measure` legt fest, wonach gezählt wird, und `$evaluate-measure` liefert das Ergebnis als `MeasureReport`. Bspw. der Blaze-FHIR-Server unterstützt das ([CQL-Abfragen in Blaze](https://blaze-server.org/cql-queries.html)).
 
 ### Abfrage 3.2: Kopfschmerz-Diagnosen (R51) genauer ansehen
 
@@ -347,7 +347,7 @@ ___
 
 ## 💻 4. Laborwerte (LOINC)
 
-Die Musterdaten enthalten 2.040 Laborwerte im KDS-Profil `ObservationLab`. Wir hatten dazu aus [Übung 1 · Profil erstellen](exercise-1.md) das HbA1c-Beispiel. Durch die Musterdaten liegen uns nun unter anderem z. B. auch Angaben zu Hämoglobin, Kalium und Natrium vor.
+Die Musterdaten enthalten 2.040 Laborwerte im KDS-Profil `ObservationLab`. Wir hatten dazu aus [Übung 1 · Profil erstellen](exercise-1.md) das HbA1c-Beispiel. Durch die Musterdaten liegen uns nun unter anderem auch Angaben zu Hämoglobin, Kalium und Natrium vor.
 
 ### Abfrage 4.1: Überblick – von wem stammen die Laborwerte?
 
@@ -371,7 +371,6 @@ curl -s "http://localhost:8080/fhir/Observation?category=laboratory&_count=2100"
 🧩 **Was du gerade gesehen hast:** Laborwerte gibt es nur für 6 der Muster-Patienten, und fast alle (> 80 %) stammen von einer einzigen Person. Eine Statistik über „die Laborwerte“ der Musterdaten beschreibt also im Wesentlichen einen Patienten. Vor einer Auswertung kann ein Blick auf die Verteilung der Referenzen solche Schieflagen aufzeigen.
 
 ### Abfrage 4.2: Hämoglobin – LOINC und lokale Codes
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Die Laborwerte des UKSH tragen einen **lokalen Laborcode** und, wenn vorhanden, zusätzlich einen **LOINC-Code**. Welche Codes stehen bei den Hämoglobin-Werten (LOINC `718-7`)?
 
@@ -425,14 +424,12 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://medic.uksh.de/Codeys
 
 🧩 **Was du gerade gesehen hast:**
 
-- 819 von 2.040 Laborwerten (rund 40 %) haben statt eines LOINC-Codes einen **Platzhalter**: das „Codesystem“ `…/Codeystem/unknown` (mit `Codeystem` statt `CodeSystem` in der URL) und den Code `Unknown`.
-- Eine standortübergreifende Abfrage per LOINC findet diese Werte nicht. Das Mapping lokaler Codes auf LOINC ist eine zentrale Aufgabe im DIZ.
-- Nach dem Platzhalter kannst du gezielt suchen, sobald du ihn im Überblick entdeckt hast: `Observation?code=http://medic.uksh.de/Codeystem/unknown|Unknown&_summary=count` ergibt `819`.
+- 819 von 2.040 Laborwerten (rund 40 %) haben statt eines LOINC-Codes einen **Platzhalter**: das „Codesystem“ `…/Codeystem/unknown` (mit `Codeystem` statt `CodeSystem` in der URL) und den Code `Unknown`. Die Werte gehen dadurch nicht verloren, sie wären aber über LOINC (z. B. bei einer standortübergreifenden Anfrage) nicht auffindbar.
+- Das Mapping lokaler Codes auf LOINC ist eine zentrale Aufgabe im DIZ, um die Daten einheitlich abfragbar zu machen.
 
 ### Abfrage 4.3: Auffällige Werte finden – Kalium
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-Kalium (`6298-4`) über 5 mmol/L. Die Ausgabe zeigt je Wert eine Zeile mit Datum, Wert, Bewertung (`H` = hoch) und ID. `sort` sortiert nach Datum, denn Blaze kann mit `_sort` nicht nach Datum sortieren (siehe Abschnitt 1):
+Kalium (`6298-4`) über 5 mmol/L. Die Ausgabe zeigt je Wert eine Zeile mit Datum, Wert, Bewertung (`H` = hoch) und ID. `sort` sortiert nach Datum, denn Blaze kann mit `_sort` nicht nach Datum sortieren:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|6298-4&value-quantity=gt5|http://unitsofmeasure.org|mmol/L" \
@@ -449,7 +446,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|6298-4&val
 2022-02-04T17:10  6.6 mmol/l  H  LAB-1c0f057b3e1bb6028f4cf74ff2ce5db54c7320425c626e63e679e472
 ```
 
-> 💡 **Merke:** Bei `value-quantity` steht die Einheit als UCUM-Code hinter dem Wert: `[präfix][wert]|[system]|[code]`. Ohne Einheit (`gt5`) wird nur der Zahlenwert verglichen.
+> 💡 **Merke:** Bei `value-quantity` steht die Einheit als UCUM-Code hinter dem Wert: `[präfix][wert]|[system]|[code]`. Ohne Filterung (`gt5`) würde einfach nur der Wert abgefragt.
 
 Alle fünf Werte stammen vom selben Patienten (`PID-62849a39…`). Ein Filter zeigt dir nur die Werte, die ihn erfüllen. Wie sah es davor und danach aus? Hol dir alle Kaliumwerte dieses Patienten aus den ersten drei Tagen. Zwei `date`-Parameter grenzen den Zeitraum ein:
 
@@ -476,10 +473,9 @@ curl -s -G "http://localhost:8080/fhir/Observation" \
 2022-01-23T14:03  4.9 mmol/l  H
 ```
 
-🧩 **Was du gerade gesehen hast:** Die hohen Werte stehen jeweils zwischen normalen Werten, die wenige Minuten vorher oder nachher gemessen wurden. Ein einzelner Wert mit `H` ist deshalb noch kein Befund. Der Filter findet Kandidaten, der Verlauf hilft, sie einzuordnen. Den Befund, zu dem der höchste Wert (8.8) gehört, siehst du dir in [Abfrage 5.3](#abfrage-53-_include--befund-mit-allen-einzelwerten) an.
+🧩 **Was du gerade gesehen hast:** Die hohen Werte stehen jeweils zwischen normalen Werten, die wenige Minuten vorher oder nachher gemessen wurden. Ein einzelner Wert mit `H` ist nicht genug für einen Befund. Der Filter findet Kandidaten, der Verlauf hilft, sie einzuordnen. Den Befund, zu dem der höchste Wert (8.8) gehört, siehst du dir in [Abfrage 5.3](#abfrage-53-_include--befund-mit-allen-einzelwerten) an.
 
 ### 💻 Dasselbe für Hämoglobin und Natrium
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Mit demselben Muster findest du Hämoglobin-Werte unter 10 g/dL und Natrium-Werte (`2951-2`) unter 135 mmol/L. Statt der ID zeigt die letzte Spalte diesmal den Patienten:
 
@@ -488,30 +484,28 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|718-7&valu
   | jq -r '.entry[].resource | "\(.effectiveDateTime[0:16])  \(.valueQuantity.value) \(.valueQuantity.unit)  \(.subject.reference[8:20])"' | sort
 
 curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|2951-2&value-quantity=lt135" \
-  | jq -r '.entry[].resource | "\(.effectiveDateTime[0:16])  \(.valueQuantity.value) \(.valueQuantity.unit)  \(.subject.reference[8:20])"' | sort
+  | jq -r '.entry[].resource | "\(.effectiveDateTime[0:16])  \(.valueQuantity.value) \(.valueQuantity.unit)  \(.subject.reference[8:])"' | sort
 ```
 
 ✅ **Erwartetes Ergebnis:** 6 Hämoglobin- und 7 Natrium-Werte, alle vom Patienten `PID-6f82e92c`:
 
 ```text
-2018-06-21T15:53  8.8 g/dl  PID-6f82e92c
-2019-10-01T15:55  8.3 g/dl  PID-6f82e92c
-2023-03-17T14:04  8.8 g/dl  PID-6f82e92c
+2018-06-21T15:53  8.8 g/dl  PID-6f82e92c[...]
+2019-10-01T15:55  8.3 g/dl  PID-6f82e92c[...]
+2023-03-17T14:04  8.8 g/dl  PID-6f82e92c[...]
 ...
-2016-03-18T11:33  132.0 mmol/l  PID-6f82e92c
+2016-03-18T11:33  132.0 mmol/l  PID-6f82e92c[...]
 ...
-2019-08-27T13:00  130.0 mmol/l  PID-6f82e92c
+2019-08-27T13:00  130.0 mmol/l  PID-6f82e92c[...]
 ```
 
-🧩 **Was du gerade gesehen hast:** Auch hier ist es immer derselbe Patient, derjenige mit 1.720 Laborwerten aus 4.1. Das Ergebnis sagt deshalb mehr über die Verteilung der Daten aus dem Überblick als über Hämoglobin oder Natrium.
+🧩 **Was du gerade gesehen hast:** Auch hier ist es immer derselbe Patient, derjenige mit 1.720 Laborwerten aus 4.1. Das Ergebnis der Abfrage sagt deshalb mehr über die Verteilung der Musterdaten als über Hämoglobin oder Natrium.
 
 ___
 
 ## 💻 5. Ressourcen verknüpfen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ### Abfrage 5.1: Chaining – über eine Referenz hinweg filtern
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 „Alle R51-Diagnosen bei **Frauen**“ – das Geschlecht steht nicht in der Condition, sondern im verknüpften Patient:
 
@@ -531,16 +525,15 @@ curl -s "http://localhost:8080/fhir/Condition?encounter:Encounter.class=IMP&_sum
 # → 315
 ```
 
-🧩 **Was du gerade gesehen hast:** Zusammen sind das 459 von 482 Diagnosen. Die übrigen 23 haben gar keinen `encounter`, sie stammen vom UKHD. Eine Chaining-Suche findet nur Ressourcen, bei denen die Referenz auch gesetzt ist.
+🧩 **Was du gerade gesehen hast:** Zusammen sind das 459 von 482 Diagnosen. Die übrigen 23 haben gar keinen `encounter`. Eine Chaining-Suche findet nur Ressourcen, bei denen die Referenz auch gesetzt ist.
 
 ### Abfrage 5.2: Reverse Chaining (`_has`) – Patienten über ihre Daten finden
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 „Welche **Patienten** haben eine R51-Diagnose?“ – hier wird umgekehrt gesucht: Patienten, auf die eine passende Condition verweist:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_has:Condition:subject:code=http://fhir.de/CodeSystem/bfarm/icd-10-gm|R51" \
-  | jq -r '.entry[].resource | "\(.id[0:20])  \(.gender)  \(.birthDate)"'
+  | jq -r '.entry[].resource | "\(.id[0:])  \(.gender)  \(.birthDate)"'
 ```
 
 ✅ **Erwartetes Ergebnis:** dieselben 5 Patienten wie in 3.2, diesmal als Patient-Ressourcen (3 männlich, 2 weiblich):
@@ -561,7 +554,6 @@ curl -s "http://localhost:8080/fhir/Patient?_has:Procedure:subject:code=http://f
 ```
 
 ### Abfrage 5.3: `_include` – Befund mit allen Einzelwerten
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 In 4.3 bist du auf einen Kaliumwert von 8.8 mmol/L gestoßen. Ein Laborbefund (`DiagnosticReport`) verweist über `result` auf seine Einzelwerte. Mit `result=` findest du den Befund, der diesen Wert enthält, und mit `_include` kommen alle seine Einzelwerte in derselben Antwort mit:
 
@@ -588,7 +580,6 @@ include  Observation       6298-4   8.8 mmol/l    H
 - Einen auffälligen Wert ordnest du also im Kontext ein: im **Verlauf** (Suche nach Patient und Code, 4.3) und im **Befund** (`_include`). Beides holst du dir mit wenigen Suchanfragen, ohne jede Ressource einzeln abzurufen.
 
 ### Abfrage 5.4: `_revinclude` – die Patientenakte
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Mit `_revinclude` holst du alle Ressourcen, die **auf** einen Patienten verweisen – eine kleine Patientenakte in einer Abfrage. Nimm dafür einen der Patienten mit R51-Diagnose aus [Abfrage 5.2](#abfrage-52-reverse-chaining-_has--patienten-über-ihre-daten-finden). Die Beispielausgaben unten gehören zur Patientin `PID-e5d803e4…` aus 3.2, mit einer anderen ID siehst du andere Zahlen:
 
@@ -648,12 +639,10 @@ IMP  2024-02-23  2024-02-23
 ___
 
 ## 🔍 6. Auffälligkeiten in den Daten
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Echte Routinedaten sind selten fehlerfrei. Mit FHIR-Search lassen sich Widersprüche aufspüren – und manchmal stellt sich heraus, dass es keine sind.
 
 ### Abfrage 6.1: Verstorben – oder doch nicht?
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Der Vitalstatus wird im KDS doppelt abgebildet: als `deceased[x]` im Patient und als eigene Observation (`67162-8`, Profil *Vitalstatus*) mit den Werten `L` (lebend) und `T` (tot). Wir zählen beide Angaben getrennt:
 
@@ -678,7 +667,7 @@ curl -s "http://localhost:8080/fhir/Observation?code=http://loinc.org|67162-8&va
 - `Patient.deceased[x]` beschreibt den **aktuellen** Stand, als `deceasedDateTime` samt Todeszeitpunkt, als `deceasedBoolean` nur mit ja/nein.
 - Die Vitalstatus-Observation ist eine **Momentaufnahme**: „Zum Zeitpunkt `effective[x]` war der Patient lebend (bzw. tot).“
 
-Ein Patient, der 2023 bei einem Aufenthalt mit „L“ dokumentiert wurde und 2025 verstorben ist, hat beide Angaben zu Recht. Ein **echter** Widerspruch läge erst vor, wenn eine „L“-Observation **nach** dem Tod datiert ist. Dafür brauchst du ein Todesdatum. Wie ist `deceased` in den Daten angegeben? Der Überblick zeigt je Patient die ersten drei Zeichen der ID (also den Standort, siehe 2.1) und den Wert:
+Ein Patient, der 2023 bei einem Aufenthalt mit „L“ dokumentiert wurde und 2025 verstorben ist, hat beide Angaben zu Recht. Ein **echter** Widerspruch läge erst vor, wenn eine „L“-Observation **nach** dem Tod datiert ist. Dafür brauchst du ein Todesdatum. Wie ist `deceased` in den Daten angegeben? Der Überblick zeigt je Patient die gekürzte ID (also einen Hinweis auf den Standort, siehe 2.1) und den Wert:
 
 ```bash
 curl -s "http://localhost:8080/fhir/Patient?_count=300" \
@@ -719,23 +708,21 @@ curl -s -G "http://localhost:8080/fhir/Observation" \
 
 - Für den einzigen Patienten mit „T“ passt alles zusammen: morgens lebend, abends verstorben, und `deceasedBoolean` ist `true`.
 - Alle UKSH-Patienten mit Angabe sind als verstorben markiert, die UKHD-Patienten als lebend. Weil nirgends ein Todesdatum steht, lässt sich für die übrigen 258 „verstorbenen“ Patienten nicht prüfen, ob eine „L“-Observation zu spät kommt. Diese Prüfung ist mit den Musterdaten nicht möglich.
-- Jede Angabe im KDS hat einen Zeitbezug. Zwei Angaben, die nicht zusammenpassen, sind erst dann ein Widerspruch, wenn sich dieselbe Aussage zum selben Zeitpunkt unterscheidet. Ob du das prüfen kannst, hängt davon ab, welche Elemente überhaupt befüllt sind. Das zeigt dir der Überblick.
+- Jede Angabe im KDS hat einen Zeitbezug. Zwei Angaben, die nicht zusammenpassen, sind erst dann ein Widerspruch, wenn sich dieselbe Aussage zum selben Zeitpunkt unterscheidet. Ob du das prüfen kannst, hängt davon ab, welche Elemente überhaupt befüllt sind.
 
 ___
 
 ## 💻 7. Skriptbasierter Ausblick (Python/R)
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Für wiederkehrende Abfragen und statistische Auswertungen lohnt sich ein Skript. Bibliotheken übernehmen dabei das Blättern durch die Seiten und wandeln die Ressourcen in Tabellen um. Beide Beispiele holen alle Hämoglobin-Werte.
 
 ### 7.1 Python: fhir-pyrate
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ```bash
 pip install fhir-pyrate
 ```
 
-> 💡 Neuere Ubuntu-/Debian-Versionen (auch unter WSL2) verweigern `pip install` außerhalb einer virtuellen Umgebung mit dem Fehler `externally-managed-environment`. Lege dann vorher eine an:
+> 💡 Neuere Ubuntu-/Debian-Versionen (auch unter WSL2) verweigern `pip install` außerhalb einer virtuellen Umgebung mit dem Fehler `externally-managed-environment`. Lege dann vorher eine virtuelle Umgebung an:
 >
 > ```bash
 > python3 -m venv ~/venv-fhir && source ~/venv-fhir/bin/activate
@@ -762,7 +749,6 @@ print(df["wert"].describe())
 ```
 
 ### 7.2 R: fhircrackr
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ```r
 # install.packages("fhircrackr")
@@ -800,17 +786,14 @@ summary(df$wert)
 ___
 
 ## 🏁 Zusammenfassung & Merkregeln
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ### Warum FHIR-Search?
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 > ✅ **Standardisiert** — Alle FHIR-Server sprechen dieselbe Sprache  
 > ✅ **Standortübergreifend** — Dieselbe Abfrage funktioniert an jedem DIZ, sofern die Daten einheitlich kodiert sind  
 > ✅ **Flexibel** — Filter, Verknüpfungen und Seiten lassen sich kombinieren  
 
 ### Wichtigste Parameter im Alltag
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Situation | Parameter | Beispiel |
 | --------- | --------- | -------- |
@@ -825,17 +808,15 @@ ___
 | **Blättern** | `_count` + `next`-Link | `Patient?_count=5` |
 
 ### Was du über die Daten gelernt hast
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-- Die Standorte setzen Pseudonymisierung unterschiedlich um; die ID-Muster verraten, woher eine Ressource stammt.
+- Die Standorte setzen Pseudonymisierung unterschiedlich um. Im vorliegenden Datenauszug (Musterdaten) verraten die ID-Muster, woher eine Ressource stammt.
 - Diagnosen und Laborwerte tragen oft nur Codes ohne Klartext. Dieselbe Diagnose steht teils mehrfach im selben Fall.
-- Laborwerte gibt es nur für wenige Patienten. Rund 40 % der Laborwerte haben statt eines LOINC-Codes nur einen Platzhalter.
+- Laborwerte gibt es in diesem Datensatz nur für wenige Patienten. Rund 40 % der Laborwerte haben statt eines LOINC-Codes nur einen Platzhalter.
 - Die Daten enthalten ungültige Codes. Nicht jede Auffälligkeit ist ein Widerspruch, und manche Prüfung ist mangels befüllter Elemente gar nicht möglich.
 
 ___
 
 ### Ausblick
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 - **Übung 5:** Terminologien prüfen mit FHIR-Operationen – Codes nachschlagen und prüfen  
 - **Übung 6:** Terminologieserver einrichten und mit dem FHIR Validator Ressourcen gegen Profile prüfen  

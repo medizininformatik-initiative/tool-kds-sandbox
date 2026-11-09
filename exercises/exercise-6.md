@@ -4,7 +4,7 @@ ___
 ___
 ___
 
-# 🟣 Nutzen eines FHIR Validators
+# 🟣 Nutzen eines FHIR-Validators
 
 **Nächste Schritte:**
 
@@ -581,7 +581,7 @@ jq '.meta.profile' condition-570762.json condition-r51.json
 
 Die Diagnose aus 4.1 nennt `Diagnose|2025.0.0`. Der Validator hat das Profil aus dem geladenen Paket 2025.0.1 verwendet und gegen das KDS-Profil geprüft. Die Diagnose aus 4.2 nennt `Diagnose|2024.0.0`. Diese Version kennt der Validator nicht. Er prüft dann **nur gegen den FHIR-Basisstandard** und sagt das lediglich als `information` und `warning`.
 
-> ❗ **Merke:** „Keine Fehler" heißt nicht automatisch „gültig nach KDS". Prüfe immer, ob der Validator das Profil überhaupt gefunden hat. Mit dem Parameter `profile` aus Schritt 3.2 kannst du die Prüfung gegen ein bestimmtes Profil erzwingen.
+> ❗ **Merke:** „Keine Fehler“ heißt nicht automatisch „gültig nach KDS". Prüfe immer, ob der Validator das Profil überhaupt gefunden hat. Mit dem Parameter `profile` aus Schritt 3.2 kannst du die Prüfung gegen ein bestimmtes Profil erzwingen.
 
 ### 4.3 Anzeigetexte mitprüfen
 <!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
