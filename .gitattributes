@@ -1,0 +1,12 @@
+# Einheitliche Zeilenenden: Textdateien liegen im Repo und im Arbeitsverzeichnis mit LF vor,
+# auch bei einem Klon unter Windows (wichtig für die Bash-Skripte unter WSL).
+* text=auto eol=lf
+
+# Windows-Batch-Dateien brauchen CRLF
+*.bat text eol=crlf
+
+# Binärdateien nie umwandeln
+*.jar binary
+*.tgz binary
+*.zip binary
+*.png binary

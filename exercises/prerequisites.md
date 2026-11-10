@@ -36,6 +36,13 @@ Die Basiswerkzeuge der ersten Zeile installierst du unter Ubuntu/Debian (auch WS
 sudo apt update && sudo apt install -y git curl jq unzip
 ```
 
+Klone danach dieses Repository in dein Home-Verzeichnis. Mehrere Übungen rufen Skripte unter `~/tool-kds-sandbox` auf:
+
+```bash
+cd ~
+git clone https://github.com/medizininformatik-initiative/tool-kds-sandbox.git
+```
+
 Sobald alles eingerichtet ist, kannst du die Installation prüfen:
 
 ```bash

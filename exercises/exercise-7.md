@@ -13,7 +13,7 @@ ___
 - Ordne Meldungen ein: Datenfehler, Versionsthema oder Grenze des Setups?
 - Lerne, was ein Validator **nicht** findet
 
-In [Übung 6 · Ressourcen validieren](exercise-6.md) hast du Ressourcen mit dem MII FHIR Validator geprüft. Die Antwort war jedes Mal ein **`OperationOutcome`**, die „Sprache“, in der FHIR Ergebnisse und Fehler meldet.
+In [Übung 6 · Ressourcen validieren](exercise-6.md) hast du Ressourcen mit dem MII FHIR Validator geprüft. Die Antwort war jedes Mal ein **`OperationOutcome`**, der Ressourcentyp, mit dem FHIR Fehler, Warnungen und Hinweise zu einer Aktion meldet.
 
 In dieser Übung lernst du, diese Berichte zu **lesen** und **einzuordnen**: Was bedeutet ein `error` im Vergleich zu einer `warning`? Welche Meldung zeigt einen echten Fehler in den Daten, welche nur eine Lücke in deinem Setup?
 
@@ -60,6 +60,8 @@ Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Ein
 }
 ```
 
+### Felder: Was enthält ein Validierungsbericht?
+
 | Feld | Inhalt |
 | --- | --- |
 | `severity` | Wie schwer wiegt die Meldung? (siehe unten) |
@@ -98,7 +100,7 @@ ___
 
 ## <a id="meldungen"></a>📋 Häufige Validator-Meldungen
 
-### A) Bekannte Meldungen im MII-PRO-IG (kein Datenfehler)
+### A) Beispielmeldungen zum MII-Modul PRO - Implementation Guide
 
 | Meldung / Code | Bedeutung | Einordnung | Was tun? |
 |---|---|---|---|
@@ -188,7 +190,7 @@ bericht-hb.json: {"information":1,"warning":6}
 jq -r '.issue[] | select(.severity == "error" or .severity == "fatal") | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"' bericht-condition-570762.json
 ```
 
-✅ **Erwartetes Ergebnis** (die zweite Meldung ist gekürzt):
+✅ **Erwartetes Ergebnis** (die zweite Meldung hier gekürzt):
 
 ```text
 error – Condition.code.coding[0].code
@@ -218,7 +220,7 @@ jq '.code.coding[0]' condition-570762.json
 
 System und Version passen zur Meldung (`icd-10-gm`, Version `2025`), nur der Code selbst existiert nicht.
 
-🧩 **Was du gerade gesehen hast:** Der Validator sagt dir, **was** nicht stimmt, und mit `expression`, **wo**. Damit kommst du ohne Suchen direkt an das betroffene Feld. Das klappt mit den meisten Meldungen, z. B. `Observation.meta.profile[0]` → `jq '.meta.profile[0]'`. So prüfst du im Alltag eine Meldung nach, bevor du sie an die Datenquelle weitergibst.
+🧩 **Was du gerade gesehen hast:** Der Validator sagt dir, **was** nicht stimmt, und mit `expression`, **wo**. Damit kommst du ohne Suchen direkt an das betroffene Feld. Das klappt mit den meisten Meldungen, z. B. `Observation.meta.profile[0]` → `jq '.meta.profile[0]'`. So prüfst du im Alltag Meldungen nach, bevor du dich an die Datenquelle wendest.
 
 ### 1.4 Viele Berichte auf einmal
 
@@ -278,7 +280,7 @@ Nicht jede Meldung bedeutet, dass die Daten falsch sind. Ordne jede Meldung aus 
 
 Viele Meldungen der Gruppe **Versionsthema** verstehst du erst, wenn du weißt, wo Versionen in FHIR stehen und warum sie sich ändern.
 
-**Codesysteme** ändern sich regelmäßig: Die ICD-10-GM und der OPS erscheinen jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 gestrichen oder umbenannt sein. Ein `Coding` kann deshalb die Version mitführen, mit der kodiert wurde:
+**Codesysteme** werden aktualisiert: Die ICD-10-GM und der OPS erscheinen jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 gestrichen oder umbenannt sein. Ein `Coding` sollte deshalb die Version mitführen, mit der kodiert wurde:
 
 ```json
 {
@@ -297,25 +299,57 @@ https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDe
 | Situation | Was tun? |
 | --- | --- |
 | Daten nennen eine ältere Profilversion als der Validator kennt | Vorher festlegen, gegen welche Version geprüft wird, und die passenden Pakete laden (`IG_PARAMS`) |
-| Daten wurden mit einer älteren ICD-10-GM-Version kodiert | Terminologieserver mit dieser Version bestücken oder bewusst gegen die aktuelle prüfen |
+| Daten wurden mit einer älteren ICD-10-GM-Version kodiert | Terminologieserver mit dieser Version bestücken oder bewusst gegen die aktuelle prüfen. |
 | Codes haben sich zwischen zwei Versionen geändert | Überleitungstabellen des BfArM für ICD-10-GM und OPS nutzen |
 
-### 🛠️ Aufgabe: Berichte einordnen
+### 💻 Die Meldungen deiner vier Berichte einordnen
 
-- Welche Meldung in `bericht-condition-570762.json` ist ein echter **Datenfehler**?
-- Welche Meldungen tauchen in **mehreren** Berichten auf? Zu welcher Gruppe gehören sie?
-- Was meldet der Validator zum Laborwert in `bericht-hb.json`, und warum?
+Wie in 1.4 fasst du zuerst gleiche Meldungen zusammen, diesmal über die vier Berichte aus Schritt 1 und mit der Schwere vorneweg. So siehst du auf einen Blick, welche Meldungen mehrfach vorkommen:
 
-<details>
-<summary>Lösung</summary>
+```bash
+cat bericht-*.json \
+  | jq -r -s '[.[].issue[] | "\(.severity)  \(.details.text[0:110])"] | group_by(.) | sort_by(-length) | .[] | "\(length)×  \(.[0])"'
+```
 
-- `570762` ist kein ICD-10-GM-Code. Der Terminologieserver kennt ihn nicht, der Validator meldet einen ungültigen Code. Das ist ein **Datenfehler** in der Quelle.
-- `dom-6` steht in allen Berichten. Das ist eine **bekannte Meldung** (Tabelle A), kein Datenfehler.
-- „Profile reference … has not been checked“ steht in den Berichten zu `condition-r51` (`Diagnose|2024.0.0`) und `hb` (`ObservationLab|2025.0.2`): Diese Profilversionen hat der Validator nicht geladen. Das ist ein **Versionsthema**, kein Fehler in den Ressourcen. Bei `hba1c` gilt dieselbe Meldung deinem eigenen Studienprofil, das der Validator gar nicht kennt: eine **Grenze des Setups**. Die Diagnose `570762` nennt `Diagnose|2025.0.0`, die der Validator kennt, deshalb fehlt die Meldung dort.
-- Zum Code des Laborwerts meldet der Validator: `A definition for CodeSystem 'http://medic.uksh.de/fhir/CodeSystem/Laborparameter' could not be found, so the code cannot be validated`. Das ist der Hauscode des UKSH. Ein lokales Codesystem kennt ein externer Terminologieserver in der Regel nicht, der Code wurde also nicht geprüft. Falsch ist er deshalb nicht: eine **Grenze des Setups**. Zur Kategorie meldet er, dass LOINC fehlt, sie aber trotzdem gültig ist (`another coding is in the value set`).
-- Beim Laborwert erscheint außerdem `None of the codings provided are in the value set 'IdentifierType'` (wie bei `hba1c`). Das MII-Laborprofil würde `OBI` erlauben. Weil der Validator `ObservationLab|2025.0.2` nicht kennt, prüft er nur gegen den FHIR-Basisstandard, und der kennt `OBI` nicht: eine Folge des **Versionsthemas**. `all observations should have a performer` ist wie `dom-6` eine Best-Practice-Empfehlung.
+✅ **Erwartetes Ergebnis:**
 
-</details>
+```text
+4×  warning  Constraint failed: dom-6: 'A resource should have narrative for robust management' (defined in http://hl7.org/
+2×  information  A definition could not be found for Canonical URL 'https://www.medizininformatik-initiative.de/fhir/core/modul
+2×  warning  A definition for the code system 'http://loinc.org' could not be found, so this coding was not checked. The Co
+2×  warning  Best Practice Recommendation: In general, all observations should have a performer
+2×  warning  None of the codings provided are in the value set 'IdentifierType' (http://hl7.org/fhir/ValueSet/identifier-ty
+1×  error  Example URLs are not allowed in this context (http://example.org/StructureDefinition/pr-studie-hba1c)
+1×  error  Example URLs are not allowed in this context (http://www.acme.com/identifiers/patient)
+1×  error  The code provided (http://fhir.de/CodeSystem/bfarm/icd-10-gm#570762) was not found in the value set 'MII VS Di
+1×  error  Unknown code '570762' in the CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' version '2025'
+1×  warning  A definition for CodeSystem 'http://loinc.org' version '2.82' could not be found, so the code cannot be valida
+1×  warning  A definition for CodeSystem 'http://medic.uksh.de/fhir/CodeSystem/Laborparameter' could not be found, so the c
+1×  warning  A definition for CodeSystem 'http://snomed.info/sct' version 'http://snomed.info/sct/900000000000207008' could
+1×  warning  A definition for CodeSystem 'http://snomed.info/sct' version 'http://snomed.info/sct/900000000000207008/versio
+1×  warning  Constraint failed: icd-regex: 'In code sind nur gültige ICD-10-Codes ohne Zusätze erlaubt' (defined in http://
+1×  warning  Error begin -1, end 64, length 64 validating Coding
+1×  warning  Profile reference 'http://example.org/StructureDefinition/pr-studie-hba1c' has not been checked because it cou
+1×  warning  Profile reference 'https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDefinition/Di
+1×  warning  Profile reference 'https://www.medizininformatik-initiative.de/fhir/core/modul-labor/StructureDefinition/Obser
+```
+
+Welche Meldung aus welchem Bericht stammt, zeigt dir `grep -l` wie in 1.4, z. B. `grep -l 'has not been checked' bericht-*.json` → `bericht-condition-r51.json`, `bericht-hba1c.json`, `bericht-hb.json`.
+
+🧩 **Was du gerade gesehen hast:** Die Meldungen ordnen sich so den Gruppen zu:
+
+| Meldung | Bericht | Gruppe | Warum? |
+| --- | --- | --- | --- |
+| `Unknown code '570762' …` und `… was not found in the value set 'MII VS Diagnose ICD-10-GM'` | `condition-570762` | **Datenfehler** | `570762` ist kein ICD-10-GM-Code. Das ist an der Datenquelle zu korrigieren. |
+| `Profile reference … has not been checked …` | `condition-r51`, `hb` | **Versionsthema** | Die Daten nennen `Diagnose\|2024.0.0` bzw. `ObservationLab\|2025.0.2`, die der Validator nicht geladen hat. Die Diagnose `570762` nennt `Diagnose\|2025.0.0`, deshalb fehlt die Meldung dort. |
+| `Profile reference … has not been checked …` | `hba1c` | **Grenze des Setups** | Dein eigenes Studienprofil ist im Validator nicht geladen. |
+| `Example URLs are not allowed in this context` | `hba1c` | **Datenfehler** | Dein Beispiel aus Übung 1 nutzt Platzhalter-Adressen (`example.org`, `acme.com`). In echten Daten wären sie falsch. |
+| `A definition for CodeSystem 'http://loinc.org'` bzw. `'http://snomed.info/sct' … could not be found` | `hba1c` | **Grenze des Setups** | Dein FHIRsmith enthält kein LOINC und kein SNOMED CT ([Übung 6, Schritt 1](exercise-6.md#schritt-1)). Beim Laborwert `hb` meldet der Validator zum LOINC-Code dagegen nichts. |
+| `A definition for CodeSystem 'http://medic.uksh.de/…/Laborparameter' could not be found …` | `hb` | **Grenze des Setups** | Ein lokales Codesystem kennt ein externer Terminologieserver in der Regel nicht. Der Code ist **nicht geprüft**, deshalb aber nicht falsch. Zur Kategorie meldet der Validator bei `hb` und `hba1c`, dass LOINC nicht geprüft wurde, die Kategorie aber trotzdem gültig ist (`A definition for the code system 'http://loinc.org' could not be found, so this coding was not checked …`). |
+| `None of the codings provided are in the value set 'IdentifierType'` | `hb`, `hba1c` | Folge des **Versionsthemas** | Das MII-Laborprofil würde `OBI` erlauben. Ohne gefundenes Profil prüft der Validator nur gegen den FHIR-Basisstandard, und der kennt `OBI` nicht. |
+| `dom-6: A resource should have narrative …`, `all observations should have a performer` | alle bzw. die Laborwerte | **Bekannte Meldung** | Best-Practice-Empfehlungen (Tabelle A) |
+
+Die mehrfach vorkommenden Meldungen gehen hier auf Setup, Version oder Best-Practice-Empfehlungen zurück. Die Datenfehler stehen jeweils nur in einem Bericht. Datenfehler entspringen der Datenquelle oder der ETL-Strecke, Versionsthemen sind systematisch für den ganzen Bestand zu klären, Grenzen des Setups beeinflussen, was geprüft werden kann.
 
 ___
 
@@ -335,13 +369,13 @@ Ein HbA1c-Wert in `mmol/mol` (IFCC) hätte den Code `59261-8` gebraucht. Prüfe 
 - **SUSHI** und der **IG Publisher** prüfen, ob die Instanz zum Profil passt – und das tut sie, denn das Profil selbst enthält die falsche Kombination.
 - Der **Validator** prüft, ob `4548-4` ein gültiger LOINC-Code ist und ob `mmol/mol` eine gültige UCUM-Einheit ist. Beides stimmt. Ob Code und Einheit **fachlich zusammenpassen**, prüft er nicht.
 
-> 💡 **Merke:** Validierung prüft die Form, nicht den Sinn. Ob Code, Einheit und Wert zusammenpassen, gehört in fachliche Plausibilitätsprüfungen und in das Review eines Profils.
+> 💡 **Merke:** Der Validator prüft nur, was im Profil festgelegt ist. Ob Code, Einheit und Wert fachlich zusammenpassen, muss beim Profilieren und im Review des Profils sichergestellt werden. Bei realen Daten kommen das Mapping im DIZ und fachliche Plausibilitätsprüfungen dazu.
 
 ___
 
 ## <a id="schritt-3"></a>💻 Schritt 3: Validierung automatisieren
 
-Im DIZ-Alltag validiert man meist per Skript statt von Hand, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
+Im DIZ-Alltag validiert man meist per Skript statt von Hand, z. B. vor einem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
 
 ```bash
 bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-r51.json
@@ -358,7 +392,7 @@ echo "Exit-Code: $?"
 Exit-Code: 1
 ```
 
-> 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://mein-server:8082 bash validate.sh datei.json`.
+> 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://xyz:8082 bash validate.sh datei.json`.
 
 ___
 
@@ -374,20 +408,22 @@ ___
 
 ### Quick-Checkliste
 
-- [ ] Überblick verschafft: Meldungen je Schwere gezählt, bevor du einzelne Berichte liest?
-- [ ] Profil wirklich geprüft? Steht „Profile reference … has not been checked“ im Bericht, wurde nur gegen den FHIR-Basisstandard geprüft. Version klären oder mit `profile` prüfen.
-- [ ] Jeden `error` an der Stelle aus `expression` in der Ressource nachgesehen?
-- [ ] Bei vielen Berichten: Häufige Meldungen als mögliches systematisches Thema geprüft, seltene als mögliche Einzelfälle?
-- [ ] Meldungen eingeordnet: Datenfehler, Versionsthema, Grenze des Setups oder bekannte Meldung?
-- [ ] „… could not be found, so the code cannot be validated“ heißt **nicht geprüft**, nicht gültig. Ist das für deinen Zweck ausreichend?
-- [ ] Fachliche Plausibilität (Code, Einheit, Wert) separat geprüft?
-- [ ] Berichte abgelegt (Nachvollziehbarkeit)?
+- Überblick verschafft: Meldungen je Schwere gezählt, bevor du einzelne Berichte liest?
+- Profil wirklich geprüft? Steht „Profile reference … has not been checked“ im Bericht, wurde nur gegen den FHIR-Basisstandard geprüft. Version klären oder mit `profile` prüfen.
+- Jeden `error` an der Stelle aus `expression` in der Ressource nachgesehen?
+- Bei vielen Berichten: Häufige Meldungen als mögliches systematisches Thema geprüft, seltene als mögliche Einzelfälle?
+- Meldungen eingeordnet: Datenfehler, Versionsthema, Grenze des Setups oder bekannte Meldung?
+- „… could not be found, so the code cannot be validated“ heißt **nicht geprüft**, nicht gültig. Ist das für deinen Zweck ausreichend?
+- Fachliche Plausibilität (Code, Einheit, Wert) separat geprüft?
+- Berichte abgelegt (Nachvollziehbarkeit)?
 
-**Abschluss:**
+___
+
+### Abschluss
 
 Damit hast du den Weg von FHIR-Daten im DIZ einmal komplett durchlaufen: Du hast ein Profil modelliert ([1 · Profil erstellen](exercise-1.md)), Daten in einen FHIR-Server geladen und abgefragt ([2 · FHIR-Server starten](exercise-2.md), [3 · Musterdaten laden](exercise-3.md), [4 · Daten abfragen](exercise-4.md)), Codes an Terminologieservern geprüft ([5 · Codes prüfen](exercise-5.md)) und Ressourcen gegen die Profile des Kerndatensatzes validiert und die Ergebnisse eingeordnet ([6 · Ressourcen validieren](exercise-6.md), diese Übung).
 
-> 💡 **Feedback willkommen:** War etwas unklar, hat ein Befehl nicht wie beschrieben funktioniert, oder hast du Ideen für weitere Übungen? Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
+> 💡 **Feedback ist willkommen!** War etwas unklar, hat ein Befehl nicht wie beschrieben funktioniert, oder hast du Ideen für weitere Übungen? Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
 
 ___
 ___

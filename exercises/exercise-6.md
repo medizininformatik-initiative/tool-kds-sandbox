@@ -4,7 +4,7 @@ ___
 ___
 ___
 
-# 🟣 Nutzen eines FHIR Validators
+# 🟣 Nutzen eines FHIR-Validators
 
 **Nächste Schritte:**
 
@@ -37,7 +37,7 @@ ___
 
 ### Strukturelle Validierung vs. Conformance-Validierung
 
-- **Strukturell** prüfen Webtools wie fhirtoolbox.com oder SUSHI beim Build: Ist das gültiges FHIR? Sie finden Syntaxfehler, falsche Datentypen, teilweise fehlende Pflichtfelder und Codes außerhalb fest eingebauter Listen (z. B. `gender`). Das ist der schnelle Check beim Schreiben.
+- **Strukturell** prüfen Tools wie fhirtoolbox.com oder SUSHI beim Build: Ist das gültiges FHIR? Sie finden Syntaxfehler, falsche Datentypen, fehlende Pflichtfelder und Codes außerhalb fest eingebauter Listen. Das ist der schnelle Check beim Erstellen.
 - **Conformance-Validierung** (HL7 Validator, IG Publisher, MII FHIR Validator) prüft zusätzlich alles, was ein Profil vorgibt: Kardinalitäten, Invarianten (FHIRPath), Slicing. Codes gibt der Validator an einen **Terminologieserver** weiter. Der prüft, ob ein Code im CodeSystem existiert, zum gebundenen ValueSet gehört und, wenn gewünscht, zum Anzeigetext passt. So prüft man vor einem Release, in CI oder in der ETL-Strecke.
 
 > ⚠️ **Grenzen:** Ein Validator prüft **nicht**, ob Inhalte fachlich plausibel sind (z. B. ein Laborwert von 300 g/dL Hämoglobin) oder ob Code und Einheit fachlich zusammenpassen. Ob referenzierte Ressourcen (z. B. `Patient/...`) tatsächlich existieren, prüft er bei einer einzelnen Ressource ebenfalls nicht. Das hat in [Übung 3 · Musterdaten laden](exercise-3.md) Blaze beim Upload übernommen.
@@ -103,7 +103,7 @@ Du lernst beide kennen:
 
 ### <a id="schritt-1a"></a>💻 Schritt 1a: Eigenen Terminologieserver starten
 
-FHIRsmith ist ein Node.js-Server, den wir als Docker-Container starten. Er liest beim Start zwei Dateien aus seinem Datenordner:
+FHIRsmith ist ein Node.js-Server, den wir als Docker-Container starten. Er liest beim Start zwei Dateien aus der zugehörigen Ordnerstruktur:
 
 ```text
 ~/terminology-server/
@@ -168,9 +168,9 @@ sources:
   - folder:/app/data/de.bfarm.alpha-id-se
 ```
 
-> 💡 Die Pfade unter `folder:` beginnen mit `/app/data`, weil der Server sie **im Container** sieht. Dort wird dein Ordner `~/terminology-server/data` eingebunden (siehe `docker-compose.yml` unten).
+> 💡 Die Pfade unter `folder:` beginnen mit `/app/data`, sodass der Server sie **im Container** findet. Dort wird dein Ordner `~/terminology-server/data` eingebunden (siehe `docker-compose.yml` unten).
 
-Lege die Datei `data/config.json` an. FHIRsmith kann vieles (u. a. Paket-Registry, Validator); wir schalten nur den Terminologieserver ein und machen ihn unter dem Pfad `/fhir` erreichbar:
+Lege die Datei `data/config.json` an. FHIRsmith bietet verschiedene Module (u. a. Paketserver, Publisher, Registry für Terminologieserver). Wir schalten nur den Terminologieserver (`tx`) ein und machen ihn unter dem Pfad `/fhir` erreichbar:
 
 ```json
 {
@@ -223,7 +223,7 @@ Beim Start lädt FHIRsmith die `npm:`-Pakete herunter und liest alle Terminologi
 
 `localhost:3000` ist die Adresse im Container. Von deinem Rechner aus erreichst du den Server unter `http://localhost:8081`. Mit `Strg+C` beendest du die Log-Anzeige; der Server läuft weiter.
 
-> 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Findest du ICD-10-GM, OPS und Alpha-ID-SE?
+> 🔍 **Genau hinschauen:** Weiter oben im Log listet FHIRsmith jede geladene Quelle mit der Anzahl ihrer CodeSystems und ValueSets auf. Dort stehen auch die drei Ordner aus Schritt 1 (`de.bfarm.icd-10-gm`, `de.bfarm.ops`, `de.bfarm.alpha-id-se`). Fehlt einer, prüfe den Pfad unter `folder:` in der `library.yml`.
 
 Während FHIRsmith einliest: Hast du ein Client-Zertifikat für den MII Ontoserver, mach mit [Schritt 1b](#schritt-1b) weiter. Ohne Zertifikat überspringst du 1b und machst mit [Schritt 1c](#schritt-1c) weiter, sobald FHIRsmith bereit ist.
 
@@ -416,7 +416,7 @@ FHIR Validator HTTP Service started on  0.0.0.0/0.0.0.0:8080
 
 Mit `Strg+C` beendest du die Log-Anzeige; der Validator läuft weiter.
 
-> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Findest du die fünf Pakete aus `IG_PARAMS`?
+> 🔍 **Genau hinschauen:** Im Log steht, mit welchem Terminologieserver sich der Validator verbunden hat (`Terminology server …`) und welche Pakete er geladen hat (`Package Summary`). Dort sollten die fünf Pakete aus `IG_PARAMS` auftauchen. Wenn der Validator später ein Profil nicht kennt, ist diese Liste eine gute Stelle zum Nachsehen.
 
 Prüfe, ob der Validator antwortet, indem du eine minimale Patient-Ressource validierst:
 
@@ -428,7 +428,7 @@ echo '{"resourceType": "Patient"}' \
   | jq
 ```
 
-✅ **Erwartetes Ergebnis:** Ein `OperationOutcome` mit genau einem `issue`, einer **Warnung**:
+✅ **Erwartetes Ergebnis:** Ein `OperationOutcome` mit einem `issue`, einer **Warnung**:
 
 ```text
 "severity": "warning",
@@ -438,7 +438,7 @@ echo '{"resourceType": "Patient"}' \
 
 Der Validator antwortet also und prüft. Die Warnung ist nur eine Empfehlung: Eine Ressource sollte einen lesbaren Text (`text`, Narrative) mitbringen. Fehler (`error`) gibt es keine, denn ein leerer Patient ist nach dem FHIR-Basisstandard gültig.
 
-> 💡 `--data @-` liest die Ressource aus der Pipe statt aus einer Datei. So kannst du Ressourcen direkt aus Blaze an den Validator weiterreichen.
+> 💡 `--data @-` liest hier die Ressource aus der Pipe statt aus einer Datei.
 
 ___
 
@@ -465,8 +465,6 @@ curl -s -X POST http://localhost:8082/validateResource \
   | jq -r '.issue[] | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"'
 ```
 
-🔍 **Genau hinschauen:** Was meldet der Validator zu deinem Studienprofil? Kennt er es überhaupt?
-
 ✅ **Erwartetes Ergebnis:** 2 Fehler und 9 Warnungen. Sortiert nach Ursache:
 
 | Schwere | Meldung (gekürzt) | Ursache |
@@ -478,7 +476,11 @@ curl -s -X POST http://localhost:8082/validateResource \
 | `warning` | `None of the codings provided are in the value set 'IdentifierType'` | `OBI` verlangt der KDS, das allgemeine FHIR-ValueSet kennt es nicht. Kein Problem |
 | `warning` | `dom-6: A resource should have narrative`, `all observations should have a performer` | Best-Practice-Empfehlungen |
 
-Die Warnungen zu LOINC und SNOMED CT heißen: **nicht geprüft**, nicht falsch. Mit einem Terminologieserver, der beide kennt (z. B. dem MII Ontoserver), fallen sie weg.
+🧩 **Was du gerade gesehen hast:**
+
+- Entscheidend ist die Meldung, dass der Validator dein Studienprofil nicht kennt. Die übrigen Meldungen basieren deshalb nicht auf deinem Profil aus Übung 1, sondern auf dem FHIR-Basisstandard und der Code-Prüfung am Terminologieserver.
+- Die Warnungen zu LOINC und SNOMED CT heißen: Code **nicht geprüft**, nicht: Code falsch. Mit einem Terminologieserver, der beide kennt (z. B. dem MII Ontoserver), wäre die Prüfung möglich.
+- Wie die Tabelle oben zeigt, lassen sich die elf Meldungen wenigen Ursachen zuordnen. Hilfreich ist es deshalb, einen Bericht nach Ursachen zu gruppieren, statt ihn von oben nach unten zu lesen. In [Übung 7 · Berichte auswerten](exercise-7.md) machen wir das mit Filterung per `jq`.
 
 ### 3.2 Gegen das MII-Laborprofil validieren
 
@@ -495,10 +497,10 @@ curl -s -X POST "http://localhost:8082/validateResource?profile=https://www.medi
 
 | | Meldung | Warum |
 | --- | --- | --- |
-| entfällt | `None of the codings provided are in the value set 'IdentifierType'` | Das MII-Profil erlaubt `OBI` über ein eigenes ValueSet |
-| neu | `ValueSet 'http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips' not found` | Das MII-Profil verweist für `code` auf ein ValueSet, das der Validator nicht geladen hat. Nur eine Empfehlung (`preferred`), daher eine Warnung |
+| entfällt | `None of the codings provided are in the value set 'IdentifierType'` | Das MII-Profil erlaubt die Angabe des Codes `OBI` als IdentifierType über ein eigenes ValueSet |
+| neu | `ValueSet 'http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips' not found` | Das MII-Profil verweist für `code` auf ein ValueSet, das der Validator nicht geladen hat. Die Verwendung des ValueSets ist nur eine Empfehlung (`preferred` im Profil), daher nur eine Warnung |
 
-Gegen das MII-Profil gibt es also **keine strukturellen Fehler**: Pflichtfelder, Kategorien, Einheit und Bezugsdatum passen. Übrig bleiben die Platzhalter-URLs aus dem Beispiel und Codes, die dein Terminologieserver nicht prüfen kann.
+🧩 **Was du gerade gesehen hast:** Gegen das MII-Profil gibt es **keine strukturellen Fehler**: Pflichtfelder, Kategorien, Einheit und Bezugsdatum passen. Übrig bleiben die Platzhalter-URLs aus dem Beispiel und Codes, die dein Terminologieserver nicht prüfen kann. Mit `profile` bestimmst du also selbst, wogegen geprüft wird, unabhängig davon, was in `meta.profile` steht.
 
 > 💡 Neuere Versionen des Validators nennen die Parameter `profiles` und `displayOption` statt `profile` und `checkDisplay`. Meldet er `Unable to process param`, probiere die andere Schreibweise.
 
@@ -525,12 +527,12 @@ curl -s -X POST http://localhost:8082/validateResource \
 
 | Schwere | Meldung (gekürzt) | Bedeutung |
 | --- | --- | --- |
-| `error` | `Unknown code '570762' in the CodeSystem '…/icd-10-gm' version '2025'` | Den Code gibt es in der ICD-10-GM nicht |
+| `error` | `Unknown code '570762' in the CodeSystem '…/icd-10-gm' version '2025'` | Den Code gibt es in der ICD-10-GM (Version 2025) nicht |
 | `error` | `The code provided … was not found in the value set 'MII VS Diagnose ICD-10-GM' … a code from this value set is required` | Das KDS-Profil verlangt einen Code aus diesem ValueSet (Bindung `required`) |
 | `warning` | `Constraint failed: icd-regex: 'In code sind nur gültige ICD-10-Codes ohne Zusätze erlaubt'` | Der Code hat nicht einmal das Format eines ICD-10-Codes |
-| `warning` | `dom-6: A resource should have narrative` | Best-Practice-Empfehlung |
+| `warning` | `dom-6: A resource should have narrative` | Bereits von oben bekannte Best-Practice-Empfehlung |
 
-Hier findet der Validator einen **echten Datenfehler**: Der Code ist kein ICD-10-GM-Code.
+🧩 **Was du gerade gesehen hast:** Hier findet der Validator einen **echten Datenfehler**: Der Code ist kein ICD-10-GM-Code. In [Übung 4, Abfrage 3.3](exercise-4.md) bist du über ein einfaches Muster auf denselben Code gestoßen. Der Validator bestätigt das jetzt am Terminologieserver und am KDS-Profil.
 
 ### 4.2 Eine gültige Diagnose zum Vergleich
 
@@ -564,11 +566,11 @@ jq '.meta.profile' condition-570762.json condition-r51.json
 
 Die Diagnose aus 4.1 nennt `Diagnose|2025.0.0`. Der Validator hat das Profil aus dem geladenen Paket 2025.0.1 verwendet und gegen das KDS-Profil geprüft. Die Diagnose aus 4.2 nennt `Diagnose|2024.0.0`. Diese Version kennt der Validator nicht. Er prüft dann **nur gegen den FHIR-Basisstandard** und sagt das lediglich als `information` und `warning`.
 
-> ❗ **Merke:** „Keine Fehler" heißt nicht automatisch „gültig nach KDS". Prüfe immer, ob der Validator das Profil überhaupt gefunden hat. Mit dem Parameter `profile` aus Schritt 3.2 kannst du die Prüfung gegen ein bestimmtes Profil erzwingen.
+> ❗ **Merke:** „Keine Fehler“ heißt nicht automatisch „gültig nach KDS“. Prüfe immer, ob der Validator das Profil überhaupt gefunden hat. Mit dem Parameter `profile` aus Schritt 3.2 kannst du die Prüfung gegen ein bestimmtes Profil erzwingen.
 
 ### 4.3 Anzeigetexte mitprüfen
 
-Ein Code kann neben `code` auch einen Anzeigetext (`display`) tragen. Standardmäßig prüft der Validator nicht, ob dieser Text zum Code passt. Mit dem Parameter `checkDisplay=Check` fragt er dafür mit `$validate-code` beim Terminologieserver nach, so wie du es in [Übung 5 · Codes prüfen](exercise-5.md) von Hand gemacht hast.
+Ein Coding kann neben `code` auch einen Anzeigetext (`display`) enthalten. Standardmäßig prüft der Validator nicht, ob dieser Text zum Code passt. Mit dem Parameter `checkDisplay=Check` fragt er dafür mit `$validate-code` beim Terminologieserver nach, so wie du es in [Übung 5 · Codes prüfen](exercise-5.md) von Hand gemacht hast.
 
 Die Diagnosen aus den Musterdaten haben keinen Anzeigetext. Wir nehmen deshalb eine Prozedur mit OPS-Code:
 
@@ -655,14 +657,14 @@ diagnosen/bericht-Diagnosis-010.json
 diagnosen/bericht-Diagnosis-026.json
 ```
 
-Sieh dir für eine dieser Diagnosen den Code und die Fehlermeldungen an:
+Sieh dir für eine dieser Diagnosen den Code und die Fehlermeldungen aus ihrem Bericht an:
 
 ```bash
 jq '.code.coding' diagnosen/Diagnosis-010.json
 jq -r '.issue[] | select(.severity == "error") | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"' diagnosen/bericht-Diagnosis-010.json
 ```
 
-✅ **Erwartetes Ergebnis** (die zweite Fehlermeldung ist sehr lang, hier gekürzt):
+✅ **Erwartetes Ergebnis** (die zweite Fehlermeldung ist relativ lang, daher hier gekürzt):
 
 ```text
 [
@@ -679,13 +681,14 @@ error – Condition.code.coding[0]
   The code provided (http://fhir.de/CodeSystem/bfarm/icd-10-gm#Z11 U99.0!) was not found in the value set 'MII VS Diagnose ICD-10-GM' (…), and a code from this value set is required: …
 ```
 
-Den Code gibt es nicht, und er gehört nicht zum ICD-10-GM-ValueSet, das das KDS-Profil zwingend verlangt.
+Den Code gibt es in dieser Form nicht, und er gehört nicht zum ICD-10-GM-ValueSet, das das KDS-Profil zwingend verlangt.
 
 🧩 **Was du gerade gesehen hast:**
 
 - 57 der 482 Diagnosen nennen eine Profilversion, die der Validator nicht kennt. Ohne `profile` hätte er sie nur gegen den FHIR-Basisstandard geprüft.
 - Mit `profile` erfüllen 55 davon auch das aktuelle KDS-Profil. Die alte Versionsangabe ist bei ihnen nur eine Formsache.
-- Zwei Diagnosen fallen durch. Sie tragen den Code `Z11 U99.0!`. Einzeln sind beide gültige ICD-10-GM-Codes, zusammen kodieren sie einen negativen SARS-CoV-2-Test. In einem `Coding` darf aber nur **ein** Code stehen. Das ist also ein Fehler in der Abbildung, nicht in der Diagnose. Den unbekannten Code hätte der Validator auch ohne `profile` gemeldet, denn Codes prüft er immer am Terminologieserver. Dass das KDS-Profil hier zwingend einen Code aus dem ICD-10-GM-ValueSet verlangt, siehst du erst mit `profile`.
+- Zwei Diagnosen fallen durch. In ihrem `code` stehen zwei ICD-10-GM-Codes in einem Feld: `Z11 U99.0!`. Gemeint sind `Z11` und `U99.0`. Das Ausrufezeichen markiert `U99.0` als Sekundärkode, der einen Primärkode ergänzt (Mehrfachkodierung). Zusammen kodieren sie einen negativen SARS-CoV-2-Test. Fachlich ist die Diagnose also in Ordnung, der Fehler liegt in der Abbildung: In ein `Coding` gehört genau **ein** Code, und das Ausrufezeichen ist nicht Teil davon. Auch `U99.0!` allein kennt der Terminologieserver nicht, `U99.0` dagegen schon. Zusammengesetzte Ausdrücke erkennt ein Terminologieserver nur an, wenn das Codesystem sie selbst vorsieht, wie z. B. SNOMED CT, das die sogenannte [Postkoordination](https://docs.snomed.org/snomed-ct-practical-guides/snomed-ct-postcoordination-guide) von Codes ermöglicht. Die ICD-10-GM sieht das nicht vor.
+- Den unbekannten Code hätte der Validator auch ohne `profile` gemeldet, denn Codes prüft er immer am Terminologieserver. Dass das KDS-Profil hier zwingend einen Code aus dem ICD-10-GM-ValueSet verlangt, siehst du erst mit `profile`.
 
 Bei einer unbekannten Profilversion entfallen also alle Regeln des Profils, z. B. Bindungen und Pflichtfelder. Ob Daten den KDS wirklich erfüllen, zeigt erst die Prüfung mit `profile`.
 
@@ -728,14 +731,16 @@ ___
 
 ## <a id="zusammenfassung"></a>🏁 Zusammenfassung und Ausblick
 
-**Was du mitnehmen sollst:**
+**Was du mitnehmen kannst:**
 
 - Ein Validator prüft Ressourcen gegen **Profile**. Welche Profile er kennt, bestimmen die geladenen IG-Pakete.
 - Für kleine Tests reicht der zentrale **MII Ontoserver**. Für die eigene Validierung, z. B. in der ETL-Strecke, betreibt man einen **eigenen Terminologieserver**.
 - Alle Code-Prüfungen gibt der Validator an **einen Terminologieserver** weiter. Was dort nicht geladen ist, kann er nicht prüfen – die Wahl des Terminologieservers bestimmt also, was die Validierung aussagt.
 - Profile haben **Versionen**. Nennt eine Ressource eine Profilversion, die der Validator nicht kennt, prüft er nur gegen den FHIR-Basisstandard. „Keine Fehler“ heißt dann nicht „gültig nach KDS“. Mit dem Parameter `profile` erzwingst du die Prüfung gegen ein bestimmtes Profil.
 
-**Ausblick:**
+___
+
+### Ausblick
 
 - [Übung 7 · Berichte auswerten](exercise-7.md): Validierungsberichte lesen, filtern und Meldungen einordnen
 
