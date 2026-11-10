@@ -29,7 +29,7 @@ Usage: #example
 * effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding = http://snomed.info/sct#399445004 "Specimen collection date (observable entity)"
 
 // 1. Dein fixierter LOINC-Code (wird hier exakt belegt)
-* code.coding[0].version = "2.82.0"
+* code.coding[0].version = "2.82"
 * code.coding[0].system = "http://loinc.org"
 * code.coding[0].code = #4548-4
 * code.coding[0].display = "Hemoglobin A1c/Hemoglobin.total in Blood"

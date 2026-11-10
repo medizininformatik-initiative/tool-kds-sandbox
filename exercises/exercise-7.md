@@ -323,7 +323,7 @@ cat bericht-*.json \
 1×  error  Example URLs are not allowed in this context (http://www.acme.com/identifiers/patient)
 1×  error  The code provided (http://fhir.de/CodeSystem/bfarm/icd-10-gm#570762) was not found in the value set 'MII VS Di
 1×  error  Unknown code '570762' in the CodeSystem 'http://fhir.de/CodeSystem/bfarm/icd-10-gm' version '2025'
-1×  warning  A definition for CodeSystem 'http://loinc.org' version '2.82.0' could not be found, so the code cannot be vali
+1×  warning  A definition for CodeSystem 'http://loinc.org' version '2.82' could not be found, so the code cannot be valida
 1×  warning  A definition for CodeSystem 'http://medic.uksh.de/fhir/CodeSystem/Laborparameter' could not be found, so the c
 1×  warning  A definition for CodeSystem 'http://snomed.info/sct' version 'http://snomed.info/sct/900000000000207008' could
 1×  warning  A definition for CodeSystem 'http://snomed.info/sct' version 'http://snomed.info/sct/900000000000207008/versio

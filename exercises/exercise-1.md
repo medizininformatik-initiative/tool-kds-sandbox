@@ -16,7 +16,7 @@ Grundsätzlich lassen sich FHIR-Profile auf verschiedene Weise spezifizieren. Ge
 
 Dies ist auch beim MII-Kerndatensatz (KDS) der Fall. Der MII-KDS ist in Basis- und Erweiterungsmodule unterteilt und wird kontinuierlich weiterentwickelt. Während die Basismodule fachlich übergreifend definiert sind (z. B. Basis, Labor, Medikation), fokussieren sich die Erweiterungsmodule auf spezifische Anwendungs- und Fachgebiete (z. B. Intensivmedizin, Kardiologie). Weitere Informationen findest du direkt beim [MII Kerndatensatz](https://www.medizininformatik-initiative.de/de/der-kerndatensatz-der-medizininformatik-initiative).
 
-In dieser Übung nutzen wir `FHIR Shorthand` (kurz `FSH`, gesprochen "Fish"). Dies ist eine für die Spezifikation von FHIR entwickelte, domänenspezifische Auszeichnungssprache, mit der sich FHIR-Profile und -Instanzen effizient und lesbar definieren lassen. Die Festlegungen in den `.fsh`-Dateien werden anschließend vom zugehörigen Compiler `SUSHI` verarbeitet, um die finalen FHIR-Strukturdefinitionen (JSON/XML) zu generieren.
+In dieser Übung nutzen wir `FHIR Shorthand` (kurz `FSH`, gesprochen „Fish“). Dies ist eine für die Spezifikation von FHIR entwickelte, domänenspezifische Auszeichnungssprache, mit der sich FHIR-Profile und -Instanzen effizient und lesbar definieren lassen. Die Festlegungen in den `.fsh`-Dateien werden anschließend vom zugehörigen Compiler `SUSHI` verarbeitet, um die finalen FHIR-Strukturdefinitionen (JSON/XML) zu generieren.
 
 📋 Übersicht:
 
@@ -46,7 +46,7 @@ sushi -v
 
 Für das Schreiben von FSH-Code wird ein Texteditor mit entsprechender Syntax-Unterstützung empfohlen:
 
-- Visual Studio Code (Empfehlung): Installiere dir hierzu die Extension "FHIR Shorthand" für Syntax-Highlighting, Autocomplete und Fehlererkennung in Echtzeit.
+- Visual Studio Code (Empfehlung): Installiere dir hierzu die Extension „FHIR Shorthand“ für Syntax-Highlighting, Autocomplete und Fehlererkennung in Echtzeit.
 - Alternative (CLI): nano oder vim direkt im Terminal.
 
 Um FHIR-Packages für den Build-Prozess zu verwalten, empfiehlt sich die Installation des `Firely Terminal`:
@@ -84,7 +84,7 @@ Um uns der Spezifikation von Profilen und Ressourcen praktisch anzunähern, init
 Wechsle in dein Arbeitsverzeichnis und starte das Projekt-Setup (bspw. mit Default-Werten) mittels:
 
 ```bash
-SUSHI init
+sushi init
 cd <PROJECT/FOLDER-NAME>
 ```
 
@@ -175,13 +175,13 @@ ___
 
 Wir werden nun ein eigenes Profil definieren, das von einem bestehenden MII-Basisprofil erbt, dieses für den Kontext einer fiktiven klinischen Studie sinnvoll einschränken und abschließend eine passende Beispielressource (Example-Instanz) dazu bauen.
 
-### 📖 Anwendungsfallbeispiel Studie "ZuckerWatch-2026" (Typ-2-Diabetes-Monitoring)
+### 📖 Anwendungsfallbeispiel Studie „ZuckerWatch-2026“ (Typ-2-Diabetes-Monitoring)
 
 Im Rahmen einer fiktiven multizentrischen klinischen Studie zur Verlaufskontrolle von Patient:innen mit Diabetes mellitus Typ 2 sollen Laborwerte standardisiert erfasst werden. Für die statistische Auswertung ist es zwingend erforderlich, den HbA1c-Wert (glykiertes Hämoglobin) homogen zu modellieren.
 
 Das bestehende Basisprofil der Medizininformatik-Initiative `MII_PR_Labor_Laboruntersuchung` ist bewusst flexibel gehalten, um alle denkbaren Laboruntersuchungen im deutschen Gesundheitswesen abzubilden. Für unsere Studie müssen wir dieses Profil nun restriktiver gestalten, um die Datenqualität bei der späteren Ausleitung und Zusammenführung der Daten zu sichern:
 
-1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC-Version soll ausschließlich LOINC 2.82.0 verwendbar sein.
+1. Eindeutige Identifikation: Das neue Profil muss fest auf den LOINC-Code 4548-4 (Hemoglobin A1c/Hemoglobin.total in Blood) fixiert werden. Als LOINC-Version soll ausschließlich LOINC 2.82 verwendbar sein.
 
 2. Einheitliche Metrik: Um Berechnungsfehler in der Auswertung zu vermeiden, darf der Laborwert ausschließlich in der UCUM-Einheit mmol/mol angegeben werden (andere Einheiten wie % werden für diese Studie ausgeschlossen).
 
@@ -200,11 +200,11 @@ dependencies:
   de.medizininformatikinitiative.kerndatensatz.laborbefund: 2026.0.0
 ```
 
-❗Aktuelle Versionen des KDS findest du in der ["Übersicht über Versionen der Kerndatensatz-Module"](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Übersicht-über-Versionen-der-Kerndatensatz‐Module).
+❗Aktuelle Versionen des KDS findest du in der [„Übersicht über Versionen der Kerndatensatz-Module“](https://github.com/medizininformatik-initiative/kerndatensatz-meta/wiki/Übersicht-über-Versionen-der-Kerndatensatz‐Module).
 
 ##### Verschiedene Ressourcen im Projekt strukturieren
 
-`SUSHI` verwendet alle `.fsh`-Dateien im Ordner `/input/fsh` für die Generierung. Die Dateien lassen sich daher flexibel strukturiert ablegen. Für unser Beispiel verwenden wir die Unterordner "profiles" und "examples".
+`SUSHI` verwendet alle `.fsh`-Dateien im Ordner `/input/fsh` für die Generierung. Die Dateien lassen sich daher flexibel strukturiert ablegen. Für unser Beispiel verwenden wir die Unterordner „profiles“ und „examples“.
 
 ##### Studienprofil anlegen
 
@@ -223,18 +223,18 @@ Id: pr-studie-hba1c
 Title: "ZuckerWatch 2026 - HbA1c Laboruntersuchung"
 Description: "Spezifisches Profil für die ZuckerWatch-2026 Studie zur Erfassung des HbA1c-Wertes. Erbt vom MII-Kerndatensatz Modul Labor."
 
-// 1. Fixierung auf den LOINC-Code 4548-4 und die LOINC Version 2.82.0
-* code.coding[loinc] 1..1
-* code.coding[loinc].version = "2.82.0"
-* code.coding[loinc].code = #4548-4
-* code.coding[loinc].display = "Hemoglobin A1c/Hemoglobin.total in Blood"
+// 1. Fixierung auf den LOINC-Code 4548-4 und die LOINC Version 2.82
+* code.coding 1..1
+* code.coding.version = "2.82"
+* code.coding = http://loinc.org#4548-4 "Hemoglobin A1c/Hemoglobin.total in Blood"
 
-// 2. Verpflichtender Messwert (Kardinalität 1..1 und Must Support)
+// 2. Verpflichtender Messwert (Kardinalität 1..1 und Must Support) als Quantity
+* value[x] only Quantity
 * valueQuantity 1..1 MS
 * valueQuantity.value 1..1 MS
 
 // 3. Einheitliche Metrik: Fixierung auf UCUM-Einheit mmol/mol
-* valueQuantity.system = "http://unitsofmeasure.org"
+//    (valueQuantity.system ist bereits im Parent-Profil auf UCUM fixiert)
 * valueQuantity.code = #mmol/mol
 * valueQuantity.unit = "mmol/mol"
 ```
@@ -257,7 +257,7 @@ Unser Ordner sieht damit wie folgt aus:
 
 Schreibe in einer separaten `.fsh`-Datei eine Instance eines fiktiven Patienten-Messwerts. Nutze als `InstanceOf` das neu erstellte Studienprofil `PR_Studie_HbA1c` und befülle es mit einem realistischen Testwert (z. B. 48 mmol/mol).
 
-Definition der Instance unseres "PR_Studie_HbA1c"-Profils:
+Definition der Instance unseres „PR_Studie_HbA1c“-Profils:
 
 ```bash
 Instance: Example-Studie-HbA1c-01
@@ -291,7 +291,7 @@ Usage: #example
 * effectiveDateTime.extension[QuelleKlinischesBezugsdatum].valueCoding = http://snomed.info/sct#399445004 "Specimen collection date (observable entity)"
 
 // 1. Dein fixierter LOINC-Code (wird hier exakt belegt)
-* code.coding[0].version = "2.82.0"
+* code.coding[0].version = "2.82"
 * code.coding[0].system = "http://loinc.org"
 * code.coding[0].code = #4548-4
 * code.coding[0].display = "Hemoglobin A1c/Hemoglobin.total in Blood"
@@ -442,7 +442,7 @@ jq '.differential.element[] | select(.id | startswith("Observation.code"))' \
 {
   "id": "Observation.code.coding.version",
   "path": "Observation.code.coding.version",
-  "patternString": "2.82.0"
+  "patternString": "2.82"
 }
 ```
 
@@ -450,7 +450,7 @@ jq '.differential.element[] | select(.id | startswith("Observation.code"))' \
 
 - Aus jeder `Instance` wird eine Ressource, aus jedem `Profile` eine `StructureDefinition`. In der Instanz stehen genau die Werte aus deiner FSH-Datei, `meta.profile` verweist auf dein Studienprofil.
 - Das `differential` des Profils enthält nur sechs Elemente: den Code (`code.coding`) und den Messwert (`value[x]:valueQuantity`) mit den Teilen, die du in `PR_Studie_HbA1c.fsh` festgelegt hast. Alles andere erbt das Profil von `MII_PR_Labor_Laboruntersuchung`. Das ist der Unterschied zwischen Differential und Snapshot aus dem Abschnitt oben.
-- Nicht jede Zeile aus der FSH-Datei wird zu einem eigenen Element. SUSHI fasst System, Code und Anzeigetext zu einem `patternCoding` zusammen. Zu `valueQuantity.value` und `valueQuantity.system` steht kein eigenes Element im Differential, obwohl die FSH-Datei Regeln dafür enthält.
+- Nicht jede Zeile aus der FSH-Datei wird zu einem eigenen Element. SUSHI fasst System, Code und Anzeigetext zu einem `patternCoding` zusammen. Zu `valueQuantity.value` steht kein eigenes Element im Differential, obwohl die FSH-Datei eine Regel dafür enthält: Das Elternprofil legt dasselbe schon fest.
 - Die Festlegung steht auf `Observation.code.coding` selbst, nicht auf einem Slice `coding:loinc`, und zwar mit `max: "1"`. Dein Profil erlaubt damit genau **ein** Coding, nämlich LOINC `4548-4`. Einen zusätzlichen Hauscode, wie ihn das UKSH bei seinen Laborwerten mitliefert ([Übung 4 · Daten abfragen](exercise-4.md)), ließe es nicht zu. Ob eine FSH-Regel so wirkt wie gedacht, siehst du deshalb am besten im erzeugten Profil.
 
 ## 🏁 Generierte Ressourcen menschenlesbar anzeigen 🏁
@@ -462,6 +462,20 @@ Um Profile, ValueSets und Leitfäden in eine strukturierte, interaktive HTML-Ans
 Je nachdem, ob du lokal die vollständige Dokumentation bauen oder nur schnell ein einzelnes Profil prüfen möchtest, stehen dir dafür verschiedene Wege zur Verfügung:
 
 ### 💻 Methode 1: Den Publisher mit `Java` ausführen
+
+Der `FHIR IG Publisher` basiert auf `Java` und nutzt im Hintergrund den statischen Webseiten-Generator `Jekyll` (basierend auf der Programmiersprache Ruby). Ohne `Jekyll` kann der Publisher die HTML-Seiten nicht final rendern. Solltest du `Java` & `Jekyll` noch nicht installiert haben, hier eine kurze Installationsanleitung:
+
+```bash
+# 1. Java installieren für Ubuntu / Debian (WSL)
+sudo apt update && sudo apt install default-jre default-jdk -y
+
+# 2. Jekyll installieren für Ubuntu / Debian (WSL)
+sudo apt update && sudo apt install jekyll -y
+
+# Überprüfung der Installation (erfordert mindestens Java 11 oder höher)
+java -version
+jekyll -v
+```
 
 - Lade die aktuellste Version des `FHIR IG Publishers` herunter und platziere sie einfach auch in deinem SUSHI-Projektordner:
 
@@ -492,21 +506,7 @@ java -jar org.hl7.fhir.publisher.jar -ig ig.ini -clean
 
 Je nach Umfang an zu verarbeitenden Dateien oder verwendeten Codierungen dauert der IG-Build ungefähr 10 Minuten (bei komplexeren Projekten evtl. mehrere Stunden).
 
-Der `FHIR IG Publisher` basiert auf `Java` und nutzt im Hintergrund den statischen Webseiten-Generator `Jekyll` (basierend auf der Programmiersprache Ruby). Ohne `Jekyll` kann der Publisher die HTML-Seiten nicht final rendern. Solltest du `Java` & `Jekyll` noch nicht installiert haben, hier eine kurze Installationsanleitung:
-
-```bash
-# 1. Java installieren für Ubuntu / Debian (WSL)
-sudo apt update && sudo apt install default-jre default-jdk -y
-
-# 2. Jekyll installieren für Ubuntu / Debian (WSL)
-sudo apt update && sudo apt install jekyll -y
-
-# Überprüfung der Installation (erfordert mindestens Java 11 oder höher)
-java -version
-jekyll -v
-```
-
-### 🧩 Alternative "Simplifier.net"
+### 🧩 Alternative „Simplifier.net“
 
 Wenn du deine Profile und den IG online verwalten und als HTML darstellen möchtest:
 
@@ -528,7 +528,7 @@ Wenn du keine lokale `Java`-Umgebung einrichten willst und nur schnell sehen mö
 
 Für die Zwecke unseres Tutorials haben wir nun eine stabile lokale Entwicklungsumgebung zum Arbeiten mit `FHIR Shorthand` und Erstellen von FHIR-Profilen und Ressourcen eingerichtet.
 
-Falls du mehr über `FHIR Shorthand` erfahren möchtest, ist die Website "fshschool.org" mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
+Falls du mehr über `FHIR Shorthand` erfahren möchtest, ist die Website „fshschool.org“ mit [umfassender Dokumentation](https://fshschool.org/docs/SUSHI/) sowie einem [Online-FSH-Editor](https://fshonline.fshschool.org) zu empfehlen.
 
 ___
 

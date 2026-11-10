@@ -26,7 +26,7 @@ ___
 |            | **UKSH** | **UKHD** | **UKW** |
 | :--------- | :------ | :------- | :------- |
 | **Datei(en)** | `UKSH/UKSH-2025-11-11.zip` | `UKHD/UKHD-2025-12-02.zip` | `UKW/UKW-2025-12-05.json` |
-| **Bundle-Typ** | Einzelressourcen -> `transaction` | `searchset`-Bundle | `searchset` |
+| **Bundle-Typ** | `searchset`-Bundles -> `transaction` | `searchset`-Bundle | `searchset` |
 | **Ressourcen gesamt** | ~8.400 | ~1.400  | ~235 |
 | **Referenzielle Integrität** | ❌ Nicht gegeben | ❌ Nicht gegeben | ❌ Nicht gegeben |
 
@@ -265,8 +265,8 @@ bash ~/musterdatenspende-diz/bin/unresolved-references.sh ~/tool-kds-sandbox/sol
 ### Schritt C: Bundle anpassen – POST → PUT umwandeln
 
 > **Warum?** `merge-bundles.sh` setzt für jeden Eintrag die HTTP-Methode **POST**.  
-> **POST** bedeutet "lege neu an und vergib eine ID" – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID!  
-> **PUT** bedeutet "schreibe unter dieser ID" – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben beim Upload auflösbar.
+> **POST** bedeutet „lege neu an und vergib eine ID“ – der Server ignoriert dabei die bereits in der Ressource stehende `id` und erzeugt eine neue, zufällige ID!  
+> **PUT** bedeutet „schreibe unter dieser ID“ – so bleiben die bereits vergebenen festen IDs in den Ressourcen (z. B. `PID-013b...`) erhalten und die Referenzen der Ressourcen bleiben beim Upload auflösbar.
 
 ```bash
 bash ./convert_to_put.sh transaction-bundle_cleaned.json
@@ -413,7 +413,7 @@ ___
 
 | Konzept | Erklärung |
 | :------ | :-------- |
-| **Referenzielle Integrität** | In FHIR müssen Referenzen immer auf existierende Ressourcen zeigen. |
+| **Referenzielle Integrität** | Eine Referenz ist auflösbar, wenn die Ressource, auf die sie zeigt, vorhanden ist. Blaze prüft das beim Upload und lehnt ein Bundle mit unauflösbaren Referenzen ab. |
 | **searchset vs. batch/transaction** | `searchset` = Read/Result (Response), `batch`/`transaction` = Write/Operation (Request). |
 | **FHIR Bundle-Endpunkt** | POST an `/fhir` mit JSON-Bundle ist die Standard-Methode für Bulk-Import. |
 

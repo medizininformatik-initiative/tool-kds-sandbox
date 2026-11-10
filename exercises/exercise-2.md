@@ -12,7 +12,7 @@ ___
 - Führe die Upload-Befehle für Patient und Observation aus (mit PUT für feste IDs)
 - Teste die Search-Abfragen mit verschiedenen Parametern (code, subject, _count)
 
-In [Übung 1 · Profil erstellen](exercise-1.md) haben wir eine HL7 FHIR Structure Definition ("PR_Studie_HbA1c") als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir eine Beispiel-Observation-Ressource ("Example-Studie-HbA1c-01") erzeugt. Eine Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
+In [Übung 1 · Profil erstellen](exercise-1.md) haben wir eine HL7 FHIR Structure Definition („PR_Studie_HbA1c“) als .fsh-Datei angelegt, das Profil in der Datei ausdefiniert und abschließend aus der .fsh-Definition die Strukturdefinition per `sushi build` generiert. Des Weiteren haben wir eine Beispiel-Observation-Ressource („Example-Studie-HbA1c-01“) erzeugt. Eine Beispiel-Patient-Ressource war bereits im von `SUSHI` initiierten Projektordner enthalten.
 
 Nun laden wir die beiden generierten Beispielressourcen in einen (lokalen) FHIR-Server hoch und fragen die darin enthaltenen Daten danach per FHIR-Searchstring ab. Zuallererst starten wir dafür einen lokalen FHIR-Server (optional: alternativen FHIR-Server verwenden).
 
@@ -48,6 +48,14 @@ docker compose version
 
 ```bash
 sudo docker run hello-world
+```
+
+- Damit du Docker ohne `sudo` nutzen kannst, nimm deinen Benutzer in die Gruppe `docker` auf. `newgrp docker` aktiviert die Gruppe im aktuellen Terminal. In neuen Terminals gilt sie, nachdem du dich einmal ab- und wieder angemeldet hast:
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+docker run hello-world
 ```
 
 ### Container definieren und starten
@@ -117,9 +125,11 @@ Wir laden nun die Beispielressourcen einzeln auf den FHIR-Server hoch. Später i
 
 #### Upload Patient
 
+- Gib dem Beispiel-Patienten zuerst eine feste ID: Ergänze in `input/fsh/patient.fsh` bei der Instanz `PatientExample` unter `Description` die Zeile `* id = "example-patient"` und baue das Projekt neu mit `sushi .`. Die Ressource liegt danach als `fsh-generated/resources/Patient-example-patient.json` vor. Wozu die feste ID gut ist, siehst du gleich beim Upload der Observation.
+
 - Upload der Beispiel-Patient-Ressource via `HTTP POST` an den `/Patient`-Endpunkt des FHIR-Servers:
 
-> Voraussetzung: Ressource wurde mittels `sushi .` im SUSHI-Projektordner (Bsp.: `tool-kds-sandbox/solution-exercise-2/ExampleIG`) aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner "fsh-generated" auffindbar.
+> Voraussetzung: Ressource wurde mittels `sushi .` im SUSHI-Projektordner (Bsp.: `tool-kds-sandbox/solution-exercise-2/ExampleIG`) aus dem zugehörigen `.fsh`-File generiert und ist im Unterordner „fsh-generated“ auffindbar.
 
 ```bash
 curl -X POST http://localhost:8080/fhir/Patient  \
@@ -155,7 +165,7 @@ curl -X POST http://localhost:8080/fhir/Patient  \
 
 - Bevor wir die Observation hochladen, müssen wir sicherstellen, dass die referenzielle Integrität gewahrt bleibt. In unserem Fall mit der Ressource `Patient` und einer Ressource `Observation` ist für die Verknüpfung das Element `subject` der Observation-Ressource, welches auf eine Patienten-Ressource verweist, relevant.
 
-- Da der Server bei einem POST-Request IDs zufällig generiert (z. B. "DHYSYTWMKTNZRTNP"), würde unsere Observation keine gültige Zuordnung haben, wenn sie hart auf `subject`:`Patient/example-patient` referenziert.
+- Da der Server bei einem POST-Request IDs zufällig generiert (z. B. „DHYSYTWMKTNZRTNP“), würde unsere Observation keine gültige Zuordnung haben, wenn sie hart auf `subject`:`Patient/example-patient` referenziert.
 
 ##### Feste IDs via HTTP PUT erzwingen
 
@@ -163,7 +173,7 @@ curl -X POST http://localhost:8080/fhir/Patient  \
 
 ##### Patient mit selbst festgelegter ID hochladen (`HTTP PUT`)
 
-- Hierbei übergeben wir die ID "example-patient" direkt am Ende der Endpunkt-URL.
+- Hierbei übergeben wir die ID „example-patient“ direkt am Ende der Endpunkt-URL.
 
 ```Bash
 curl -X PUT http://localhost:8080/fhir/Patient/example-patient \
@@ -182,7 +192,7 @@ In der Antwort des Servers steht nun die beim Upload festgelegte ID:
 
 - Da unsere in Übung 1 definierte Observation (`EXA_Studie_HbA1c.fsh`) bereits die Zeile * subject = Reference(Patient/example-patient) enthält, matcht die Referenz nun mit dem soeben angelegten Patienten.
 
-- Da unser Example zusätzlich auf eine Organisation als "Assigner" für den identifier "analyseBefundCode" verweist, müssen wir diese ebenfalls anlegen und in den FHIR-Server hochladen.
+- Da unser Example zusätzlich auf eine Organisation als „Assigner“ für den identifier „analyseBefundCode“ verweist, müssen wir diese ebenfalls anlegen und in den FHIR-Server hochladen.
 
 Dafür legen wir eine minimal befüllte Organization-Ressource als `Organization-beispiel-labor.fsh`-File im `examples`-Ordner an, bauen diese mittels `sushi .` und laden sie hoch:
 
@@ -222,7 +232,7 @@ curl -X PUT http://localhost:8080/fhir/Observation/Example-Studie-HbA1c-01 \
 
 #### Ressourcen abfragen
 
-- Zur Abfrage von Ressourcen wird ein "FHIR-Search-String" als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
+- Zur Abfrage von Ressourcen wird ein „FHIR-Search-String“ als Query-Parameter an die Basis-URL der jeweiligen Ressource angehängt.
 
 ##### Beispielabfrage via HTTP-REST
 

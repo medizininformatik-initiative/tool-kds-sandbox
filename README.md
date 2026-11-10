@@ -19,7 +19,7 @@ ___
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | ⚪ | [Voraussetzungen](exercises/prerequisites.md) | Dich orientieren & Entwicklungsumgebung vorbereiten | – | Checkliste | ✅ |
 | 🔵 | [1 · Profil erstellen](exercises/exercise-1.md) | Profil und Beispielressource in FSH schreiben und kompilieren, Implementation Guide bauen | `sushi`, Firely Terminal, Java + IG Publisher | Groß · ca. 20 Befehlsblöcke, IG-Build ca. 10 min | ✅ |
-| 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 8 Befehlsblöcke | ✅ |
+| 🟢 | [2 · FHIR-Server starten](exercises/exercise-2.md) | Lokalen FHIR-Server starten, eigene Ressourcen hochladen und abfragen | Docker Compose, Blaze, `curl` | Klein · ca. 15 Befehlsblöcke | ✅ |
 | 🟡 | [3 · Musterdaten laden](exercises/exercise-3.md) | Musterdatenspende dreier Standorte aufbereiten, bereinigen und hochladen | `git`, `jq`, Bash-Skripte | Mittel · ca. 18 Befehlsblöcke | ✅ |
 | 🟠 | [4 · Daten abfragen](exercises/exercise-4.md) | Diagnosen, Laborwerte und Patienten in den Musterdaten suchen, Ressourcen verknüpfen, Auffälligkeiten finden | `curl`, `jq`, optional fhir-pyrate / fhircrackr | Groß · ca. 30 Befehlsblöcke | ✅ |
 | 🔴 | [5 · Codes prüfen](exercises/exercise-5.md) | Codesysteme in den Musterdaten finden, Codes am öffentlichen Terminologieserver nachschlagen und prüfen, Grenzen erkennen | tx.fhir.org, `curl`, `jq` | Mittel · ca. 18 Befehlsblöcke | ✅ |
@@ -46,7 +46,7 @@ ___
  7 · Berichte auswerten      Validierungsberichte lesen und einordnen
 ```
 
-Der in [Übung 2 · FHIR-Server starten](exercises/exercise-2.md) gestartete FHIR-Server wird in den Übungen 3 und 4 weiterverwendet, die in [Übung 3 · Musterdaten laden](exercises/exercise-3.md) geladenen Daten sind die Grundlage für die Übungen 4 bis 7. Bearbeite die Übungen daher am besten in der angegebenen Reihenfolge.
+Der in [Übung 2 · FHIR-Server starten](exercises/exercise-2.md) gestartete FHIR-Server wird in den Übungen 3 bis 7 weiterverwendet, die in [Übung 3 · Musterdaten laden](exercises/exercise-3.md) geladenen Daten sind die Grundlage für die Übungen 4 bis 7. Bearbeite die Übungen daher am besten in der angegebenen Reihenfolge.
 
 ___
 
@@ -67,6 +67,7 @@ Für die Übungen brauchst du:
 - **Betriebssystem:** Linux oder Windows mit **WSL2**
 - **Hardware:** mindestens **8 GB**, empfohlen **16 GB Arbeitsspeicher**
 - **Rechte:** Sudo-Rechte zum Installieren von Paketen
+- **Repository:** dieses Repository, geklont nach `~/tool-kds-sandbox` (mehrere Übungen rufen Skripte unter diesem Pfad auf)
 - **Werkzeuge**, die im Laufe der Übungen eingerichtet werden:
   - Node.js mit `npm`, FSH-Compiler `sushi`, Firely Terminal ([Übung 1 · Profil erstellen](exercises/exercise-1.md))
   - Java (ab 11, empfohlen 17 oder 21) und Jekyll für den IG Publisher ([Übung 1 · Profil erstellen](exercises/exercise-1.md))
@@ -92,6 +93,7 @@ ___
 > Voraussetzung: Docker und Docker Compose installiert.
 
 - Lokalen FHIR-Server **Blaze** per Docker Compose starten
+- Docker so einrichten, dass es ohne `sudo` nutzbar ist
 - Patient und Observation aus [Übung 1 · Profil erstellen](exercises/exercise-1.md) hochladen und den Unterschied zwischen `POST` (Server vergibt ID) und `PUT` (feste ID) kennenlernen
 - Erste Suchanfragen per HTTP REST stellen (`code`, `subject`, `_count`)
 

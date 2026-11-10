@@ -29,7 +29,7 @@ curl -X POST http://localhost:8080/fhir \
   --data @transaction-bundle_cleaned_put.json
 ```
 
-### Optional: Für UKW (`searchset`-Bundle)
+### Für UKW (`searchset`-Bundle)
 
 ```bash
 # 1. Daten bereinigen (wie oben)
@@ -50,18 +50,18 @@ curl -X POST http://localhost:8080/fhir \
   --data @UKW/UKW-2025-12-05_cleaned_prepared_put.json
 ```
 
-## Warum "Remove-Broken" statt "Repair"?
+## Warum „Remove-Broken“ statt „Repair“?
 
 | Ansatz | Vorteile | Nachteile |
 | :--- | :--- | :--- |
 | **Repair** (früheres `repair-bundle.sh`, entfernt) | Datenmenge bleibt gleich | Komplexer, lange Laufzeit, viele Dummy-Ressourcen |
 | **Remove** (clean_bundle.sh) | **Sehr schnell, einfach, reproduzierbar** | Einige Ressourcen werden entfernt |
 
-Da der Fokus dieser Übung auf **"Daten in den Server laden"** liegt und nicht auf "Data Engineering", ist **Remove-Broken** die bessere Wahl.
+Da der Fokus dieser Übung auf **„Daten in den Server laden“** liegt und nicht auf „Data Engineering“, ist **Remove-Broken** die bessere Wahl.
 
 ## Warum `transaction` statt `batch` für UKW?
 
-Die UKW-Daten enthalten **zirkuläre Referenzen**: `Condition.encounter` verweist auf einen `Encounter`, und `Encounter.diagnosis[].condition` verweist zurück auf eine `Condition`. In einem **batch**-Bundle prüft der Server die referenzielle Integrität pro Eintrag sofort — eine Condition, deren Encounter noch nicht gespeichert ist, schlägt mit **HTTP 409 "Referential integrity violated"** fehl (und umgekehrt). In einem **transaction**-Bundle löst der Server die Referenzen innerhalb des Bundles auf und speichert alles atomar, wodurch zirkuläre Referenzen funktionieren.
+Die UKW-Daten enthalten **zirkuläre Referenzen**: `Condition.encounter` verweist auf einen `Encounter`, und `Encounter.diagnosis[].condition` verweist zurück auf eine `Condition`. In einem **batch**-Bundle prüft der Server die referenzielle Integrität pro Eintrag sofort — eine Condition, deren Encounter noch nicht gespeichert ist, schlägt mit **HTTP 409 „Referential integrity violated“** fehl (und umgekehrt). In einem **transaction**-Bundle löst der Server die Referenzen innerhalb des Bundles auf und speichert alles atomar, wodurch zirkuläre Referenzen funktionieren.
 
 Zusätzlich benennt `prepare_upload.sh` doppelte Ressourcen-IDs um (z. B. `Observation/LabResult-000000335` kommt in den UKW-Daten zweimal vor), damit beim späteren PUT-Upload keine URL-Kollisionen entstehen.
 
@@ -95,7 +95,7 @@ curl -X POST http://localhost:8080/fhir \
 
 ---
 
-## Beispiel: UKHD-Bundle (optional, analog zu UKSH)
+## Beispiel: UKHD-Bundle (analog zu UKSH)
 
 ```bash
 # 1. Entpacken (4 searchset-Dateien) und zusammenführen
@@ -117,7 +117,7 @@ curl -X POST http://localhost:8080/fhir \
 
 ---
 
-## Beispiel: UKW-Bundle (optional, searchset → transaction)
+## Beispiel: UKW-Bundle (searchset → transaction)
 
 ```bash
 # 1. Bundle nach /tmp kopieren
