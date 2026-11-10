@@ -8,6 +8,9 @@ Die Übungen zeigen, wie Arbeitsschritte mit FHIR-Daten in der Praxis aussehen k
 
 > Alles läuft lokal auf deinem Rechner mit Open-Source-Werkzeugen. Nur in [Übung 5 · Codes prüfen](exercises/exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org und in [Übung 6 · Ressourcen validieren](exercises/exercise-6.md) – optional, mit Client-Zertifikat – den MII Ontoserver.
 
+> 💡 **Feedback ist willkommen!** Ist etwas unklar, funktioniert ein Befehl bei dir nicht wie beschrieben, oder hast du Ideen für weitere Übungen?  
+> Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
+
 ___
 
 ## 📋 Übersicht

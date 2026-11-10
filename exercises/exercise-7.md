@@ -13,7 +13,7 @@ ___
 - Ordne Meldungen ein: Datenfehler, Versionsthema oder Grenze des Setups?
 - Lerne, was ein Validator **nicht** findet
 
-In [Übung 6 · Ressourcen validieren](exercise-6.md) hast du Ressourcen mit dem MII FHIR Validator geprüft. Die Antwort war jedes Mal ein **`OperationOutcome`**, die „Sprache“, in der FHIR Ergebnisse und Fehler meldet.
+In [Übung 6 · Ressourcen validieren](exercise-6.md) hast du Ressourcen mit dem MII FHIR Validator geprüft. Die Antwort war jedes Mal ein **`OperationOutcome`**, der Ressourcentyp, mit dem FHIR Fehler, Warnungen und Hinweise zu einer Aktion meldet.
 
 In dieser Übung lernst du, diese Berichte zu **lesen** und **einzuordnen**: Was bedeutet ein `error` im Vergleich zu einer `warning`? Welche Meldung zeigt einen echten Fehler in den Daten, welche nur eine Lücke in deinem Setup?
 
@@ -39,7 +39,6 @@ ___
 ___
 
 ## <a id="hintergrund"></a>📖 Hintergrund: Aufbau eines OperationOutcome
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Eintrag sieht vereinfacht so aus:
 
@@ -61,6 +60,8 @@ Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Ein
 }
 ```
 
+### Felder: Was enthält ein Validierungsbericht?
+
 | Feld | Inhalt |
 | --- | --- |
 | `severity` | Wie schwer wiegt die Meldung? (siehe unten) |
@@ -70,7 +71,6 @@ Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Ein
 | `location` | Ältere Ortsangabe; der HL7-Validator ergänzt hier oft Zeile und Spalte |
 
 ### Severity: Wie schwer wiegt die Meldung?
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Severity | Bedeutung | Handlung |
 | --- | --- | --- |
@@ -80,7 +80,6 @@ Ein Validierungsbericht ist eine Liste von `issue`-Einträgen. Ein einzelner Ein
 | **information** | Hinweis, z. B. „All OK“ | Optional lesen |
 
 ### Code: Welche Art von Problem?
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Eine Auswahl der `code`-Werte, die dir beim Validieren häufig begegnen:
 
@@ -100,10 +99,8 @@ Eine Auswahl der `code`-Werte, die dir beim Validieren häufig begegnen:
 ___
 
 ## <a id="meldungen"></a>📋 Häufige Validator-Meldungen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-### A) Bekannte Meldungen im MII-PRO-IG (kein Datenfehler)
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
+### A) Beispielmeldungen zum MII-Modul PRO - Implementation Guide
 
 | Meldung / Code | Bedeutung | Einordnung | Was tun? |
 |---|---|---|---|
@@ -114,7 +111,6 @@ ___
 | `dom-6` | Ressource ohne Narrative | Warnung | Narrative ergänzen oder unterdrücken |
 
 ### B) Typische Meldungen (sinngemäß, Wortlaut kann abweichen)
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Meldung (sinngemäß) | Bedeutung | Typische Ursache | Was tun? |
 |---|---|---|---|
@@ -133,7 +129,6 @@ ___
 ___
 
 ## <a id="schritt-1"></a>💻 Schritt 1: Berichte speichern und auswerten
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 > ⚠️ **Voraussetzung:** Blaze und der Validator aus [Übung 6 · Ressourcen validieren](exercise-6.md) laufen. In `~/validator` liegen diese Dateien aus Übung 6:
 >
@@ -169,7 +164,6 @@ ls bericht-*.json
 ```
 
 ### 1.1 Überblick: Meldungen je Schwere
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Fang mit einem Überblick an: Wie viele Meldungen welcher Schwere enthält jeder Bericht?
 
@@ -191,13 +185,12 @@ bericht-hb.json: {"information":1,"warning":6}
 🧩 **Was du gerade gesehen hast:** Eine Zeile pro Bericht reicht, um zu wissen, wo du hinschauen musst. Fehler haben nur `condition-570762` und `hba1c`. Die beiden anderen Berichte sind fehlerfrei. Ob dabei wirklich gegen ein KDS-Profil geprüft wurde, verrät die Zählung allerdings nicht (siehe [Übung 6, Schritt 4.2](exercise-6.md#schritt-4) und Schritt 2 unten). Bei vielen Berichten gehst du genauso vor: erst zählen, dann gezielt lesen.
 
 ### 1.2 Die Fehler eines Berichts lesen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 ```bash
 jq -r '.issue[] | select(.severity == "error" or .severity == "fatal") | "\(.severity) – \(.expression[0])\n  \(.details.text)\n"' bericht-condition-570762.json
 ```
 
-✅ **Erwartetes Ergebnis** (die zweite Meldung ist gekürzt):
+✅ **Erwartetes Ergebnis** (die zweite Meldung hier gekürzt):
 
 ```text
 error – Condition.code.coding[0].code
@@ -208,7 +201,6 @@ error – Condition.code.coding[0]
 ```
 
 ### 1.3 An der gemeldeten Stelle nachsehen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Jede Meldung sagt dir in `expression`, **wo** in der Ressource das Problem liegt. Der FHIRPath-Ausdruck `Condition.code.coding[0]` entspricht in `jq` dem Pfad `.code.coding[0]`: Ressourcentyp weglassen, mit einem Punkt beginnen.
 
@@ -228,10 +220,9 @@ jq '.code.coding[0]' condition-570762.json
 
 System und Version passen zur Meldung (`icd-10-gm`, Version `2025`), nur der Code selbst existiert nicht.
 
-🧩 **Was du gerade gesehen hast:** Der Validator sagt dir, **was** nicht stimmt, und mit `expression`, **wo**. Damit kommst du ohne Suchen direkt an das betroffene Feld. Das klappt mit den meisten Meldungen, z. B. `Observation.meta.profile[0]` → `jq '.meta.profile[0]'`. So prüfst du im Alltag eine Meldung nach, bevor du sie an die Datenquelle weitergibst.
+🧩 **Was du gerade gesehen hast:** Der Validator sagt dir, **was** nicht stimmt, und mit `expression`, **wo**. Damit kommst du ohne Suchen direkt an das betroffene Feld. Das klappt mit den meisten Meldungen, z. B. `Observation.meta.profile[0]` → `jq '.meta.profile[0]'`. So prüfst du im Alltag Meldungen nach, bevor du dich an die Datenquelle wendest.
 
 ### 1.4 Viele Berichte auf einmal
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 In [Übung 6, Schritt 4.4](exercise-6.md#schritt-4-4) hast du 57 Diagnosen validiert, ihre Berichte liegen in `~/validator/diagnosen/`. 57 Berichte einzeln zu lesen, ist mühsam. Bequemer geht es mit `jq -s`: Es liest alle Berichte auf einmal ein, und du bekommst wieder zuerst einen Überblick:
 
@@ -275,7 +266,6 @@ cat diagnosen/bericht-*.json \
 ___
 
 ## <a id="schritt-2"></a>🛠️ Schritt 2: Meldungen einordnen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Nicht jede Meldung bedeutet, dass die Daten falsch sind. Ordne jede Meldung aus deinen vier Berichten einer dieser Gruppen zu:
 
@@ -287,11 +277,10 @@ Nicht jede Meldung bedeutet, dass die Daten falsch sind. Ordne jede Meldung aus 
 | **Bekannte Meldung** | Steht sie in Tabelle A oben? | Meist niemand |
 
 ### 📖 Versionen von Codesystemen und Profilen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Viele Meldungen der Gruppe **Versionsthema** verstehst du erst, wenn du weißt, wo Versionen in FHIR stehen und warum sie sich ändern.
 
-**Codesysteme** ändern sich regelmäßig: Die ICD-10-GM und der OPS erscheinen jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 gestrichen oder umbenannt sein. Ein `Coding` kann deshalb die Version mitführen, mit der kodiert wurde:
+**Codesysteme** werden aktualisiert: Die ICD-10-GM und der OPS erscheinen jährlich, LOINC zweimal im Jahr. Ein Code, der 2023 gültig war, kann 2026 gestrichen oder umbenannt sein. Ein `Coding` sollte deshalb die Version mitführen, mit der kodiert wurde:
 
 ```json
 {
@@ -310,11 +299,10 @@ https://www.medizininformatik-initiative.de/fhir/core/modul-diagnose/StructureDe
 | Situation | Was tun? |
 | --- | --- |
 | Daten nennen eine ältere Profilversion als der Validator kennt | Vorher festlegen, gegen welche Version geprüft wird, und die passenden Pakete laden (`IG_PARAMS`) |
-| Daten wurden mit einer älteren ICD-10-GM-Version kodiert | Terminologieserver mit dieser Version bestücken oder bewusst gegen die aktuelle prüfen |
+| Daten wurden mit einer älteren ICD-10-GM-Version kodiert | Terminologieserver mit dieser Version bestücken oder bewusst gegen die aktuelle prüfen. |
 | Codes haben sich zwischen zwei Versionen geändert | Überleitungstabellen des BfArM für ICD-10-GM und OPS nutzen |
 
 ### 💻 Die Meldungen deiner vier Berichte einordnen
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Wie in 1.4 fasst du zuerst gleiche Meldungen zusammen, diesmal über die vier Berichte aus Schritt 1 und mit der Schwere vorneweg. So siehst du auf einen Blick, welche Meldungen mehrfach vorkommen:
 
@@ -361,12 +349,11 @@ Welche Meldung aus welchem Bericht stammt, zeigt dir `grep -l` wie in 1.4, z. B.
 | `None of the codings provided are in the value set 'IdentifierType'` | `hb`, `hba1c` | Folge des **Versionsthemas** | Das MII-Laborprofil würde `OBI` erlauben. Ohne gefundenes Profil prüft der Validator nur gegen den FHIR-Basisstandard, und der kennt `OBI` nicht. |
 | `dom-6: A resource should have narrative …`, `all observations should have a performer` | alle bzw. die Laborwerte | **Bekannte Meldung** | Best-Practice-Empfehlungen (Tabelle A) |
 
-Die mehrfach vorkommenden Meldungen gehen hier auf Setup, Version oder Best-Practice-Empfehlungen zurück. Die Datenfehler stehen jeweils nur in einem Bericht. Für die Arbeit heißt das: Datenfehler gehen an die Datenquelle, Versionsthemen klärst du einmal für den ganzen Bestand, Grenzen des Setups behebst du selbst.
+Die mehrfach vorkommenden Meldungen gehen hier auf Setup, Version oder Best-Practice-Empfehlungen zurück. Die Datenfehler stehen jeweils nur in einem Bericht. Datenfehler entspringen der Datenquelle oder der ETL-Strecke, Versionsthemen sind systematisch für den ganzen Bestand zu klären, Grenzen des Setups beeinflussen, was geprüft werden kann.
 
 ___
 
 ## <a id="nicht-gefunden"></a>🔍 Was der Validator nicht findet
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Ein Bericht ohne `error` heißt nicht, dass die Daten fachlich stimmen. Dein eigenes Beispiel aus [Übung 1 · Profil erstellen](exercise-1.md) zeigt das:
 
@@ -382,14 +369,13 @@ Ein HbA1c-Wert in `mmol/mol` (IFCC) hätte den Code `59261-8` gebraucht. Prüfe 
 - **SUSHI** und der **IG Publisher** prüfen, ob die Instanz zum Profil passt – und das tut sie, denn das Profil selbst enthält die falsche Kombination.
 - Der **Validator** prüft, ob `4548-4` ein gültiger LOINC-Code ist und ob `mmol/mol` eine gültige UCUM-Einheit ist. Beides stimmt. Ob Code und Einheit **fachlich zusammenpassen**, prüft er nicht.
 
-> 💡 **Merke:** Validierung prüft die Form, nicht den Sinn. Ob Code, Einheit und Wert zusammenpassen, gehört in fachliche Plausibilitätsprüfungen und in das Review eines Profils.
+> 💡 **Merke:** Der Validator prüft nur, was im Profil festgelegt ist. Ob Code, Einheit und Wert fachlich zusammenpassen, muss beim Profilieren und im Review des Profils sichergestellt werden. Bei realen Daten kommen das Mapping im DIZ und fachliche Plausibilitätsprüfungen dazu.
 
 ___
 
 ## <a id="schritt-3"></a>💻 Schritt 3: Validierung automatisieren
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-Im DIZ-Alltag validiert man meist per Skript statt von Hand, z. B. vor jedem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
+Im DIZ-Alltag validiert man meist per Skript statt von Hand, z. B. vor einem Import. Ein einfaches Beispiel liegt in `solution-exercise-7/validate.sh`: Es validiert eine Datei, gibt die Anzahl der Fehler und Warnungen aus und endet mit Exit-Code `1`, sobald ein Fehler auftritt.
 
 ```bash
 bash ~/tool-kds-sandbox/solution-exercise-7/validate.sh ~/validator/condition-r51.json
@@ -406,12 +392,11 @@ echo "Exit-Code: $?"
 Exit-Code: 1
 ```
 
-> 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://mein-server:8082 bash validate.sh datei.json`.
+> 💡 Über den Exit-Code kann eine Pipeline (z. B. GitLab CI oder GitHub Actions) entscheiden, ob es weitergeht. Mit der Umgebungsvariable `VALIDATOR_URL` lässt sich ein anderer Validator ansprechen, z. B. `VALIDATOR_URL=http://xyz:8082 bash validate.sh datei.json`.
 
 ___
 
 ## <a id="zusammenfassung"></a>🏁 Zusammenfassung und Abschluss
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 | Aufgabe | Befehl |
 | --- | --- |
@@ -422,25 +407,23 @@ ___
 | Datei per Skript prüfen | `bash solution-exercise-7/validate.sh datei.json` |
 
 ### Quick-Checkliste
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
-- [ ] Überblick verschafft: Meldungen je Schwere gezählt, bevor du einzelne Berichte liest?
-- [ ] Profil wirklich geprüft? Steht „Profile reference … has not been checked“ im Bericht, wurde nur gegen den FHIR-Basisstandard geprüft. Version klären oder mit `profile` prüfen.
-- [ ] Jeden `error` an der Stelle aus `expression` in der Ressource nachgesehen?
-- [ ] Bei vielen Berichten: Häufige Meldungen als mögliches systematisches Thema geprüft, seltene als mögliche Einzelfälle?
-- [ ] Meldungen eingeordnet: Datenfehler, Versionsthema, Grenze des Setups oder bekannte Meldung?
-- [ ] „… could not be found, so the code cannot be validated“ heißt **nicht geprüft**, nicht gültig. Ist das für deinen Zweck ausreichend?
-- [ ] Fachliche Plausibilität (Code, Einheit, Wert) separat geprüft?
-- [ ] Berichte abgelegt (Nachvollziehbarkeit)?
+- Überblick verschafft: Meldungen je Schwere gezählt, bevor du einzelne Berichte liest?
+- Profil wirklich geprüft? Steht „Profile reference … has not been checked“ im Bericht, wurde nur gegen den FHIR-Basisstandard geprüft. Version klären oder mit `profile` prüfen.
+- Jeden `error` an der Stelle aus `expression` in der Ressource nachgesehen?
+- Bei vielen Berichten: Häufige Meldungen als mögliches systematisches Thema geprüft, seltene als mögliche Einzelfälle?
+- Meldungen eingeordnet: Datenfehler, Versionsthema, Grenze des Setups oder bekannte Meldung?
+- „… could not be found, so the code cannot be validated“ heißt **nicht geprüft**, nicht gültig. Ist das für deinen Zweck ausreichend?
+- Fachliche Plausibilität (Code, Einheit, Wert) separat geprüft?
+- Berichte abgelegt (Nachvollziehbarkeit)?
 
 ___
 
 ### Abschluss
-<!-- TODO Jenne: Aufgabe nochmals prüfen und ggf. überarbeiten -->
 
 Damit hast du den Weg von FHIR-Daten im DIZ einmal komplett durchlaufen: Du hast ein Profil modelliert ([1 · Profil erstellen](exercise-1.md)), Daten in einen FHIR-Server geladen und abgefragt ([2 · FHIR-Server starten](exercise-2.md), [3 · Musterdaten laden](exercise-3.md), [4 · Daten abfragen](exercise-4.md)), Codes an Terminologieservern geprüft ([5 · Codes prüfen](exercise-5.md)) und Ressourcen gegen die Profile des Kerndatensatzes validiert und die Ergebnisse eingeordnet ([6 · Ressourcen validieren](exercise-6.md), diese Übung).
 
-> 💡 **Feedback willkommen:** War etwas unklar, hat ein Befehl nicht wie beschrieben funktioniert, oder hast du Ideen für weitere Übungen? Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
+> 💡 **Feedback ist willkommen!** War etwas unklar, hat ein Befehl nicht wie beschrieben funktioniert, oder hast du Ideen für weitere Übungen? Eröffne gern ein [Issue auf GitHub](https://github.com/medizininformatik-initiative/tool-kds-sandbox/issues).
 
 ___
 ___
