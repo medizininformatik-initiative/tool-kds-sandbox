@@ -4,6 +4,8 @@ Eine praxisnahe Schulungsumgebung zum **MII-Kerndatensatz (KDS)** und zu **HL7 F
 
 In sieben aufeinander aufbauenden Übungen werden verschiedene Stationen auf dem Weg von Daten im MII-Kontext angeschnitten: von der Spezifikation eines FHIR-Profils über das Starten eines FHIR-Servers, die Kommunikation mit ihm sowie das Laden und Abfragen realitätsnaher Musterdaten bis hin zur Nutzung von Terminologiediensten, zur Validierung von FHIR-Ressourcen und zum Verstehen von Validierungsberichten.
 
+Die Übungen zeigen, wie Arbeitsschritte mit FHIR-Daten in der Praxis aussehen können. Du setzt die benötigte technische Infrastruktur selbst auf, sprichst sie an und lernst aus den Ergebnissen vorgegebener Befehle. Die Übungen bauen technisch aufeinander auf, vermitteln FHIR aber nicht systematisch wie ein Lehrbuch. Eine Abschlussprüfung gibt es nicht.
+
 > Alles läuft lokal auf deinem Rechner mit Open-Source-Werkzeugen. Nur in [Übung 5 · Codes prüfen](exercises/exercise-5.md) nutzt du zusätzlich den öffentlichen Terminologieserver tx.fhir.org und in [Übung 6 · Ressourcen validieren](exercises/exercise-6.md) – optional, mit Client-Zertifikat – den MII Ontoserver.
 
 ___
